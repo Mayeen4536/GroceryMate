@@ -8,6 +8,8 @@ interface HouseholdSwitcherProps {
   compact?: boolean
   /** 'dark' styles the switcher for pine surfaces. */
   tone?: 'light' | 'dark'
+  /** Icon-only tile for the collapsed sidebar. */
+  iconOnly?: boolean
 }
 
 /** Placeholder household switcher. Visual only; switching arrives with real data. */
@@ -15,8 +17,26 @@ export function HouseholdSwitcher({
   household,
   compact = false,
   tone = 'light',
+  iconOnly = false,
 }: HouseholdSwitcherProps) {
   const dark = tone === 'dark'
+
+  if (iconOnly) {
+    return (
+      <button
+        type="button"
+        title={`${household.name} (household switching is coming soon)`}
+        className={cn(
+          'mx-auto flex size-10 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2',
+          dark
+            ? 'bg-pine-mint/15 text-pine-mint hover:bg-pine-mint/25 focus-visible:ring-pine-mint/50'
+            : 'bg-mint-100 text-mint-700 hover:bg-mint-200 focus-visible:ring-brand-500/40',
+        )}
+      >
+        <House size={17} aria-hidden="true" />
+      </button>
+    )
+  }
 
   if (compact) {
     return (

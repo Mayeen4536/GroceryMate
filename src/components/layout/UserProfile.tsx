@@ -7,11 +7,31 @@ interface UserProfileProps {
   user: MockUser
   /** 'dark' styles the row for pine surfaces. */
   tone?: 'light' | 'dark'
+  /** Avatar-only for the collapsed sidebar. */
+  avatarOnly?: boolean
 }
 
 /** Placeholder user profile row for the sidebar footer. Visual only. */
-export function UserProfile({ user, tone = 'light' }: UserProfileProps) {
+export function UserProfile({ user, tone = 'light', avatarOnly = false }: UserProfileProps) {
   const dark = tone === 'dark'
+
+  if (avatarOnly) {
+    return (
+      <button
+        type="button"
+        title={`${user.name} (account settings are coming soon)`}
+        className={cn(
+          'mx-auto flex rounded-full p-1 transition-colors focus-visible:outline-none focus-visible:ring-2',
+          dark
+            ? 'hover:bg-white/[0.06] focus-visible:ring-pine-mint/50'
+            : 'hover:bg-sand focus-visible:ring-brand-500/40',
+        )}
+      >
+        <Avatar name={user.name} size="sm" />
+      </button>
+    )
+  }
+
   return (
     <button
       type="button"

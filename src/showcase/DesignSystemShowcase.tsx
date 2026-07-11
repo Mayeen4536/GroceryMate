@@ -1,9 +1,11 @@
-import { useState, type ReactNode } from 'react'
-import { motion } from 'framer-motion'
+import { useEffect, useState, type ReactNode } from 'react'
+import { AnimatePresence, Reorder, motion } from 'framer-motion'
 import {
   ArrowRight,
   Check,
+  GripVertical,
   Leaf,
+  Pencil,
   Plus,
   RotateCcw,
   Search,
@@ -14,17 +16,21 @@ import {
   Users,
 } from 'lucide-react'
 import {
+  AnimatedNumber,
   Avatar,
   Badge,
   Button,
   Card,
+  Drawer,
   Input,
+  Modal,
   SectionHeader,
   Select,
+  Skeleton,
   Textarea,
 } from '../components/ui'
 import { cn } from '../lib/cn'
-import { fadeInUp, staggerChildren } from '../lib/motion'
+import { fadeInUp, springPop, staggerChildren } from '../lib/motion'
 
 /**
  * Temporary page for reviewing the design system visually.
@@ -42,10 +48,16 @@ function Section({
   children: ReactNode
 }) {
   return (
-    <section className="space-y-6">
+    <motion.section
+      variants={fadeInUp}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: '-60px' }}
+      className="space-y-6"
+    >
       <SectionHeader title={title} description={description} level={2} />
       {children}
-    </section>
+    </motion.section>
   )
 }
 
@@ -162,10 +174,11 @@ const memberNames = ['Aisha Khan', 'Bilal Ahmed', 'Chloe Lee', 'Daniyal Raza', '
 
 const motionRules = [
   'Durations: 150ms for press and hover feedback, 220ms for reveals, 320ms maximum.',
-  'One easing curve everywhere: ease-soft (cubic-bezier 0.22, 1, 0.36, 1).',
+  'Tweens use ease-soft; physical feedback uses the shared springs (springSnappy, springGentle, springPop, springPanel).',
   'Animate only transform and opacity. Never animate layout, color, or size for feedback.',
-  'Press feedback: scale to 0.97. Hover lift on interactive cards: 2px up.',
-  'Entrances are subtle (8px fade-up) and run once. Nothing loops or bounces.',
+  'Buttons: hover scale 1.02, press scale 0.97. Interactive cards lift 3px on a spring.',
+  'Page transitions slide in the direction of navigation and exit in 120ms.',
+  'Entrances are subtle (8px fade-up) and run once. Loops are banned except one gentle float per empty state.',
   'Reduced motion is respected app-wide via MotionConfig reducedMotion="user".',
   'All presets live in src/lib/motion.ts. Do not hand-write durations in components.',
 ]
@@ -173,6 +186,31 @@ const motionRules = [
 export function DesignSystemShowcase() {
   const [cardClicks, setCardClicks] = useState(0)
   const [replayKey, setReplayKey] = useState(0)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [settled, setSettled] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [total, setTotal] = useState(2450)
+  const [groceryOrder, setGroceryOrder] = useState([
+    'Milk (2L)',
+    'Brown bread',
+    'Eggs (dozen)',
+    'Basmati rice',
+  ])
+
+  // Success pop resets itself so the demo can be replayed.
+  useEffect(() => {
+    if (!settled) return
+    const timer = setTimeout(() => setSettled(false), 2200)
+    return () => clearTimeout(timer)
+  }, [settled])
+
+  // Skeleton demo: pretend to load for a moment.
+  useEffect(() => {
+    if (!loading) return
+    const timer = setTimeout(() => setLoading(false), 1800)
+    return () => clearTimeout(timer)
+  }, [loading])
 
   return (
     <div className="min-h-screen pb-24">
@@ -531,6 +569,219 @@ export function DesignSystemShowcase() {
               }
             />
           </Card>
+        </Section>
+
+        <Section
+          title="Interactions"
+          description="Overlays, feedback, and list behaviors. Everything runs on transforms and opacity."
+        >
+          <div className="grid gap-5 md:grid-cols-2">
+            <Card padding="lg" className="space-y-4">
+              <h3 className="text-base font-semibold text-ink">Overlays</h3>
+              <p className="text-sm text-muted">
+                Modals scale in from the center; drawers slide from an edge. Both close on
+                Escape or backdrop click.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <Button variant="secondary" onClick={() => setModalOpen(true)}>
+                  Open modal
+                </Button>
+                <Button variant="secondary" onClick={() => setDrawerOpen(true)}>
+                  Open drawer
+                </Button>
+              </div>
+            </Card>
+
+            <Card padding="lg" className="space-y-4">
+              <h3 className="text-base font-semibold text-ink">Animated numbers</h3>
+              <div>
+                <AnimatedNumber
+                  value={total}
+                  className="text-3xl font-bold tracking-tight text-ink"
+                />
+                <p className="mt-1 text-sm text-muted">spent this month</p>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                iconLeft={RotateCcw}
+                onClick={() => setTotal(1200 + Math.round(Math.random() * 3600))}
+              >
+                Recalculate
+              </Button>
+            </Card>
+
+            <Card padding="lg" className="space-y-4">
+              <h3 className="text-base font-semibold text-ink">Success feedback</h3>
+              <p className="text-sm text-muted">
+                Confirmations pop in with a slight spring overshoot, then settle.
+              </p>
+              <div className="flex min-h-9 flex-wrap items-center gap-3">
+                <Button size="sm" iconLeft={Check} onClick={() => setSettled(true)}>
+                  Mark as settled
+                </Button>
+                <AnimatePresence>
+                  {settled && (
+                    <motion.span
+                      initial={{ opacity: 0, scale: 0.8, y: 4 }}
+                      animate={{ opacity: 1, scale: 1, y: 0, transition: springPop }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                    >
+                      <Badge tone="success" icon={Check}>
+                        Settled with Bilal
+                      </Badge>
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </div>
+            </Card>
+
+            <Card padding="lg" className="space-y-4">
+              <h3 className="text-base font-semibold text-ink">Skeleton loading</h3>
+              {loading ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="size-10 rounded-full" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-3 w-1/3" />
+                      <Skeleton className="h-3 w-1/2" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-2/3" />
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Avatar name="Aisha Khan" />
+                    <div>
+                      <p className="text-sm font-medium text-ink">Aisha Khan</p>
+                      <p className="text-xs text-muted">added 3 items</p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-ink-soft">
+                    Milk, brown bread, and eggs were added to this week's list.
+                  </p>
+                </div>
+              )}
+              <Button variant="secondary" size="sm" onClick={() => setLoading(true)}>
+                Simulate loading
+              </Button>
+            </Card>
+          </div>
+
+          <Card padding="lg" className="space-y-3">
+            <h3 className="text-base font-semibold text-ink">Hover to reveal actions</h3>
+            <p className="text-sm text-muted">
+              Member rows keep actions hidden until hover or keyboard focus.
+            </p>
+            <div className="space-y-2">
+              {['Aisha Khan', 'Bilal Ahmed', 'Chloe Lee'].map((name, index) => (
+                <div
+                  key={name}
+                  className="group relative flex items-center gap-3 rounded-lg bg-surface px-4 py-3 shadow-card transition-shadow hover:shadow-lifted"
+                >
+                  <Avatar name={name} size="sm" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-ink">{name}</p>
+                    <p className="text-xs text-muted">{index === 0 ? 'Owner' : 'Member'}</p>
+                  </div>
+                  <div className="flex translate-x-1 gap-1 opacity-0 transition-all duration-200 group-focus-within:translate-x-0 group-focus-within:opacity-100 group-hover:translate-x-0 group-hover:opacity-100">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      iconLeft={Pencil}
+                      aria-label={`Edit ${name}`}
+                      className="w-9 px-0"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      iconLeft={Trash2}
+                      aria-label={`Remove ${name}`}
+                      className="w-9 px-0 text-danger-600 hover:bg-danger-50 hover:text-danger-700"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card padding="lg" className="space-y-3">
+            <h3 className="text-base font-semibold text-ink">Drag to reorder</h3>
+            <p className="text-sm text-muted">
+              Grab an item and drag it; the list makes room with a spring.
+            </p>
+            <Reorder.Group
+              axis="y"
+              values={groceryOrder}
+              onReorder={setGroceryOrder}
+              className="space-y-2"
+            >
+              {groceryOrder.map((item) => (
+                <Reorder.Item
+                  key={item}
+                  value={item}
+                  whileDrag={{ scale: 1.02 }}
+                  className="flex cursor-grab items-center gap-3 rounded-lg bg-surface px-4 py-3 shadow-card active:cursor-grabbing"
+                >
+                  <GripVertical size={16} aria-hidden="true" className="shrink-0 text-muted" />
+                  <span className="text-sm font-medium text-ink">{item}</span>
+                </Reorder.Item>
+              ))}
+            </Reorder.Group>
+          </Card>
+
+          <Modal
+            open={modalOpen}
+            onClose={() => setModalOpen(false)}
+            title="Remove Basmati rice?"
+            footer={
+              <>
+                <Button variant="ghost" onClick={() => setModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button variant="danger" iconLeft={Trash2} onClick={() => setModalOpen(false)}>
+                  Remove item
+                </Button>
+              </>
+            }
+          >
+            <p className="text-sm text-ink-soft">
+              This removes the item from this week's list. Anyone in the household can add
+              it back later.
+            </p>
+          </Modal>
+
+          <Drawer
+            open={drawerOpen}
+            onClose={() => setDrawerOpen(false)}
+            title="Add grocery item"
+            footer={
+              <>
+                <Button variant="ghost" onClick={() => setDrawerOpen(false)}>
+                  Cancel
+                </Button>
+                <Button iconLeft={Plus} onClick={() => setDrawerOpen(false)}>
+                  Add item
+                </Button>
+              </>
+            }
+          >
+            <div className="space-y-5 pb-2">
+              <Input label="Item name" placeholder="e.g. Milk (2L)" />
+              <Select label="Paid by" defaultValue="">
+                <option value="" disabled>
+                  Choose a member
+                </option>
+                {memberNames.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          </Drawer>
         </Section>
 
         <Section

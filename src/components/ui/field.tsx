@@ -31,13 +31,18 @@ export const controlClasses = {
   base: cn(
     'w-full rounded-md border bg-surface text-[0.9375rem] text-ink placeholder:text-muted/60',
     'shadow-[0_1px_2px_rgb(30_26_22/0.03)]',
-    'transition-[border-color,box-shadow,background-color] duration-150 ease-soft',
-    'focus:outline-none focus:ring-4',
+    'transition-[border-color,box-shadow,background-color] duration-200 ease-soft',
+    'focus:outline-none',
     'disabled:cursor-not-allowed disabled:bg-sand disabled:shadow-none disabled:opacity-70',
   ),
-  valid:
-    'border-line-strong hover:border-ink/25 focus:border-brand-500 focus:ring-brand-500/12',
-  invalid: 'border-danger-500 focus:border-danger-500 focus:ring-danger-500/12',
+  valid: cn(
+    'border-line-strong hover:border-ink/25 focus:border-brand-500',
+    'focus:shadow-[0_0_0_4px_rgb(51_147_99/0.12),0_2px_12px_-2px_rgb(51_147_99/0.28)]',
+  ),
+  invalid: cn(
+    'border-danger-500 focus:border-danger-500',
+    'focus:shadow-[0_0_0_4px_rgb(224_82_82/0.12),0_2px_12px_-2px_rgb(224_82_82/0.28)]',
+  ),
 }
 
 export function controlTone(error?: string): string {

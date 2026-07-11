@@ -16,19 +16,29 @@ function useShowDesignSystem(): boolean {
   return hash === '#design-system'
 }
 
+const pageIndex = (page: PageId) => NAV_ITEMS.findIndex((item) => item.id === page)
+
 export default function App() {
   const showDesignSystem = useShowDesignSystem()
   const [activePage, setActivePage] = useState<PageId>('overview')
+  // 1 = navigating forward in the nav order, -1 = backward; drives the slide direction.
+  const [direction, setDirection] = useState(1)
   const activeItem = NAV_ITEMS.find((item) => item.id === activePage) ?? NAV_ITEMS[0]
+
+  const navigate = (page: PageId) => {
+    if (page === activePage) return
+    setDirection(pageIndex(page) >= pageIndex(activePage) ? 1 : -1)
+    setActivePage(page)
+  }
 
   return (
     <MotionConfig reducedMotion="user">
       {showDesignSystem ? (
         <DesignSystemShowcase />
       ) : (
-        <AppShell activePage={activePage} onNavigate={setActivePage}>
-          <AnimatePresence mode="wait" initial={false}>
-            <PagePlaceholder key={activePage} item={activeItem} />
+        <AppShell activePage={activePage} onNavigate={navigate}>
+          <AnimatePresence mode="wait" initial={false} custom={direction}>
+            <PagePlaceholder key={activePage} item={activeItem} direction={direction} />
           </AnimatePresence>
         </AppShell>
       )}

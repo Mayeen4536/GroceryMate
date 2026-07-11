@@ -21,9 +21,11 @@ export function BottomNav({ activePage, onNavigate }: BottomNavProps) {
           const Icon = item.icon
           const active = item.id === activePage
           return (
-            <button
+            <motion.button
               key={item.id}
               type="button"
+              whileTap={{ scale: 0.93 }}
+              transition={springSnappy}
               onClick={() => onNavigate(item.id)}
               aria-current={active ? 'page' : undefined}
               className={cn(
@@ -46,7 +48,7 @@ export function BottomNav({ activePage, onNavigate }: BottomNavProps) {
                 className={cn('relative transition-colors', active && 'text-pine-mint')}
               />
               <span className="relative max-w-full truncate px-1">{item.label}</span>
-            </button>
+            </motion.button>
           )
         })}
       </div>

@@ -51,6 +51,7 @@ export function Button({
     <motion.button
       type={type}
       disabled={disabled}
+      whileHover={disabled ? undefined : { scale: 1.02 }}
       whileTap={disabled ? undefined : { scale: 0.97 }}
       transition={springSnappy}
       className={cn(

@@ -79,12 +79,19 @@ Hover elevates `card → lifted`.
 Presets in [src/lib/motion.ts](src/lib/motion.ts); do not hand-write durations in components.
 
 - Durations: 150ms (press/hover), 220ms (reveals), 320ms max
-- Easing: `ease-soft` = cubic-bezier(0.22, 1, 0.36, 1) for tweens;
-  `springSnappy` for nav pills and press feedback, `springGentle` for hover lifts
-- Animate transform and opacity only; press = scale 0.97, card hover = 3px lift
-- Page switches: `pageVariants` + `riseChild` (staggered enter, quick 120ms exit
-  via `AnimatePresence mode="wait"`)
-- Entrances: 8px fade-up, once per mount; never loop, never bounce
+- Easing: `ease-soft` = cubic-bezier(0.22, 1, 0.36, 1) for tweens. Springs:
+  `springSnappy` (nav pills, presses), `springGentle` (hover lifts),
+  `springPop` (success confirmations, slight overshoot), `springPanel`
+  (modals/drawers, no visible bounce)
+- Animate transform and opacity only; hover = scale 1.02 (buttons), press =
+  scale 0.97, card hover = 3px lift
+- Page switches: `pageVariants` + `riseChild`; the slide direction follows nav
+  order (pass direction through `custom` on AnimatePresence and the page root)
+- Entrances: 8px fade-up, once per mount; showcase sections reveal on scroll
+  (`whileInView`, once)
+- Loops are banned except one ambient float per empty state (5s+, few px)
+- Skeletons shimmer via background-position (paint-only); add
+  `motion-reduce:animate-none`
 - Reduced motion respected globally (`MotionConfig reducedMotion="user"` in App)
 
 ## Components (`src/components/ui`)
@@ -95,6 +102,10 @@ Presets in [src/lib/motion.ts](src/lib/motion.ts); do not hand-write durations i
 - **Badge** - tones `neutral | brand | mint | success | warning | danger`, optional `icon`.
 - **Avatar** - initials + member accent derived from `name` (pin with `tone` index); sizes `sm | md | lg`.
 - **SectionHeader** - `title`, `description`, `icon`, `action` slot, heading `level` 1-3.
+- **Modal** - centered dialog (`open`, `onClose`, `title`, `footer` slot); scales in on `springPanel`, Escape/backdrop close, body scroll lock.
+- **Drawer** - edge panel, `side: right | bottom`; same API and behaviors as Modal.
+- **Skeleton** - shimmer placeholder sized via `className`.
+- **AnimatedNumber** - counts toward `value` with `format` callback; tabular digits, honors reduced motion.
 
 UI stays presentational: components receive data via props and report events via
 callbacks. Business logic (splitting, sessions, persistence) will live outside

@@ -114,6 +114,18 @@
 
   /* Motion -------------------------------------------------------------- */
   --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Skeleton shimmer: paint-only (background-position), cheap to run */
+  --animate-shimmer: shimmer 1.8s ease-in-out infinite;
+
+  @keyframes shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
 }
 
 @layer base {

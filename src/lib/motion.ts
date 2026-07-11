@@ -23,6 +23,12 @@ export const springSnappy: Transition = { type: 'spring', stiffness: 520, dampin
 /** Softer spring for hover lifts and decorative movement. */
 export const springGentle: Transition = { type: 'spring', stiffness: 240, damping: 26 }
 
+/** Slight overshoot for success pops and confirmations. Subtle, never rubbery. */
+export const springPop: Transition = { type: 'spring', stiffness: 560, damping: 24 }
+
+/** Firm spring for overlay panels (modals, drawers). No visible bounce. */
+export const springPanel: Transition = { type: 'spring', stiffness: 400, damping: 38 }
+
 /** Gentle entrance for content blocks. Use once on mount, never on rerenders. */
 export const fadeInUp: Variants = {
   hidden: { opacity: 0, y: 8 },
@@ -35,15 +41,24 @@ export const staggerChildren: Variants = {
   visible: { transition: { staggerChildren: 0.05 } },
 }
 
-/** Page-level enter/exit. Pair with `riseChild` on direct children for a staggered reveal. */
+/**
+ * Page-level enter/exit with a directional slide. Pass the navigation
+ * direction (1 = forward, -1 = backward) via the `custom` prop on both
+ * the motion element and its AnimatePresence. Pair with `riseChild` on
+ * direct children for a staggered reveal.
+ */
 export const pageVariants: Variants = {
-  hidden: { opacity: 0, y: 12 },
+  hidden: (direction: number = 1) => ({ opacity: 0, x: 28 * direction }),
   visible: {
     opacity: 1,
-    y: 0,
+    x: 0,
     transition: { ...transitionBase, when: 'beforeChildren', staggerChildren: 0.05 },
   },
-  exit: { opacity: 0, y: -8, transition: { duration: 0.12, ease: easeSoft } },
+  exit: (direction: number = 1) => ({
+    opacity: 0,
+    x: -20 * direction,
+    transition: { duration: 0.12, ease: easeSoft },
+  }),
 }
 
 /** Child blocks inside a `pageVariants` container. */

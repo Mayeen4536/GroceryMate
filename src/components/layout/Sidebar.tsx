@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { cn } from '../../lib/cn'
 import { springSnappy } from '../../lib/motion'
 import { NAV_ITEMS, type NavItem, type PageId } from '../../lib/navigation'
@@ -10,15 +11,19 @@ import { UserProfile } from './UserProfile'
 interface SidebarProps {
   activePage: PageId
   onNavigate: (page: PageId) => void
+  collapsed: boolean
+  onToggleCollapsed: () => void
 }
 
 function SidebarNavItem({
   item,
   active,
+  collapsed,
   onNavigate,
 }: {
   item: NavItem
   active: boolean
+  collapsed: boolean
   onNavigate: (page: PageId) => void
 }) {
   const Icon = item.icon
@@ -27,9 +32,11 @@ function SidebarNavItem({
       type="button"
       onClick={() => onNavigate(item.id)}
       aria-current={active ? 'page' : undefined}
+      title={collapsed ? item.label : undefined}
       className={cn(
-        'relative flex h-10 w-full items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors',
+        'relative flex h-10 w-full items-center rounded-md text-sm font-medium transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pine-mint/50',
+        collapsed ? 'justify-center px-0' : 'gap-3 px-3',
         active ? 'text-white' : 'text-pine-muted hover:bg-white/[0.05] hover:text-pine-text',
       )}
     >
@@ -46,20 +53,44 @@ function SidebarNavItem({
         aria-hidden="true"
         className={cn('relative shrink-0 transition-colors', active && 'text-pine-mint')}
       />
-      <span className="relative">{item.label}</span>
+      {!collapsed && <span className="relative whitespace-nowrap">{item.label}</span>}
     </button>
   )
 }
 
-/** Desktop-only sidebar on the dark pine surface: brand, household, nav, profile. */
-export function Sidebar({ activePage, onNavigate }: SidebarProps) {
+/** Desktop-only sidebar on the dark pine surface. Collapses to an icon rail. */
+export function Sidebar({ activePage, onNavigate, collapsed, onToggleCollapsed }: SidebarProps) {
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col bg-pine-950 lg:flex">
-      <div className="px-5 pb-5 pt-6">
-        <Brand withTagline tone="dark" />
+    <aside
+      className={cn(
+        'fixed inset-y-0 left-0 z-30 hidden flex-col bg-pine-950 lg:flex',
+        'transition-[width] duration-300 ease-soft',
+        collapsed ? 'w-[4.5rem]' : 'w-60',
+      )}
+    >
+      <div
+        className={cn(
+          'flex items-center pb-5 pt-6',
+          collapsed ? 'flex-col gap-3 px-0' : 'justify-between pl-5 pr-3',
+        )}
+      >
+        <Brand withTagline tone="dark" markOnly={collapsed} />
+        <button
+          type="button"
+          onClick={onToggleCollapsed}
+          aria-expanded={!collapsed}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          className="flex size-8 shrink-0 items-center justify-center rounded-md text-pine-muted transition-colors hover:bg-white/[0.06] hover:text-pine-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pine-mint/50"
+        >
+          {collapsed ? (
+            <PanelLeftOpen size={16} aria-hidden="true" />
+          ) : (
+            <PanelLeftClose size={16} aria-hidden="true" />
+          )}
+        </button>
       </div>
-      <div className="px-3 pb-5">
-        <HouseholdSwitcher household={mockHousehold} tone="dark" />
+      <div className={cn('pb-5', collapsed ? 'px-3' : 'px-3')}>
+        <HouseholdSwitcher household={mockHousehold} tone="dark" iconOnly={collapsed} />
       </div>
       <nav aria-label="Main" className="flex-1 space-y-0.5 overflow-y-auto px-3">
         {NAV_ITEMS.map((item) => (
@@ -67,12 +98,13 @@ export function Sidebar({ activePage, onNavigate }: SidebarProps) {
             key={item.id}
             item={item}
             active={item.id === activePage}
+            collapsed={collapsed}
             onNavigate={onNavigate}
           />
         ))}
       </nav>
       <div className="border-t border-white/[0.07] p-3">
-        <UserProfile user={mockUser} tone="dark" />
+        <UserProfile user={mockUser} tone="dark" avatarOnly={collapsed} />
       </div>
     </aside>
   )

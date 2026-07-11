@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
+import { cn } from '../../lib/cn'
 import type { PageId } from '../../lib/navigation'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
@@ -11,10 +12,12 @@ interface AppShellProps {
 }
 
 /**
- * Application chrome: desktop sidebar, mobile top bar and bottom nav,
- * and the main content container. Pages render as children.
+ * Application chrome: desktop sidebar (collapsible), mobile top bar and
+ * floating dock, and the main content container. Pages render as children.
  */
 export function AppShell({ activePage, onNavigate, children }: AppShellProps) {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+
   return (
     <div className="min-h-screen">
       <a
@@ -23,9 +26,19 @@ export function AppShell({ activePage, onNavigate, children }: AppShellProps) {
       >
         Skip to content
       </a>
-      <Sidebar activePage={activePage} onNavigate={onNavigate} />
+      <Sidebar
+        activePage={activePage}
+        onNavigate={onNavigate}
+        collapsed={sidebarCollapsed}
+        onToggleCollapsed={() => setSidebarCollapsed((collapsed) => !collapsed)}
+      />
       <TopBar />
-      <div className="lg:pl-60">
+      <div
+        className={cn(
+          'transition-[padding] duration-300 ease-soft',
+          sidebarCollapsed ? 'lg:pl-[4.5rem]' : 'lg:pl-60',
+        )}
+      >
         <main
           id="main"
           className="mx-auto w-full max-w-5xl px-4 pb-32 pt-6 sm:px-6 lg:px-10 lg:pb-16 lg:pt-12"

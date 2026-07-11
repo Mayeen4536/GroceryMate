@@ -30,12 +30,18 @@ const accents: Record<PageId, { tile: string; glow: string }> = {
 }
 
 /** Stand-in page body until the real screens are built. */
-export function PagePlaceholder({ item }: { item: NavItem }) {
+export function PagePlaceholder({ item, direction = 1 }: { item: NavItem; direction?: number }) {
   const Icon = item.icon
   const accent = accents[item.id]
 
   return (
-    <motion.div variants={pageVariants} initial="hidden" animate="visible" exit="exit">
+    <motion.div
+      variants={pageVariants}
+      custom={direction}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+    >
       <motion.div variants={riseChild}>
         <PageHeader title={item.label} description={item.description} />
       </motion.div>
@@ -49,16 +55,22 @@ export function PagePlaceholder({ item }: { item: NavItem }) {
             )}
           />
           <div className="relative flex flex-col items-center gap-4 px-6 py-16 text-center sm:py-20">
-            <motion.span
-              whileHover={{ rotate: 3, scale: 1.06 }}
-              transition={springGentle}
-              className={cn(
-                'flex size-16 items-center justify-center rounded-xl bg-linear-to-br shadow-card ring-1 ring-ink/5',
-                accent.tile,
-              )}
+            <motion.div
+              aria-hidden="true"
+              animate={{ y: [0, -5, 0] }}
+              transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut' }}
             >
-              <Icon size={28} aria-hidden="true" />
-            </motion.span>
+              <motion.span
+                whileHover={{ rotate: 3, scale: 1.06 }}
+                transition={springGentle}
+                className={cn(
+                  'flex size-16 items-center justify-center rounded-xl bg-linear-to-br shadow-card ring-1 ring-ink/5',
+                  accent.tile,
+                )}
+              >
+                <Icon size={28} aria-hidden="true" />
+              </motion.span>
+            </motion.div>
             <div className="space-y-1.5">
               <p className="text-base font-semibold text-ink">
                 The {item.label} screen is on its way
