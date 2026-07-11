@@ -133,7 +133,18 @@ export function HeroMockup() {
               </div>
             ))}
           </div>
-          <div className="flex items-center justify-between gap-3 border-t border-line bg-mint-50/70 px-5 py-4">
+          <div className="relative flex items-center justify-between gap-3 overflow-hidden border-t border-line bg-mint-50/70 px-5 py-4">
+            {/* Money quietly flowing toward settlement */}
+            {[0, 1, 2].map((index) => (
+              <motion.span
+                key={index}
+                aria-hidden="true"
+                className="absolute top-0 size-[3px] -translate-y-1/2 rounded-full bg-brand-400"
+                initial={{ left: '-2%', opacity: 0 }}
+                animate={{ left: ['-2%', '102%'], opacity: [0, 1, 1, 0] }}
+                transition={{ duration: 2.8, delay: index * 0.9, repeat: Infinity, ease: 'linear' }}
+              />
+            ))}
             <div>
               <p className="text-xs text-muted">Fair settlement</p>
               <p className="text-sm font-semibold text-ink">

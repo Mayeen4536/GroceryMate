@@ -34,8 +34,9 @@ import {
   Skeleton,
   Textarea,
 } from '../components/ui'
+import { BasketLoader, Celebration, SettlementFlow } from '../components/experience'
 import { cn } from '../lib/cn'
-import { fadeInUp, springPop, staggerChildren } from '../lib/motion'
+import { fadeInUp, springPop, staggerChildren, transitionFast } from '../lib/motion'
 
 /**
  * Temporary page for reviewing the design system visually.
@@ -183,7 +184,7 @@ const motionRules = [
   'Animate only transform and opacity. Never animate layout, color, or size for feedback.',
   'Buttons: hover scale 1.02, press scale 0.97. Interactive cards lift 3px on a spring.',
   'Page transitions blend opacity, a directional shift, a 1.5% scale settle, and a brief blur: 260ms in, 130ms out.',
-  'Entrances are subtle (8px fade-up) and run once. Loops are banned except one gentle float per empty state.',
+  'Entrances are subtle (8px fade-up) and run once. Loops live only in empty-state floats, loaders, and flow visualizations.',
   'Reduced motion is respected app-wide via MotionConfig reducedMotion="user".',
   'All presets live in src/lib/motion.ts. Do not hand-write durations in components.',
 ]
@@ -203,6 +204,18 @@ export function DesignSystemShowcase() {
     'Basmati rice',
   ])
   const [splitWith, setSplitWith] = useState<string | null>(null)
+  const [settleState, setSettleState] = useState<'idle' | 'working' | 'done'>('idle')
+  const [celebrate, setCelebrate] = useState(0)
+
+  const startSettle = () => {
+    if (settleState !== 'idle') return
+    setSettleState('working')
+    setTimeout(() => {
+      setSettleState('done')
+      setCelebrate((count) => count + 1)
+    }, 1400)
+    setTimeout(() => setSettleState('idle'), 4200)
+  }
 
   // Success pop resets itself so the demo can be replayed.
   useEffect(() => {
@@ -809,6 +822,99 @@ export function DesignSystemShowcase() {
               </Select>
             </div>
           </Drawer>
+        </Section>
+
+        <Section
+          title="Signature moments"
+          description="The touches that make GroceryMate feel like GroceryMate. Confetti fires only when a settlement completes."
+        >
+          <div className="grid gap-5 md:grid-cols-3">
+            <Card padding="lg" className="flex flex-col gap-4">
+              <div>
+                <h3 className="text-base font-semibold text-ink">Settling up</h3>
+                <p className="mt-1 text-sm text-muted">
+                  The button morphs through the work and the moment of even is celebrated.
+                </p>
+              </div>
+              <div className="relative flex flex-1 items-center justify-center py-4">
+                <Celebration trigger={celebrate} />
+                <motion.button
+                  layout
+                  type="button"
+                  onClick={startSettle}
+                  className={cn(
+                    'relative flex h-12 items-center justify-center overflow-hidden rounded-lg px-6 font-semibold text-white',
+                    'transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas',
+                    settleState === 'done'
+                      ? 'bg-linear-to-b from-success-500 to-success-700 shadow-button-brand'
+                      : 'bg-linear-to-b from-brand-500 to-brand-700 shadow-button-brand',
+                    settleState === 'working' && 'cursor-wait',
+                  )}
+                >
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.span
+                      key={settleState}
+                      initial={{ y: 10, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      exit={{ y: -10, opacity: 0 }}
+                      transition={transitionFast}
+                      className="flex items-center gap-2 whitespace-nowrap text-sm"
+                    >
+                      {settleState === 'idle' && (
+                        <>
+                          <HandCoins size={17} aria-hidden="true" />
+                          Settle up
+                        </>
+                      )}
+                      {settleState === 'working' && (
+                        <>
+                          Settling
+                          {[0, 1, 2].map((index) => (
+                            <motion.span
+                              key={index}
+                              className="size-1 rounded-full bg-white"
+                              animate={{ opacity: [0.3, 1, 0.3] }}
+                              transition={{ duration: 0.9, delay: index * 0.18, repeat: Infinity }}
+                            />
+                          ))}
+                        </>
+                      )}
+                      {settleState === 'done' && (
+                        <>
+                          <Check size={17} aria-hidden="true" />
+                          All settled
+                        </>
+                      )}
+                    </motion.span>
+                  </AnimatePresence>
+                </motion.button>
+              </div>
+            </Card>
+
+            <Card padding="lg" className="flex flex-col gap-4">
+              <div>
+                <h3 className="text-base font-semibold text-ink">Money flows home</h3>
+                <p className="mt-1 text-sm text-muted">
+                  Settlements are shown as flow, not tables. The amount counts up on arrival.
+                </p>
+              </div>
+              <div className="flex flex-1 items-center">
+                <SettlementFlow />
+              </div>
+            </Card>
+
+            <Card padding="lg" className="flex flex-col gap-4">
+              <div>
+                <h3 className="text-base font-semibold text-ink">Basket loading</h3>
+                <p className="mt-1 text-sm text-muted">
+                  Waiting looks like groceries being packed, not a spinner.
+                </p>
+              </div>
+              <div className="flex flex-1 items-center justify-center py-2">
+                <BasketLoader label="Packing your list…" />
+              </div>
+            </Card>
+          </div>
         </Section>
 
         <Section

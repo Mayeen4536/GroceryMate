@@ -100,7 +100,8 @@ Presets in [src/lib/motion.ts](src/lib/motion.ts); do not hand-write durations i
 - Entrances: 8px fade-up, once per mount; showcase sections reveal on scroll
   (`whileInView`, once)
 - Loops are banned except gentle ambient drift (5s+, few px, transform/opacity
-  only) in empty states and the landing hero
+  only) in empty states and the landing hero, and inside dedicated experience
+  pieces (loaders, flow visualizations) where motion is the content
 - Skeletons shimmer via background-position (paint-only); add
   `motion-reduce:animate-none`
 - Reduced motion respected globally (`MotionConfig reducedMotion="user"` in App)
@@ -119,6 +120,18 @@ Presets in [src/lib/motion.ts](src/lib/motion.ts); do not hand-write durations i
 - **Drawer** - edge panel, `side: right | bottom`; same API and behaviors as Modal.
 - **Skeleton** - shimmer placeholder sized via `className`.
 - **AnimatedNumber** - counts toward `value` with `format` callback; tabular digits, honors reduced motion.
+
+## Experience components (`src/components/experience`)
+
+Signature moments. Use sparingly; each is tied to a meaning.
+
+- **BasketLoader** - the loading state: groceries drop into a bobbing basket. The only sanctioned spinner replacement.
+- **Celebration** - one-shot confetti burst (`trigger` counter, radiates from the nearest `relative` ancestor, self-clears in ~1s). Reserved exclusively for a completed settlement. Honors reduced motion.
+- **SettlementFlow** - dots travel from debtor to creditor while the amount counts up on scroll into view.
+
+Taste rules: confetti only on settlement completion, never on page load or
+minor actions. One signature moment per screen. If an animation does not
+carry meaning, it does not ship.
 
 UI stays presentational: components receive data via props and report events via
 callbacks. Business logic (splitting, sessions, persistence) will live outside
