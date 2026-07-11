@@ -1,11 +1,15 @@
 @import 'tailwindcss';
-@import '@fontsource-variable/inter';
+@import '@fontsource-variable/inter/opsz.css';
 
 /*
   GroceryMate design tokens.
   Every value here becomes both a CSS variable and a Tailwind utility
   (e.g. --color-brand-600 -> bg-brand-600 / text-brand-600).
   See DESIGN.md for usage rules.
+
+  Depth model: surfaces are separated by layered shadows and hairline
+  alpha borders, not solid 1px lines. The pine family is the dark
+  chrome surface (sidebar, mobile dock) that anchors the interface.
 */
 @theme {
   /* Typography ------------------------------------------------------ */
@@ -14,8 +18,8 @@
 
   /* Hero / display headline (text-display) */
   --text-display: 2.5rem;
-  --text-display--line-height: 1.1;
-  --text-display--letter-spacing: -0.025em;
+  --text-display--line-height: 1.08;
+  --text-display--letter-spacing: -0.03em;
   --text-display--font-weight: 700;
 
   /* Brand - fresh deep green --------------------------------------- */
@@ -36,11 +40,20 @@
   --color-mint-200: #b9e7cf;
   --color-mint-700: #1e6b4a;
 
+  /* Pine - dark chrome surface (sidebar, mobile dock) ---------------- */
+  --color-pine-950: #0b1912;
+  --color-pine-900: #102217;
+  --color-pine-800: #16301f;
+  --color-pine-text: #eef1e9; /* primary text on pine */
+  --color-pine-muted: #9fac9d; /* secondary text on pine (AA on pine-950) */
+  --color-pine-mint: #86dcae; /* active accent on pine */
+
   /* Warm neutrals ---------------------------------------------------- */
   --color-canvas: #faf8f5; /* app background */
   --color-surface: #ffffff; /* cards, inputs */
   --color-sand: #f3f0ea; /* soft fills, ghost hover */
-  --color-line: #e7e2da; /* borders, dividers */
+  --color-line: rgb(42 39 36 / 0.09); /* hairline borders, dividers */
+  --color-line-strong: rgb(42 39 36 / 0.16); /* input borders */
   --color-ink: #2a2724; /* primary text */
   --color-ink-soft: #57524a; /* secondary text */
   --color-muted: #6f6a61; /* muted text (AA on canvas) */
@@ -77,25 +90,56 @@
   --radius-sm: 0.5rem; /* 8px  - chips, tiny controls */
   --radius-md: 0.75rem; /* 12px - buttons, inputs */
   --radius-lg: 1rem; /* 16px - icon tiles, small cards */
-  --radius-xl: 1.25rem; /* 20px - cards */
+  --radius-xl: 1.25rem; /* 20px - cards, mobile dock */
   --radius-2xl: 1.75rem; /* 28px - modals, hero surfaces */
 
-  /* Shadows - soft, warm-tinted --------------------------------------- */
-  --shadow-soft: 0 1px 2px rgb(42 39 36 / 0.04), 0 2px 8px rgb(42 39 36 / 0.04);
-  --shadow-card: 0 1px 2px rgb(42 39 36 / 0.05), 0 4px 16px rgb(42 39 36 / 0.06);
-  --shadow-lifted: 0 2px 4px rgb(42 39 36 / 0.06), 0 12px 32px rgb(42 39 36 / 0.1);
+  /* Shadows - layered, warm-tinted; the 0 0 0 1px layer replaces borders */
+  --shadow-soft: 0 1px 2px rgb(30 26 22 / 0.05), 0 2px 6px rgb(30 26 22 / 0.04);
+  --shadow-card:
+    0 0 0 1px rgb(30 26 22 / 0.04), 0 1px 2px rgb(30 26 22 / 0.04),
+    0 8px 24px -12px rgb(30 26 22 / 0.12);
+  --shadow-lifted:
+    0 0 0 1px rgb(30 26 22 / 0.04), 0 2px 6px rgb(30 26 22 / 0.05),
+    0 20px 44px -16px rgb(30 26 22 / 0.18);
+  --shadow-button:
+    inset 0 1px 0 rgb(255 255 255 / 0.7), 0 0 0 1px rgb(30 26 22 / 0.08),
+    0 1px 2px rgb(30 26 22 / 0.07);
+  --shadow-button-brand:
+    inset 0 1px 0 rgb(255 255 255 / 0.16), 0 1px 2px rgb(16 58 38 / 0.28),
+    0 5px 16px -6px rgb(33 122 80 / 0.5);
+  --shadow-button-danger:
+    inset 0 1px 0 rgb(255 255 255 / 0.16), 0 1px 2px rgb(90 20 20 / 0.28),
+    0 5px 16px -6px rgb(194 68 68 / 0.5);
+  --shadow-dock: 0 2px 8px rgb(11 25 18 / 0.28), 0 12px 32px -8px rgb(11 25 18 / 0.45);
 
   /* Motion -------------------------------------------------------------- */
   --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @layer base {
-  body {
+  html {
     background-color: var(--color-canvas);
+  }
+
+  body {
     color: var(--color-ink);
     font-family: var(--font-sans);
+    font-optical-sizing: auto;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+  }
+
+  /* Ambient washes: a whisper of green and warm gold at the top of the
+     canvas so the page never reads as a flat white field. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(52rem 30rem at 12% -10%, rgb(51 147 99 / 0.08), transparent 68%),
+      radial-gradient(44rem 26rem at 88% -12%, rgb(227 154 38 / 0.05), transparent 66%);
   }
 
   ::selection {

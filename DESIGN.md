@@ -1,7 +1,12 @@
 # GroceryMate Design System
 
 Modern, calm, premium, friendly. Fresh green on warm neutrals, generous
-whitespace, soft shadows, rounded cards, subtle motion.
+whitespace, layered depth, rounded cards, physical motion.
+
+Depth model: surfaces separate through layered shadows and hairline alpha
+borders rather than solid 1px lines. The dark pine chrome (desktop sidebar,
+mobile dock) anchors the interface; content lives on a warm canvas with
+subtle ambient washes at the top of the page.
 
 All tokens live in [src/index.css](src/index.css) as Tailwind `@theme` variables, so every
 token is available both as a CSS variable (`var(--color-brand-600)`) and as a
@@ -17,8 +22,10 @@ Tailwind utility (`bg-brand-600`). Reusable components live in
 | `canvas` | `#faf8f5` | App background (warm off-white) |
 | `surface` | `#ffffff` | Cards, inputs |
 | `sand` | `#f3f0ea` | Soft fills, ghost-button hover, disabled fields |
-| `line` | `#e7e2da` | Borders and dividers |
+| `line` / `line-strong` | ink at 9% / 16% | Hairline dividers / input borders |
 | `ink` / `ink-soft` / `muted` | `#2a2724` / `#57524a` / `#6f6a61` | Primary / secondary / muted text |
+| `pine-950/900/800` | deep greens from `#0b1912` | Dark chrome surfaces (sidebar, dock) |
+| `pine-text` / `pine-muted` / `pine-mint` | `#eef1e9` / `#9fac9d` / `#86dcae` | Text and active accent on pine |
 | `success-50/500/700` | greens | Positive status |
 | `warning-50/500/700` | warm ambers | Attention status |
 | `danger-50/500/600/700` | soft reds | Errors; 600 is the button fill (AA with white) |
@@ -60,24 +67,30 @@ Inter Variable (self-hosted via `@fontsource-variable/inter`), system-ui fallbac
 
 ## Shadows
 
-Warm ink-tinted, never black: `shadow-soft` (resting controls),
-`shadow-card` (resting cards), `shadow-lifted` (hover and overlays).
-Hover elevates `card → lifted`; nothing casts a hard shadow.
+Warm ink-tinted, never black, always layered. `shadow-card` and
+`shadow-lifted` include a `0 0 0 1px` hairline layer that replaces borders
+on cards. `shadow-soft` for resting controls; `shadow-button`
+(secondary), `shadow-button-brand` and `shadow-button-danger` add an inset
+top highlight so buttons catch light; `shadow-dock` floats the mobile dock.
+Hover elevates `card → lifted`.
 
 ## Motion
 
 Presets in [src/lib/motion.ts](src/lib/motion.ts); do not hand-write durations in components.
 
 - Durations: 150ms (press/hover), 220ms (reveals), 320ms max
-- Single easing: `ease-soft` = cubic-bezier(0.22, 1, 0.36, 1)
-- Animate transform and opacity only; press = scale 0.97, card hover = 2px lift
+- Easing: `ease-soft` = cubic-bezier(0.22, 1, 0.36, 1) for tweens;
+  `springSnappy` for nav pills and press feedback, `springGentle` for hover lifts
+- Animate transform and opacity only; press = scale 0.97, card hover = 3px lift
+- Page switches: `pageVariants` + `riseChild` (staggered enter, quick 120ms exit
+  via `AnimatePresence mode="wait"`)
 - Entrances: 8px fade-up, once per mount; never loop, never bounce
 - Reduced motion respected globally (`MotionConfig reducedMotion="user"` in App)
 
 ## Components (`src/components/ui`)
 
-- **Button** - variants `primary | secondary | ghost | danger`, sizes `sm | md | lg`, `iconLeft`/`iconRight` (Lucide), `fullWidth`. Defaults to `type="button"`.
-- **Card** - variants `default | interactive | highlighted`, `padding` prop. Interactive + `onClick` adds button role, keyboard activation, hover lift.
+- **Button** - variants `primary | secondary | ghost | danger`, sizes `sm | md | lg`, `iconLeft`/`iconRight` (Lucide), `fullWidth`. Primary/danger are subtle vertical gradients with inset light and a colored glow. Defaults to `type="button"`.
+- **Card** - variants `default | interactive | highlighted`, `padding` prop. Borderless; depth comes from layered shadows. Interactive + `onClick` adds button role, keyboard activation, spring hover lift.
 - **Input / Textarea / Select** - shared `label`, `helperText`, `error` API (see `field.tsx`); auto-wired `aria-describedby`/`aria-invalid`; `className` styles the outer wrapper. Select renders native `<option>` children.
 - **Badge** - tones `neutral | brand | mint | success | warning | danger`, optional `icon`.
 - **Avatar** - initials + member accent derived from `name` (pin with `tone` index); sizes `sm | md | lg`.

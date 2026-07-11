@@ -36,7 +36,7 @@ export function SectionHeader({
         {Icon && (
           <span
             aria-hidden="true"
-            className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-brand-700"
+            className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-brand-100 to-mint-100 text-brand-700 shadow-[inset_0_1px_0_rgb(255_255_255/0.8)] ring-1 ring-brand-600/10"
           >
             <Icon size={20} />
           </span>

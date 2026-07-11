@@ -10,12 +10,12 @@ export interface BadgeProps extends ComponentProps<'span'> {
 }
 
 const toneClasses: Record<BadgeTone, string> = {
-  neutral: 'bg-sand text-ink-soft',
-  brand: 'bg-brand-100 text-brand-800',
+  neutral: 'bg-ink/[0.05] text-ink-soft',
+  brand: 'bg-brand-600/10 text-brand-800',
   mint: 'bg-mint-100 text-mint-700',
-  success: 'bg-success-50 text-success-700',
-  warning: 'bg-warning-50 text-warning-700',
-  danger: 'bg-danger-50 text-danger-700',
+  success: 'bg-success-500/12 text-success-700',
+  warning: 'bg-warning-500/15 text-warning-700',
+  danger: 'bg-danger-500/10 text-danger-700',
 }
 
 export function Badge({ tone = 'neutral', icon: Icon, className, children, ...rest }: BadgeProps) {

@@ -28,7 +28,7 @@ export function AppShell({ activePage, onNavigate, children }: AppShellProps) {
       <div className="lg:pl-60">
         <main
           id="main"
-          className="mx-auto w-full max-w-5xl px-4 pb-28 pt-6 sm:px-6 lg:px-10 lg:pb-16 lg:pt-12"
+          className="mx-auto w-full max-w-5xl px-4 pb-32 pt-6 sm:px-6 lg:px-10 lg:pb-16 lg:pt-12"
         >
           {children}
         </main>

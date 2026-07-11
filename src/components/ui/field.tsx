@@ -29,13 +29,15 @@ export function fieldDescribedBy(
 
 export const controlClasses = {
   base: cn(
-    'w-full rounded-md border bg-surface text-[0.9375rem] text-ink placeholder:text-muted/70',
-    'transition-[border-color,box-shadow] duration-150 ease-soft',
+    'w-full rounded-md border bg-surface text-[0.9375rem] text-ink placeholder:text-muted/60',
+    'shadow-[0_1px_2px_rgb(30_26_22/0.03)]',
+    'transition-[border-color,box-shadow,background-color] duration-150 ease-soft',
     'focus:outline-none focus:ring-4',
-    'disabled:cursor-not-allowed disabled:bg-sand disabled:opacity-70',
+    'disabled:cursor-not-allowed disabled:bg-sand disabled:shadow-none disabled:opacity-70',
   ),
-  valid: 'border-line focus:border-brand-500 focus:ring-brand-500/15',
-  invalid: 'border-danger-500 focus:border-danger-500 focus:ring-danger-500/15',
+  valid:
+    'border-line-strong hover:border-ink/25 focus:border-brand-500 focus:ring-brand-500/12',
+  invalid: 'border-danger-500 focus:border-danger-500 focus:ring-danger-500/12',
 }
 
 export function controlTone(error?: string): string {

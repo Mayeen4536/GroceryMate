@@ -76,7 +76,7 @@ const neutrals: Array<[string, string, string]> = [
   ['canvas', '#faf8f5', 'bg-canvas'],
   ['surface', '#ffffff', 'bg-surface'],
   ['sand', '#f3f0ea', 'bg-sand'],
-  ['line', '#e7e2da', 'bg-line'],
+  ['line', 'ink / 9%', 'bg-line'],
   ['muted', '#6f6a61', 'bg-muted'],
   ['ink-soft', '#57524a', 'bg-ink-soft'],
   ['ink', '#2a2724', 'bg-ink'],
@@ -414,7 +414,7 @@ export function DesignSystemShowcase() {
             <Card>
               <h3 className="text-base font-semibold text-ink">Normal</h3>
               <p className="mt-1 text-sm text-muted">
-                The default container for content. Soft border, warm shadow, generous padding.
+                The default container for content. Layered warm shadow, no hard border.
               </p>
               <div className="mt-4">
                 <Badge tone="neutral" icon={Users}>
@@ -492,7 +492,7 @@ export function DesignSystemShowcase() {
               <div className="flex items-center gap-3">
                 <div className="flex -space-x-2">
                   {memberNames.slice(0, 4).map((name) => (
-                    <Avatar key={name} name={name} size="sm" />
+                    <Avatar key={name} name={name} size="sm" className="ring-2 ring-surface" />
                   ))}
                   <span className="flex size-8 items-center justify-center rounded-full bg-sand text-[0.6875rem] font-semibold text-ink-soft ring-2 ring-surface">
                     +2

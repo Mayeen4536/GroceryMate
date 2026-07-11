@@ -1,7 +1,7 @@
 import { motion, type HTMLMotionProps } from 'framer-motion'
 import type { KeyboardEvent } from 'react'
 import { cn } from '../../lib/cn'
-import { transitionFast } from '../../lib/motion'
+import { springGentle } from '../../lib/motion'
 
 type CardVariant = 'default' | 'interactive' | 'highlighted'
 type CardPadding = 'none' | 'sm' | 'md' | 'lg'
@@ -12,13 +12,13 @@ export interface CardProps extends HTMLMotionProps<'div'> {
 }
 
 const variantClasses: Record<CardVariant, string> = {
-  default: 'border-line bg-surface shadow-card',
+  default: 'bg-surface shadow-card',
   interactive: cn(
-    'border-line bg-surface shadow-card cursor-pointer',
-    'transition-[box-shadow,border-color] duration-200 hover:border-brand-200 hover:shadow-lifted',
+    'bg-surface shadow-card cursor-pointer',
+    'transition-shadow duration-200 hover:shadow-lifted',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas',
   ),
-  highlighted: 'border-brand-200 bg-brand-50 shadow-card',
+  highlighted: 'bg-linear-to-b from-mint-50 to-surface shadow-card ring-1 ring-brand-600/10',
 }
 
 const paddingClasses: Record<CardPadding, string> = {
@@ -51,14 +51,14 @@ export function Card({
 
   return (
     <motion.div
-      whileHover={variant === 'interactive' ? { y: -2 } : undefined}
-      whileTap={clickable ? { scale: 0.99 } : undefined}
-      transition={transitionFast}
+      whileHover={variant === 'interactive' ? { y: -3 } : undefined}
+      whileTap={clickable ? { scale: 0.985 } : undefined}
+      transition={springGentle}
       role={clickable ? 'button' : undefined}
       tabIndex={clickable ? 0 : undefined}
       onClick={onClick}
       onKeyDown={clickable ? handleKeyDown : onKeyDown}
-      className={cn('rounded-xl border', variantClasses[variant], paddingClasses[padding], className)}
+      className={cn('rounded-xl', variantClasses[variant], paddingClasses[padding], className)}
       {...rest}
     >
       {children}

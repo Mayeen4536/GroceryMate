@@ -48,7 +48,8 @@ export function Avatar({ name, size = 'md', tone, className }: AvatarProps) {
       aria-label={name}
       title={name}
       className={cn(
-        'inline-flex shrink-0 select-none items-center justify-center rounded-full font-semibold ring-2 ring-surface',
+        'inline-flex shrink-0 select-none items-center justify-center rounded-full font-semibold',
+        'shadow-[inset_0_1px_1px_rgb(255_255_255/0.55),inset_0_-1px_1px_rgb(30_26_22/0.05)] ring-1 ring-ink/[0.06]',
         sizeClasses[size],
         toneClass,
         className,

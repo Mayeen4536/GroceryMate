@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { MotionConfig } from 'framer-motion'
+import { AnimatePresence, MotionConfig } from 'framer-motion'
 import { AppShell } from './components/layout/AppShell'
 import { PagePlaceholder } from './pages/PagePlaceholder'
 import { NAV_ITEMS, type PageId } from './lib/navigation'
@@ -27,7 +27,9 @@ export default function App() {
         <DesignSystemShowcase />
       ) : (
         <AppShell activePage={activePage} onNavigate={setActivePage}>
-          <PagePlaceholder key={activePage} item={activeItem} />
+          <AnimatePresence mode="wait" initial={false}>
+            <PagePlaceholder key={activePage} item={activeItem} />
+          </AnimatePresence>
         </AppShell>
       )}
     </MotionConfig>
