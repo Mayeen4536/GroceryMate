@@ -89,7 +89,8 @@ Presets in [src/lib/motion.ts](src/lib/motion.ts); do not hand-write durations i
   order (pass direction through `custom` on AnimatePresence and the page root)
 - Entrances: 8px fade-up, once per mount; showcase sections reveal on scroll
   (`whileInView`, once)
-- Loops are banned except one ambient float per empty state (5s+, few px)
+- Loops are banned except gentle ambient drift (5s+, few px, transform/opacity
+  only) in empty states and the landing hero
 - Skeletons shimmer via background-position (paint-only); add
   `motion-reduce:animate-none`
 - Reduced motion respected globally (`MotionConfig reducedMotion="user"` in App)

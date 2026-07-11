@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
-import { AnimatePresence, MotionConfig } from 'framer-motion'
+import { AnimatePresence, MotionConfig, motion } from 'framer-motion'
 import { AppShell } from './components/layout/AppShell'
 import { PagePlaceholder } from './pages/PagePlaceholder'
+import { Landing } from './pages/landing/Landing'
 import { NAV_ITEMS, type PageId } from './lib/navigation'
+import { transitionBase } from './lib/motion'
 import { DesignSystemShowcase } from './showcase/DesignSystemShowcase'
 
 /** The design-system showcase stays reachable at /#design-system for component review. */
@@ -20,6 +22,7 @@ const pageIndex = (page: PageId) => NAV_ITEMS.findIndex((item) => item.id === pa
 
 export default function App() {
   const showDesignSystem = useShowDesignSystem()
+  const [entered, setEntered] = useState(false)
   const [activePage, setActivePage] = useState<PageId>('overview')
   // 1 = navigating forward in the nav order, -1 = backward; drives the slide direction.
   const [direction, setDirection] = useState(1)
@@ -36,11 +39,26 @@ export default function App() {
       {showDesignSystem ? (
         <DesignSystemShowcase />
       ) : (
-        <AppShell activePage={activePage} onNavigate={navigate}>
-          <AnimatePresence mode="wait" initial={false} custom={direction}>
-            <PagePlaceholder key={activePage} item={activeItem} direction={direction} />
-          </AnimatePresence>
-        </AppShell>
+        <AnimatePresence mode="wait" initial={false}>
+          {!entered ? (
+            <motion.div key="landing" exit={{ opacity: 0, y: -16 }} transition={transitionBase}>
+              <Landing onEnter={() => setEntered(true)} />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="app"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={transitionBase}
+            >
+              <AppShell activePage={activePage} onNavigate={navigate}>
+                <AnimatePresence mode="wait" initial={false} custom={direction}>
+                  <PagePlaceholder key={activePage} item={activeItem} direction={direction} />
+                </AnimatePresence>
+              </AppShell>
+            </motion.div>
+          )}
+        </AnimatePresence>
       )}
     </MotionConfig>
   )

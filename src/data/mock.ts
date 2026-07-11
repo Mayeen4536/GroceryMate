@@ -24,3 +24,5 @@ export const mockHousehold: MockHousehold = {
   name: 'Flat 4B',
   memberCount: 4,
 }
+
+export const mockMembers: string[] = ['Aisha Khan', 'Bilal Ahmed', 'Chloe Lee', 'Daniyal Raza']
