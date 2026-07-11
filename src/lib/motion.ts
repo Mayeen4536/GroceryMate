@@ -63,6 +63,9 @@ export const pageVariants: Variants = {
     scale: 1,
     filter: 'blur(0px)',
     transition: { duration: 0.26, ease: easeSoft, when: 'beforeChildren', staggerChildren: 0.05 },
+    // Clear the residual filter so the page stops being a containing block
+    // for fixed-position children (e.g. floating action buttons).
+    transitionEnd: { filter: 'none' },
   },
   exit: (direction: number = 1) => ({
     opacity: 0,

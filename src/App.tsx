@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion'
 import { AppShell } from './components/layout/AppShell'
 import { PagePlaceholder } from './pages/PagePlaceholder'
+import { GroceriesPage } from './pages/groceries/GroceriesPage'
 import { Landing } from './pages/landing/Landing'
 import { NAV_ITEMS, type PageId } from './lib/navigation'
 import { easeSoft } from './lib/motion'
@@ -57,7 +58,11 @@ export default function App() {
             >
               <AppShell activePage={activePage} onNavigate={navigate}>
                 <AnimatePresence mode="wait" initial={false} custom={direction}>
-                  <PagePlaceholder key={activePage} item={activeItem} direction={direction} />
+                  {activePage === 'groceries' ? (
+                    <GroceriesPage key="groceries" direction={direction} />
+                  ) : (
+                    <PagePlaceholder key={activePage} item={activeItem} direction={direction} />
+                  )}
                 </AnimatePresence>
               </AppShell>
             </motion.div>

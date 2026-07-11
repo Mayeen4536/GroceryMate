@@ -15,6 +15,8 @@ export interface DrawerProps {
   side?: DrawerSide
   /** Slot for actions pinned under the content. */
   footer?: ReactNode
+  /** Extra classes for the panel (e.g. a wider max-width). */
+  panelClassName?: string
 }
 
 const panelClasses: Record<DrawerSide, string> = {
@@ -28,7 +30,15 @@ const panelMotion: Record<DrawerSide, { hidden: { x?: string; y?: string } }> = 
 }
 
 /** Sliding panel for secondary flows. Closes on Escape or backdrop click. */
-export function Drawer({ open, onClose, title, children, side = 'right', footer }: DrawerProps) {
+export function Drawer({
+  open,
+  onClose,
+  title,
+  children,
+  side = 'right',
+  footer,
+  panelClassName,
+}: DrawerProps) {
   const titleId = useId()
   const panelRef = useRef<HTMLDivElement>(null)
 
@@ -72,6 +82,7 @@ export function Drawer({ open, onClose, title, children, side = 'right', footer 
             className={cn(
               'absolute flex flex-col bg-surface shadow-lifted focus:outline-none',
               panelClasses[side],
+              panelClassName,
             )}
           >
             <div className="flex items-start justify-between gap-4 p-6 pb-4">
