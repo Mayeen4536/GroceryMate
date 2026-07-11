@@ -180,7 +180,7 @@ const motionRules = [
   'Tweens use ease-soft; physical feedback uses the shared springs (springSnappy, springGentle, springPop, springPanel).',
   'Animate only transform and opacity. Never animate layout, color, or size for feedback.',
   'Buttons: hover scale 1.02, press scale 0.97. Interactive cards lift 3px on a spring.',
-  'Page transitions slide in the direction of navigation and exit in 120ms.',
+  'Page transitions blend opacity, a directional shift, a 1.5% scale settle, and a brief blur: 260ms in, 130ms out.',
   'Entrances are subtle (8px fade-up) and run once. Loops are banned except one gentle float per empty state.',
   'Reduced motion is respected app-wide via MotionConfig reducedMotion="user".',
   'All presets live in src/lib/motion.ts. Do not hand-write durations in components.',

@@ -42,22 +42,34 @@ export const staggerChildren: Variants = {
 }
 
 /**
- * Page-level enter/exit with a directional slide. Pass the navigation
- * direction (1 = forward, -1 = backward) via the `custom` prop on both
- * the motion element and its AnimatePresence. Pair with `riseChild` on
- * direct children for a staggered reveal.
+ * Page-level enter/exit: opacity + directional shift + a 1.5% scale settle
+ * + a brief blur that resolves as the page lands. Filter and transform both
+ * composite on the GPU, so this stays cheap. Enter 260ms, exit 130ms.
+ *
+ * Pass the navigation direction (1 = forward, -1 = backward) via the
+ * `custom` prop on both the motion element and its AnimatePresence. Pair
+ * with `riseChild` on direct children for a staggered reveal.
  */
 export const pageVariants: Variants = {
-  hidden: (direction: number = 1) => ({ opacity: 0, x: 28 * direction }),
+  hidden: (direction: number = 1) => ({
+    opacity: 0,
+    x: 24 * direction,
+    scale: 0.985,
+    filter: 'blur(6px)',
+  }),
   visible: {
     opacity: 1,
     x: 0,
-    transition: { ...transitionBase, when: 'beforeChildren', staggerChildren: 0.05 },
+    scale: 1,
+    filter: 'blur(0px)',
+    transition: { duration: 0.26, ease: easeSoft, when: 'beforeChildren', staggerChildren: 0.05 },
   },
   exit: (direction: number = 1) => ({
     opacity: 0,
-    x: -20 * direction,
-    transition: { duration: 0.12, ease: easeSoft },
+    x: -18 * direction,
+    scale: 0.99,
+    filter: 'blur(4px)',
+    transition: { duration: 0.13, ease: easeSoft },
   }),
 }
 

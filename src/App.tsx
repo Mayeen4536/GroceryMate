@@ -4,7 +4,7 @@ import { AppShell } from './components/layout/AppShell'
 import { PagePlaceholder } from './pages/PagePlaceholder'
 import { Landing } from './pages/landing/Landing'
 import { NAV_ITEMS, type PageId } from './lib/navigation'
-import { transitionBase } from './lib/motion'
+import { easeSoft } from './lib/motion'
 import { DesignSystemShowcase } from './showcase/DesignSystemShowcase'
 
 /** The design-system showcase stays reachable at /#design-system for component review. */
@@ -41,15 +41,19 @@ export default function App() {
       ) : (
         <AnimatePresence mode="wait" initial={false}>
           {!entered ? (
-            <motion.div key="landing" exit={{ opacity: 0, y: -16 }} transition={transitionBase}>
+            <motion.div
+              key="landing"
+              exit={{ opacity: 0, y: -10, scale: 0.99, filter: 'blur(4px)' }}
+              transition={{ duration: 0.16, ease: easeSoft }}
+            >
               <Landing onEnter={() => setEntered(true)} />
             </motion.div>
           ) : (
             <motion.div
               key="app"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={transitionBase}
+              initial={{ opacity: 0, y: 10, scale: 0.99, filter: 'blur(6px)' }}
+              animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+              transition={{ duration: 0.28, ease: easeSoft }}
             >
               <AppShell activePage={activePage} onNavigate={navigate}>
                 <AnimatePresence mode="wait" initial={false} custom={direction}>

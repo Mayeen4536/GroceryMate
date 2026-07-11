@@ -1,8 +1,9 @@
 import { motion } from 'framer-motion'
 import { Badge, Card } from '../components/ui'
 import { PageHeader } from '../components/layout/PageHeader'
+import { PageTransition } from '../components/layout/PageTransition'
 import { cn } from '../lib/cn'
-import { pageVariants, riseChild, springGentle } from '../lib/motion'
+import { riseChild, springGentle } from '../lib/motion'
 import type { NavItem, PageId } from '../lib/navigation'
 
 /** Presentation-only accents so each section has its own personality. */
@@ -35,13 +36,7 @@ export function PagePlaceholder({ item, direction = 1 }: { item: NavItem; direct
   const accent = accents[item.id]
 
   return (
-    <motion.div
-      variants={pageVariants}
-      custom={direction}
-      initial="hidden"
-      animate="visible"
-      exit="exit"
-    >
+    <PageTransition direction={direction}>
       <motion.div variants={riseChild}>
         <PageHeader title={item.label} description={item.description} />
       </motion.div>
@@ -83,6 +78,6 @@ export function PagePlaceholder({ item, direction = 1 }: { item: NavItem; direct
           </div>
         </Card>
       </motion.div>
-    </motion.div>
+    </PageTransition>
   )
 }

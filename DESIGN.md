@@ -88,8 +88,11 @@ Presets in [src/lib/motion.ts](src/lib/motion.ts); do not hand-write durations i
   (modals/drawers, no visible bounce)
 - Animate transform and opacity only; hover = scale 1.02 (buttons), press =
   scale 0.97, card hover = 3px lift
-- Page switches: `pageVariants` + `riseChild`; the slide direction follows nav
-  order (pass direction through `custom` on AnimatePresence and the page root)
+- Page switches: `PageTransition` (wraps `pageVariants` + `riseChild`);
+  opacity + directional shift + 1.5% scale settle + brief blur, 260ms in and
+  130ms out. The slide direction follows nav order (pass direction through
+  `custom` on AnimatePresence and the page root). Transform and filter both
+  composite on the GPU.
 - Entrances: 8px fade-up, once per mount; showcase sections reveal on scroll
   (`whileInView`, once)
 - Loops are banned except gentle ambient drift (5s+, few px, transform/opacity
