@@ -111,6 +111,13 @@
     inset 0 1px 0 rgb(255 255 255 / 0.16), 0 1px 2px rgb(90 20 20 / 0.28),
     0 5px 16px -6px rgb(194 68 68 / 0.5);
   --shadow-dock: 0 2px 8px rgb(11 25 18 / 0.28), 0 12px 32px -8px rgb(11 25 18 / 0.45);
+  /* Card shadows: three layers, no hairline (the gradient border supplies the line) */
+  --shadow-panel:
+    0 1px 2px rgb(30 26 22 / 0.03), 0 4px 12px -2px rgb(30 26 22 / 0.06),
+    0 16px 32px -16px rgb(30 26 22 / 0.12);
+  --shadow-panel-hover:
+    0 2px 4px rgb(30 26 22 / 0.04), 0 8px 20px -4px rgb(30 26 22 / 0.09),
+    0 28px 56px -20px rgb(30 26 22 / 0.18);
 
   /* Motion -------------------------------------------------------------- */
   --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
@@ -126,6 +133,25 @@
       background-position: -200% 0;
     }
   }
+}
+
+/*
+  Card surfaces. A gradient hairline border (lighter at the top, deeper at
+  the bottom, the way light falls) drawn with a border-box gradient, over a
+  barely-warm background gradient. Pair with shadow-panel.
+*/
+@utility card-surface {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(to bottom, #ffffff, #fdfcf9) padding-box,
+    linear-gradient(to bottom, rgb(30 26 22 / 0.05), rgb(30 26 22 / 0.12)) border-box;
+}
+
+@utility card-surface-mint {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(to bottom, #f1faf5, #ffffff) padding-box,
+    linear-gradient(to bottom, rgb(33 122 80 / 0.22), rgb(33 122 80 / 0.07)) border-box;
 }
 
 @layer base {

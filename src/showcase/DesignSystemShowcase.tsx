@@ -4,6 +4,9 @@ import {
   ArrowRight,
   Check,
   GripVertical,
+  HandCoins,
+  Heart,
+  History,
   Leaf,
   Pencil,
   Plus,
@@ -446,40 +449,42 @@ export function DesignSystemShowcase() {
 
         <Section
           title="Cards"
-          description="Normal for content, interactive for clickable rows and tiles, highlighted for suggestions and selection."
+          description="Gradient hairline borders, layered shadows, and an optional icon header with a per-card accent."
         >
           <div className="grid gap-5 md:grid-cols-3">
-            <Card>
-              <h3 className="text-base font-semibold text-ink">Normal</h3>
-              <p className="mt-1 text-sm text-muted">
-                The default container for content. Layered warm shadow, no hard border.
+            <Card icon={ShoppingBasket} accent="brand" title="Weekly shop" subtitle="12 items · 4 members">
+              <p className="text-sm text-muted">
+                The default surface: gradient hairline, warm layered shadow, and a whisper of
+                accent in the corner.
               </p>
-              <div className="mt-4">
-                <Badge tone="neutral" icon={Users}>
-                  4 members
-                </Badge>
-              </div>
             </Card>
-            <Card variant="interactive" onClick={() => setCardClicks((count) => count + 1)}>
-              <h3 className="text-base font-semibold text-ink">Interactive</h3>
-              <p className="mt-1 text-sm text-muted">
-                Hover to lift, press to squish. Also focusable - try Tab then Enter.
-              </p>
-              <p className="mt-4 text-sm font-medium text-brand-700">
+            <Card
+              variant="interactive"
+              icon={Users}
+              accent="violet"
+              title="Interactive"
+              subtitle="Hover to lift, press to squish"
+              onClick={() => setCardClicks((count) => count + 1)}
+            >
+              <p className="text-sm font-medium text-brand-700">
                 Clicked {cardClicks} {cardClicks === 1 ? 'time' : 'times'}
               </p>
             </Card>
-            <Card variant="highlighted">
-              <div className="flex items-start justify-between gap-3">
-                <h3 className="text-base font-semibold text-ink">Highlighted</h3>
+            <Card variant="highlighted" icon={Sparkles} accent="mint" title="Highlighted">
+              <div className="space-y-3">
+                <p className="text-sm text-muted">
+                  For the recommended option, an active selection, or a gentle callout.
+                </p>
                 <Badge tone="brand" icon={Sparkles}>
                   Suggested
                 </Badge>
               </div>
-              <p className="mt-1 text-sm text-muted">
-                For the recommended option, an active selection, or a gentle callout.
-              </p>
             </Card>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-3">
+            <Card padding="sm" icon={HandCoins} accent="gold" title="Settlements" subtitle="2 pending" />
+            <Card padding="sm" icon={History} accent="sky" title="History" subtitle="6 sessions saved" />
+            <Card padding="sm" icon={Heart} accent="rose" title="Shared fairly" subtitle="No one overpays" />
           </div>
         </Section>
 
@@ -679,7 +684,7 @@ export function DesignSystemShowcase() {
               {['Aisha Khan', 'Bilal Ahmed', 'Chloe Lee'].map((name, index) => (
                 <div
                   key={name}
-                  className="group relative flex items-center gap-3 rounded-lg bg-surface px-4 py-3 shadow-card transition-shadow hover:shadow-lifted"
+                  className="group card-surface relative flex items-center gap-3 rounded-lg px-4 py-3 shadow-soft transition-shadow hover:shadow-panel-hover"
                 >
                   <Avatar name={name} size="sm" />
                   <div className="min-w-0 flex-1">
@@ -723,7 +728,7 @@ export function DesignSystemShowcase() {
                   key={item}
                   value={item}
                   whileDrag={{ scale: 1.02 }}
-                  className="flex cursor-grab items-center gap-3 rounded-lg bg-surface px-4 py-3 shadow-card active:cursor-grabbing"
+                  className="card-surface flex cursor-grab items-center gap-3 rounded-lg px-4 py-3 shadow-soft active:cursor-grabbing"
                 >
                   <GripVertical size={16} aria-hidden="true" className="shrink-0 text-muted" />
                   <span className="text-sm font-medium text-ink">{item}</span>
@@ -817,7 +822,7 @@ export function DesignSystemShowcase() {
                   <motion.li
                     key={item}
                     variants={fadeInUp}
-                    className="flex items-center justify-between rounded-lg border border-line bg-surface px-4 py-3 text-sm"
+                    className="card-surface flex items-center justify-between rounded-lg px-4 py-3 text-sm shadow-soft"
                   >
                     <span className="font-medium text-ink">{item}</span>
                     <Badge tone="mint">Shared</Badge>

@@ -65,14 +65,17 @@ Inter Variable (self-hosted via `@fontsource-variable/inter`), system-ui fallbac
 | `rounded-2xl` | 28px | modals, hero surfaces |
 | `rounded-full` | - | badges, avatars, pills |
 
-## Shadows
+## Shadows and card surfaces
 
-Warm ink-tinted, never black, always layered. `shadow-card` and
-`shadow-lifted` include a `0 0 0 1px` hairline layer that replaces borders
-on cards. `shadow-soft` for resting controls; `shadow-button`
-(secondary), `shadow-button-brand` and `shadow-button-danger` add an inset
-top highlight so buttons catch light; `shadow-dock` floats the mobile dock.
-Hover elevates `card → lifted`.
+Warm ink-tinted, never black, always layered. Cards use the `card-surface`
+utility (gradient hairline border, lighter at top the way light falls, over a
+barely-warm background gradient) with `shadow-panel`, deepening to
+`shadow-panel-hover` on hover. `card-surface-mint` is the highlighted
+variant. `shadow-card`/`shadow-lifted` (with a baked-in hairline) remain for
+small tiles and floating elements; `shadow-soft` for resting controls;
+`shadow-button`, `shadow-button-brand` and `shadow-button-danger` add an
+inset top highlight so buttons catch light; `shadow-dock` floats the mobile
+dock.
 
 ## Motion
 
@@ -98,7 +101,7 @@ Presets in [src/lib/motion.ts](src/lib/motion.ts); do not hand-write durations i
 ## Components (`src/components/ui`)
 
 - **Button** - variants `primary | secondary | ghost | danger`, sizes `sm | md | lg`, `iconLeft`/`iconRight` (Lucide), `fullWidth`. Primary/danger are subtle vertical gradients with inset light and a colored glow. Defaults to `type="button"`.
-- **Card** - variants `default | interactive | highlighted`, `padding` prop. Borderless; depth comes from layered shadows. Interactive + `onClick` adds button role, keyboard activation, spring hover lift.
+- **Card** - variants `default | interactive | highlighted`, `padding` prop, plus optional personality: `icon` (gradient gem tile), `title`/`subtitle` (premium tracking), and `accent` (`neutral | brand | mint | violet | gold | sky | rose`) which tints the tile and adds a soft corner glow. Gradient hairline border + layered `shadow-panel`; all cards deepen slightly on hover, interactive ones also lift on a spring with button semantics.
 - **Input / Textarea / Select** - shared `label`, `helperText`, `error` API (see `field.tsx`); auto-wired `aria-describedby`/`aria-invalid`; `className` styles the outer wrapper. Select renders native `<option>` children.
 - **Badge** - tones `neutral | brand | mint | success | warning | danger`, optional `icon`.
 - **Avatar** - initials + member accent derived from `name` (pin with `tone` index); sizes `sm | md | lg`.
