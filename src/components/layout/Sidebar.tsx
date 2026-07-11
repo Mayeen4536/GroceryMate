@@ -75,8 +75,10 @@ export function Sidebar({ activePage, onNavigate, collapsed, onToggleCollapsed }
         )}
       >
         <Brand withTagline tone="dark" markOnly={collapsed} />
-        <button
+        <motion.button
           type="button"
+          whileTap={{ scale: 0.88 }}
+          transition={springSnappy}
           onClick={onToggleCollapsed}
           aria-expanded={!collapsed}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
@@ -87,7 +89,7 @@ export function Sidebar({ activePage, onNavigate, collapsed, onToggleCollapsed }
           ) : (
             <PanelLeftClose size={16} aria-hidden="true" />
           )}
-        </button>
+        </motion.button>
       </div>
       <div className={cn('pb-5', collapsed ? 'px-3' : 'px-3')}>
         <HouseholdSwitcher household={mockHousehold} tone="dark" iconOnly={collapsed} />

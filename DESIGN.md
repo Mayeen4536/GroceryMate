@@ -88,6 +88,10 @@ Presets in [src/lib/motion.ts](src/lib/motion.ts); do not hand-write durations i
   (modals/drawers, no visible bounce)
 - Animate transform and opacity only; hover = scale 1.02 (buttons), press =
   scale 0.97, card hover = 3px lift
+- Micro-feedback everywhere: button icons nudge on hover, avatars and badges
+  spring slightly on hover, field labels and icons warm to brand on focus,
+  error messages animate in, close buttons rotate their X, checkboxes draw
+  their check
 - Page switches: `PageTransition` (wraps `pageVariants` + `riseChild`);
   opacity + directional shift + 1.5% scale settle + brief blur, 260ms in and
   130ms out. The slide direction follows nav order (pass direction through
@@ -109,6 +113,8 @@ Presets in [src/lib/motion.ts](src/lib/motion.ts); do not hand-write durations i
 - **Badge** - tones `neutral | brand | mint | success | warning | danger`, optional `icon`.
 - **Avatar** - initials + member accent derived from `name` (pin with `tone` index); sizes `sm | md | lg`.
 - **SectionHeader** - `title`, `description`, `icon`, `action` slot, heading `level` 1-3.
+- **Checkbox** - real input, styled box; the check mark draws itself in and the box pops on check. `label` + `description` props.
+- **Dropdown** - animated select (`options`, `value`, `onChange`); menu springs open, chevron rotates, full keyboard support (combobox/listbox semantics). Use native Select for dense plain forms.
 - **Modal** - centered dialog (`open`, `onClose`, `title`, `footer` slot); scales in on `springPanel`, Escape/backdrop close, body scroll lock.
 - **Drawer** - edge panel, `side: right | bottom`; same API and behaviors as Modal.
 - **Skeleton** - shimmer placeholder sized via `className`.

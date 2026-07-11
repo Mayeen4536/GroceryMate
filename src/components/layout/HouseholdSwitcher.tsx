@@ -1,5 +1,7 @@
+import { motion } from 'framer-motion'
 import { ChevronsUpDown, House } from 'lucide-react'
 import { cn } from '../../lib/cn'
+import { springSnappy } from '../../lib/motion'
 import type { MockHousehold } from '../../data/mock'
 
 interface HouseholdSwitcherProps {
@@ -23,7 +25,9 @@ export function HouseholdSwitcher({
 
   if (iconOnly) {
     return (
-      <button
+      <motion.button
+        whileTap={{ scale: 0.97 }}
+        transition={springSnappy}
         type="button"
         title={`${household.name} (household switching is coming soon)`}
         className={cn(
@@ -34,13 +38,15 @@ export function HouseholdSwitcher({
         )}
       >
         <House size={17} aria-hidden="true" />
-      </button>
+      </motion.button>
     )
   }
 
   if (compact) {
     return (
-      <button
+      <motion.button
+        whileTap={{ scale: 0.97 }}
+        transition={springSnappy}
         type="button"
         title="Household switching is coming soon"
         className="flex h-9 items-center gap-1.5 rounded-md bg-surface px-2.5 text-sm font-medium text-ink shadow-button transition-colors hover:bg-sand/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40"
@@ -48,12 +54,14 @@ export function HouseholdSwitcher({
         <House size={14} aria-hidden="true" className="text-brand-600" />
         <span className="max-w-24 truncate">{household.name}</span>
         <ChevronsUpDown size={13} aria-hidden="true" className="text-muted" />
-      </button>
+      </motion.button>
     )
   }
 
   return (
-    <button
+    <motion.button
+        whileTap={{ scale: 0.97 }}
+        transition={springSnappy}
       type="button"
       title="Household switching is coming soon"
       className={cn(
@@ -89,6 +97,6 @@ export function HouseholdSwitcher({
         aria-hidden="true"
         className={cn('shrink-0', dark ? 'text-pine-muted' : 'text-muted')}
       />
-    </button>
+    </motion.button>
   )
 }

@@ -55,7 +55,7 @@ export function Button({
       whileTap={disabled ? undefined : { scale: 0.97 }}
       transition={springSnappy}
       className={cn(
-        'inline-flex select-none items-center justify-center rounded-md font-semibold',
+        'group inline-flex select-none items-center justify-center rounded-md font-semibold',
         'transition-[background-color,color,filter,box-shadow] duration-150',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas',
         'disabled:pointer-events-none disabled:opacity-50',
@@ -66,9 +66,21 @@ export function Button({
       )}
       {...rest}
     >
-      {IconLeft && <IconLeft size={iconSizes[size]} aria-hidden="true" />}
+      {IconLeft && (
+        <IconLeft
+          size={iconSizes[size]}
+          aria-hidden="true"
+          className="transition-transform duration-200 ease-soft group-hover:scale-110"
+        />
+      )}
       {children}
-      {IconRight && <IconRight size={iconSizes[size]} aria-hidden="true" />}
+      {IconRight && (
+        <IconRight
+          size={iconSizes[size]}
+          aria-hidden="true"
+          className="transition-transform duration-200 ease-soft group-hover:translate-x-0.5"
+        />
+      )}
     </motion.button>
   )
 }

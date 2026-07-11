@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { CircleAlert } from 'lucide-react'
 import { cn } from '../../lib/cn'
+import { transitionFast } from '../../lib/motion'
 
 /** Props shared by every form control (Input, Textarea, Select). */
 export interface FieldOwnProps {
@@ -55,27 +57,51 @@ interface FieldProps extends FieldOwnProps {
   children: ReactNode
 }
 
-/** Layout wrapper: label above the control, helper or error text below. */
+/**
+ * Layout wrapper: label above the control, helper or error text below.
+ * The label warms to brand while the control has focus; messages animate in.
+ */
 export function Field({ id, label, helperText, error, className, children }: FieldProps) {
   const { helperId, errorId } = fieldIds(id)
   return (
-    <div className={cn('flex w-full flex-col gap-1.5', className)}>
+    <div className={cn('group/field flex w-full flex-col gap-1.5', className)}>
       {label && (
-        <label htmlFor={id} className="text-sm font-medium text-ink">
+        <label
+          htmlFor={id}
+          className="text-sm font-medium text-ink transition-colors duration-200 group-focus-within/field:text-brand-700"
+        >
           {label}
         </label>
       )}
       {children}
-      {error ? (
-        <p id={errorId} className="flex items-center gap-1.5 text-sm text-danger-700">
-          <CircleAlert size={15} aria-hidden="true" className="shrink-0" />
-          {error}
-        </p>
-      ) : helperText ? (
-        <p id={helperId} className="text-sm text-muted">
-          {helperText}
-        </p>
-      ) : null}
+      <AnimatePresence mode="wait" initial={false}>
+        {error ? (
+          <motion.p
+            key="error"
+            id={errorId}
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={transitionFast}
+            className="flex items-center gap-1.5 text-sm text-danger-700"
+          >
+            <CircleAlert size={15} aria-hidden="true" className="shrink-0" />
+            {error}
+          </motion.p>
+        ) : helperText ? (
+          <motion.p
+            key="helper"
+            id={helperId}
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={transitionFast}
+            className="text-sm text-muted"
+          >
+            {helperText}
+          </motion.p>
+        ) : null}
+      </AnimatePresence>
     </div>
   )
 }

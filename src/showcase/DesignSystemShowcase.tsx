@@ -24,7 +24,9 @@ import {
   Badge,
   Button,
   Card,
+  Checkbox,
   Drawer,
+  Dropdown,
   Input,
   Modal,
   SectionHeader,
@@ -200,6 +202,7 @@ export function DesignSystemShowcase() {
     'Eggs (dozen)',
     'Basmati rice',
   ])
+  const [splitWith, setSplitWith] = useState<string | null>(null)
 
   // Success pop resets itself so the demo can be replayed.
   useEffect(() => {
@@ -443,6 +446,22 @@ export function DesignSystemShowcase() {
                 placeholder="Anything the household should know…"
                 helperText="Optional."
               />
+              <Dropdown
+                label="Split between"
+                placeholder="Choose a member"
+                helperText="Animated dropdown: arrows, Enter, and Escape all work."
+                options={memberNames.map((name) => ({ value: name, label: name }))}
+                value={splitWith}
+                onChange={setSplitWith}
+              />
+              <div className="space-y-4 pt-1">
+                <Checkbox
+                  label="Shared item"
+                  description="Everyone in the household splits it."
+                  defaultChecked
+                />
+                <Checkbox label="Add to next week's list too" />
+              </div>
             </div>
           </Card>
         </Section>
@@ -488,7 +507,10 @@ export function DesignSystemShowcase() {
           </div>
         </Section>
 
-        <Section title="Badges" description="Small statuses and counts. One size, six tones.">
+        <Section
+          title="Badges"
+          description="Small statuses and counts. One size, six tones. Hover for a gentle nudge."
+        >
           <Card padding="lg">
             <div className="flex flex-wrap items-center gap-2.5">
               <Badge tone="neutral" icon={Users}>
@@ -514,7 +536,7 @@ export function DesignSystemShowcase() {
 
         <Section
           title="Avatars"
-          description="Initials on a soft member accent. The color is derived from the name, so each member stays consistent."
+          description="Initials on a soft member accent, derived from the name so each member stays consistent. Hover one; it springs."
         >
           <Card padding="lg" className="space-y-6">
             <div className="flex flex-wrap items-center gap-3">

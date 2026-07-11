@@ -25,7 +25,7 @@ export function Select({
           id={id}
           aria-invalid={error ? true : undefined}
           aria-describedby={fieldDescribedBy(id, helperText, error)}
-          className={cn(controlClasses.base, controlTone(error), 'h-11 appearance-none pl-3.5 pr-10')}
+          className={cn(controlClasses.base, controlTone(error), 'peer h-11 appearance-none pl-3.5 pr-10')}
           {...rest}
         >
           {children}
@@ -33,7 +33,7 @@ export function Select({
         <ChevronDown
           size={16}
           aria-hidden="true"
-          className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-muted"
+          className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-muted transition-colors duration-200 peer-focus:text-brand-600"
         />
       </div>
     </Field>

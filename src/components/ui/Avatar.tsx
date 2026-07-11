@@ -1,4 +1,6 @@
+import { motion } from 'framer-motion'
 import { cn } from '../../lib/cn'
+import { springSnappy } from '../../lib/motion'
 
 type AvatarSize = 'sm' | 'md' | 'lg'
 
@@ -43,7 +45,9 @@ function hashOf(name: string): number {
 export function Avatar({ name, size = 'md', tone, className }: AvatarProps) {
   const toneClass = memberTones[(tone ?? hashOf(name)) % memberTones.length]
   return (
-    <span
+    <motion.span
+      whileHover={{ scale: 1.1, y: -2 }}
+      transition={springSnappy}
       role="img"
       aria-label={name}
       title={name}
@@ -56,6 +60,6 @@ export function Avatar({ name, size = 'md', tone, className }: AvatarProps) {
       )}
     >
       {initialsOf(name)}
-    </span>
+    </motion.span>
   )
 }

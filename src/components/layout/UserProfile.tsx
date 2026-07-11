@@ -1,6 +1,8 @@
+import { motion } from 'framer-motion'
 import { EllipsisVertical } from 'lucide-react'
 import { Avatar } from '../ui'
 import { cn } from '../../lib/cn'
+import { springSnappy } from '../../lib/motion'
 import type { MockUser } from '../../data/mock'
 
 interface UserProfileProps {
@@ -17,7 +19,9 @@ export function UserProfile({ user, tone = 'light', avatarOnly = false }: UserPr
 
   if (avatarOnly) {
     return (
-      <button
+      <motion.button
+        whileTap={{ scale: 0.97 }}
+        transition={springSnappy}
         type="button"
         title={`${user.name} (account settings are coming soon)`}
         className={cn(
@@ -28,12 +32,14 @@ export function UserProfile({ user, tone = 'light', avatarOnly = false }: UserPr
         )}
       >
         <Avatar name={user.name} size="sm" />
-      </button>
+      </motion.button>
     )
   }
 
   return (
-    <button
+    <motion.button
+        whileTap={{ scale: 0.97 }}
+        transition={springSnappy}
       type="button"
       title="Account settings are coming soon"
       className={cn(
@@ -64,6 +70,6 @@ export function UserProfile({ user, tone = 'light', avatarOnly = false }: UserPr
         aria-hidden="true"
         className={cn('shrink-0', dark ? 'text-pine-muted' : 'text-muted')}
       />
-    </button>
+    </motion.button>
   )
 }

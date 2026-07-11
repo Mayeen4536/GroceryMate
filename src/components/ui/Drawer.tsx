@@ -82,9 +82,13 @@ export function Drawer({ open, onClose, title, children, side = 'right', footer 
                 type="button"
                 onClick={onClose}
                 aria-label="Close"
-                className="flex size-8 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:bg-sand hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40"
+                className="group flex size-8 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:bg-sand hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40"
               >
-                <X size={16} aria-hidden="true" />
+                <X
+                  size={16}
+                  aria-hidden="true"
+                  className="transition-transform duration-200 ease-soft group-hover:rotate-90"
+                />
               </button>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto px-6">{children}</div>

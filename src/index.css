@@ -154,6 +154,35 @@
     linear-gradient(to bottom, rgb(33 122 80 / 0.22), rgb(33 122 80 / 0.07)) border-box;
 }
 
+@layer components {
+  /* Checkbox: the check draws itself in, the box pops as it fills. */
+  .checkbox-mark path {
+    stroke-dasharray: 14;
+    stroke-dashoffset: 14;
+    transition: stroke-dashoffset 0.22s var(--ease-soft) 0.04s;
+  }
+
+  input:checked + .checkbox-mark path {
+    stroke-dashoffset: 0;
+  }
+
+  .checkbox-box:checked {
+    animation: checkbox-pop 0.25s var(--ease-soft);
+  }
+
+  @keyframes checkbox-pop {
+    0% {
+      transform: scale(0.9);
+    }
+    60% {
+      transform: scale(1.06);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+}
+
 @layer base {
   html {
     background-color: var(--color-canvas);
