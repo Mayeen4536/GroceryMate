@@ -4,6 +4,7 @@ import { AppShell } from './components/layout/AppShell'
 import { PagePlaceholder } from './pages/PagePlaceholder'
 import { GroceriesPage } from './pages/groceries/GroceriesPage'
 import { MembersPage } from './pages/members/MembersPage'
+import { SettlementsPage } from './pages/settlements/SettlementsPage'
 import { Landing } from './pages/landing/Landing'
 import { NAV_ITEMS, type PageId } from './lib/navigation'
 import { easeSoft } from './lib/motion'
@@ -63,6 +64,12 @@ export default function App() {
                     <GroceriesPage key="groceries" direction={direction} />
                   ) : activePage === 'members' ? (
                     <MembersPage key="members" direction={direction} />
+                  ) : activePage === 'settlements' ? (
+                    <SettlementsPage
+                      key="settlements"
+                      direction={direction}
+                      onAddGroceries={() => navigate('groceries')}
+                    />
                   ) : (
                     <PagePlaceholder key={activePage} item={activeItem} direction={direction} />
                   )}

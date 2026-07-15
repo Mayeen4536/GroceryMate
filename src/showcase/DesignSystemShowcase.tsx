@@ -34,9 +34,9 @@ import {
   Skeleton,
   Textarea,
 } from '../components/ui'
-import { BasketLoader, Celebration, SettlementFlow } from '../components/experience'
+import { BasketLoader, SettleButton, SettlementFlow } from '../components/experience'
 import { cn } from '../lib/cn'
-import { fadeInUp, springPop, staggerChildren, transitionFast } from '../lib/motion'
+import { fadeInUp, springPop, staggerChildren } from '../lib/motion'
 
 /**
  * Temporary page for reviewing the design system visually.
@@ -204,18 +204,8 @@ export function DesignSystemShowcase() {
     'Basmati rice',
   ])
   const [splitWith, setSplitWith] = useState<string | null>(null)
-  const [settleState, setSettleState] = useState<'idle' | 'working' | 'done'>('idle')
-  const [celebrate, setCelebrate] = useState(0)
-
-  const startSettle = () => {
-    if (settleState !== 'idle') return
-    setSettleState('working')
-    setTimeout(() => {
-      setSettleState('done')
-      setCelebrate((count) => count + 1)
-    }, 1400)
-    setTimeout(() => setSettleState('idle'), 4200)
-  }
+  // Remounting resets the reusable SettleButton so the demo can replay.
+  const [settleKey, setSettleKey] = useState(0)
 
   // Success pop resets itself so the demo can be replayed.
   useEffect(() => {
@@ -836,58 +826,13 @@ export function DesignSystemShowcase() {
                   The button morphs through the work and the moment of even is celebrated.
                 </p>
               </div>
-              <div className="relative flex flex-1 items-center justify-center py-4">
-                <Celebration trigger={celebrate} />
-                <motion.button
-                  layout
-                  type="button"
-                  onClick={startSettle}
-                  className={cn(
-                    'relative flex h-12 items-center justify-center overflow-hidden rounded-lg px-6 font-semibold text-white',
-                    'transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas',
-                    settleState === 'done'
-                      ? 'bg-linear-to-b from-success-500 to-success-700 shadow-button-brand'
-                      : 'bg-linear-to-b from-brand-500 to-brand-700 shadow-button-brand',
-                    settleState === 'working' && 'cursor-wait',
-                  )}
-                >
-                  <AnimatePresence mode="wait" initial={false}>
-                    <motion.span
-                      key={settleState}
-                      initial={{ y: 10, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      exit={{ y: -10, opacity: 0 }}
-                      transition={transitionFast}
-                      className="flex items-center gap-2 whitespace-nowrap text-sm"
-                    >
-                      {settleState === 'idle' && (
-                        <>
-                          <HandCoins size={17} aria-hidden="true" />
-                          Settle up
-                        </>
-                      )}
-                      {settleState === 'working' && (
-                        <>
-                          Settling
-                          {[0, 1, 2].map((index) => (
-                            <motion.span
-                              key={index}
-                              className="size-1 rounded-full bg-white"
-                              animate={{ opacity: [0.3, 1, 0.3] }}
-                              transition={{ duration: 0.9, delay: index * 0.18, repeat: Infinity }}
-                            />
-                          ))}
-                        </>
-                      )}
-                      {settleState === 'done' && (
-                        <>
-                          <Check size={17} aria-hidden="true" />
-                          All settled
-                        </>
-                      )}
-                    </motion.span>
-                  </AnimatePresence>
-                </motion.button>
+              <div className="flex flex-1 items-center justify-center py-4">
+                <SettleButton
+                  key={settleKey}
+                  idleLabel="Settle up"
+                  doneLabel="All settled"
+                  onComplete={() => setTimeout(() => setSettleKey((key) => key + 1), 1400)}
+                />
               </div>
             </Card>
 
