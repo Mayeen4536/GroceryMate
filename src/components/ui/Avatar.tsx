@@ -19,14 +19,48 @@ const sizeClasses: Record<AvatarSize, string> = {
   lg: 'size-14 text-base',
 }
 
-const memberTones = [
-  'bg-member-coral-soft text-member-coral-strong',
-  'bg-member-sky-soft text-member-sky-strong',
-  'bg-member-violet-soft text-member-violet-strong',
-  'bg-member-gold-soft text-member-gold-strong',
-  'bg-member-rose-soft text-member-rose-strong',
-  'bg-member-teal-soft text-member-teal-strong',
-] as const
+export interface MemberTone {
+  /** Soft background + readable text, used by the avatar itself. */
+  chip: string
+  /** Solid dot for color pickers. */
+  dot: string
+  /** Low-opacity wash for card accents. */
+  glow: string
+}
+
+/** The member accent palette. Index order is stable; persisted tones rely on it. */
+export const MEMBER_TONES: MemberTone[] = [
+  {
+    chip: 'bg-member-coral-soft text-member-coral-strong',
+    dot: 'bg-member-coral-strong',
+    glow: 'bg-member-coral-strong/10',
+  },
+  {
+    chip: 'bg-member-sky-soft text-member-sky-strong',
+    dot: 'bg-member-sky-strong',
+    glow: 'bg-member-sky-strong/10',
+  },
+  {
+    chip: 'bg-member-violet-soft text-member-violet-strong',
+    dot: 'bg-member-violet-strong',
+    glow: 'bg-member-violet-strong/10',
+  },
+  {
+    chip: 'bg-member-gold-soft text-member-gold-strong',
+    dot: 'bg-member-gold-strong',
+    glow: 'bg-member-gold-strong/10',
+  },
+  {
+    chip: 'bg-member-rose-soft text-member-rose-strong',
+    dot: 'bg-member-rose-strong',
+    glow: 'bg-member-rose-strong/10',
+  },
+  {
+    chip: 'bg-member-teal-soft text-member-teal-strong',
+    dot: 'bg-member-teal-strong',
+    glow: 'bg-member-teal-strong/10',
+  },
+]
 
 function initialsOf(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean)
@@ -43,7 +77,7 @@ function hashOf(name: string): number {
 }
 
 export function Avatar({ name, size = 'md', tone, className }: AvatarProps) {
-  const toneClass = memberTones[(tone ?? hashOf(name)) % memberTones.length]
+  const toneClass = MEMBER_TONES[(tone ?? hashOf(name)) % MEMBER_TONES.length].chip
   return (
     <motion.span
       whileHover={{ scale: 1.1, y: -2 }}

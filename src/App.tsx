@@ -3,6 +3,7 @@ import { AnimatePresence, MotionConfig, motion } from 'framer-motion'
 import { AppShell } from './components/layout/AppShell'
 import { PagePlaceholder } from './pages/PagePlaceholder'
 import { GroceriesPage } from './pages/groceries/GroceriesPage'
+import { MembersPage } from './pages/members/MembersPage'
 import { Landing } from './pages/landing/Landing'
 import { NAV_ITEMS, type PageId } from './lib/navigation'
 import { easeSoft } from './lib/motion'
@@ -60,6 +61,8 @@ export default function App() {
                 <AnimatePresence mode="wait" initial={false} custom={direction}>
                   {activePage === 'groceries' ? (
                     <GroceriesPage key="groceries" direction={direction} />
+                  ) : activePage === 'members' ? (
+                    <MembersPage key="members" direction={direction} />
                   ) : (
                     <PagePlaceholder key={activePage} item={activeItem} direction={direction} />
                   )}

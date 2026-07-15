@@ -4,7 +4,7 @@ import type { LucideIcon } from 'lucide-react'
 import { cn } from '../../lib/cn'
 import { springSnappy } from '../../lib/motion'
 
-type BadgeTone = 'neutral' | 'brand' | 'mint' | 'success' | 'warning' | 'danger'
+export type BadgeTone = 'neutral' | 'brand' | 'mint' | 'success' | 'warning' | 'danger'
 
 export interface BadgeProps extends Omit<HTMLMotionProps<'span'>, 'children'> {
   children?: ReactNode

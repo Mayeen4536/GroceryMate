@@ -117,6 +117,7 @@ Presets in [src/lib/motion.ts](src/lib/motion.ts); do not hand-write durations i
 - **Checkbox** - real input, styled box; the check mark draws itself in and the box pops on check. `label` + `description` props.
 - **Dropdown** - animated select (`options`, `value`, `onChange`); menu springs open, chevron rotates, full keyboard support (combobox/listbox semantics). Use native Select for dense plain forms.
 - **Modal** - centered dialog (`open`, `onClose`, `title`, `footer` slot); scales in on `springPanel`, Escape/backdrop close, body scroll lock.
+- **SegmentedControl** - compact option switcher with a sliding active pill; radiogroup semantics.
 - **Drawer** - edge panel, `side: right | bottom`; same API and behaviors as Modal.
 - **Skeleton** - shimmer placeholder sized via `className`.
 - **AnimatedNumber** - counts toward `value` with `format` callback; tabular digits, honors reduced motion.
