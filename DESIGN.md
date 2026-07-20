@@ -129,6 +129,8 @@ Signature moments. Use sparingly; each is tied to a meaning.
 - **BasketLoader** - the loading state: groceries drop into a bobbing basket. The only sanctioned spinner replacement.
 - **Celebration** - one-shot confetti burst (`trigger` counter, radiates from the nearest `relative` ancestor, self-clears in ~1s). Reserved exclusively for a completed settlement. Honors reduced motion.
 - **SettlementFlow** - dots travel from debtor to creditor while the amount counts up on scroll into view.
+- **AIThinking** - the AI Assistant's brief "reading your request" beat: a pulsing glow, a turning sparkle, and a typing-style dot wave.
+- **GeneratingSteps** - the AI Assistant's generation sequence: self-contained step-by-step progress (reading, detecting, understanding, preparing) that lights up, checks off, and hands control back via `onComplete`.
 
 Taste rules: confetti only on settlement completion, never on page load or
 minor actions. One signature moment per screen. If an animation does not

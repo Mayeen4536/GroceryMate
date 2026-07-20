@@ -12,6 +12,10 @@ const accents: Record<PageId, { tile: string; glow: string }> = {
     tile: 'from-mint-100 to-brand-100 text-brand-700',
     glow: 'bg-brand-500/10',
   },
+  assistant: {
+    tile: 'from-mint-100 to-brand-100 text-brand-700',
+    glow: 'bg-brand-500/10',
+  },
   groceries: {
     tile: 'from-brand-100 to-mint-100 text-brand-700',
     glow: 'bg-brand-500/10',

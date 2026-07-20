@@ -16,7 +16,10 @@ export function BottomNav({ activePage, onNavigate }: BottomNavProps) {
       className="fixed inset-x-4 z-40 mx-auto max-w-sm rounded-xl bg-pine-950/95 p-1.5 shadow-dock backdrop-blur lg:hidden"
       style={{ bottom: 'calc(0.875rem + env(safe-area-inset-bottom))' }}
     >
-      <div className="grid grid-cols-5 gap-1">
+      <div
+        className="grid gap-1"
+        style={{ gridTemplateColumns: `repeat(${NAV_ITEMS.length}, minmax(0, 1fr))` }}
+      >
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon
           const active = item.id === activePage

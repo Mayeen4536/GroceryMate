@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion'
 import { AppShell } from './components/layout/AppShell'
 import { PagePlaceholder } from './pages/PagePlaceholder'
+import { AssistantPage } from './pages/assistant/AssistantPage'
 import { GroceriesPage } from './pages/groceries/GroceriesPage'
 import { MembersPage } from './pages/members/MembersPage'
 import { SettlementsPage } from './pages/settlements/SettlementsPage'
@@ -55,12 +56,24 @@ export default function App() {
             <motion.div
               key="app"
               initial={{ opacity: 0, y: 10, scale: 0.99, filter: 'blur(6px)' }}
-              animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+              animate={{
+                opacity: 1,
+                y: 0,
+                scale: 1,
+                filter: 'blur(0px)',
+                transitionEnd: { filter: 'none' },
+              }}
               transition={{ duration: 0.28, ease: easeSoft }}
             >
               <AppShell activePage={activePage} onNavigate={navigate}>
                 <AnimatePresence mode="wait" initial={false} custom={direction}>
-                  {activePage === 'groceries' ? (
+                  {activePage === 'assistant' ? (
+                    <AssistantPage
+                      key="assistant"
+                      direction={direction}
+                      onAddGroceries={() => navigate('groceries')}
+                    />
+                  ) : activePage === 'groceries' ? (
                     <GroceriesPage key="groceries" direction={direction} />
                   ) : activePage === 'members' ? (
                     <MembersPage key="members" direction={direction} />

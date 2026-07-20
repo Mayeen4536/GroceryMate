@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
-import { HandCoins, History, LayoutDashboard, ShoppingBasket, Users } from 'lucide-react'
+import { HandCoins, History, LayoutDashboard, Sparkles, ShoppingBasket, Users } from 'lucide-react'
 
-export type PageId = 'overview' | 'groceries' | 'members' | 'settlements' | 'history'
+export type PageId = 'overview' | 'assistant' | 'groceries' | 'members' | 'settlements' | 'history'
 
 export interface NavItem {
   id: PageId
@@ -17,6 +17,12 @@ export const NAV_ITEMS: NavItem[] = [
     label: 'Overview',
     icon: LayoutDashboard,
     description: "A snapshot of your household's groceries and what needs settling.",
+  },
+  {
+    id: 'assistant',
+    label: 'Assistant',
+    icon: Sparkles,
+    description: 'Describe what your household needs and let AI build the list.',
   },
   {
     id: 'groceries',
