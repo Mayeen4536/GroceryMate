@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion'
-import { CalendarClock, ChevronRight, Download, HandCoins } from 'lucide-react'
+import { CalendarClock, Download, HandCoins } from 'lucide-react'
 import { AnimatedNumber, Avatar, Badge, Card } from '../../components/ui'
-import { cn } from '../../lib/cn'
 import { springGentle } from '../../lib/motion'
 import { formatTaka } from '../../data/settlements'
 import type { HistorySession } from '../../data/history'
@@ -70,36 +69,27 @@ export function HistoryCard({ session, onOpen, onExport }: HistoryCardProps) {
               </span>
             </div>
 
-            <p className="shrink-0 text-lg font-bold tabular-nums tracking-tight text-ink">
-              <AnimatedNumber value={Number.parseFloat(session.total) || 0} format={formatTaka} />
-            </p>
+            <div className="flex shrink-0 items-center gap-1">
+              <motion.button
+                type="button"
+                aria-label={`Export ${session.title}`}
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.92 }}
+                transition={springGentle}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onExport(session)
+                }}
+                className="flex size-8 items-center justify-center rounded-md text-muted opacity-0 transition-[background-color,color,opacity] duration-200 hover:bg-sand hover:text-ink focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 group-hover:opacity-100"
+              >
+                <Download size={15} aria-hidden="true" />
+              </motion.button>
+              <p className="text-lg font-bold tabular-nums tracking-tight text-ink">
+                <AnimatedNumber value={Number.parseFloat(session.total) || 0} format={formatTaka} />
+              </p>
+            </div>
           </div>
         </div>
-      </div>
-
-      <div
-        className={cn(
-          'absolute right-4 top-4 flex items-center gap-1 transition-all duration-200',
-          'translate-x-1 opacity-0 group-focus-within:translate-x-0 group-focus-within:opacity-100 group-hover:translate-x-0 group-hover:opacity-100',
-        )}
-      >
-        <motion.button
-          type="button"
-          aria-label={`Export ${session.title}`}
-          whileHover={{ scale: 1.08 }}
-          whileTap={{ scale: 0.92 }}
-          transition={springGentle}
-          onClick={(event) => {
-            event.stopPropagation()
-            onExport(session)
-          }}
-          className="flex size-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-sand hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40"
-        >
-          <Download size={15} aria-hidden="true" />
-        </motion.button>
-        <span className="flex size-8 items-center justify-center text-muted">
-          <ChevronRight size={16} aria-hidden="true" />
-        </span>
       </div>
     </Card>
   )
