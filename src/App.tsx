@@ -6,6 +6,7 @@ import { AssistantPage } from './pages/assistant/AssistantPage'
 import { GroceriesPage } from './pages/groceries/GroceriesPage'
 import { MembersPage } from './pages/members/MembersPage'
 import { SettlementsPage } from './pages/settlements/SettlementsPage'
+import { HistoryPage } from './pages/history/HistoryPage'
 import { Landing } from './pages/landing/Landing'
 import { NAV_ITEMS, type PageId } from './lib/navigation'
 import { easeSoft } from './lib/motion'
@@ -83,6 +84,8 @@ export default function App() {
                       direction={direction}
                       onAddGroceries={() => navigate('groceries')}
                     />
+                  ) : activePage === 'history' ? (
+                    <HistoryPage key="history" direction={direction} />
                   ) : (
                     <PagePlaceholder key={activePage} item={activeItem} direction={direction} />
                   )}
