@@ -8,6 +8,7 @@ import { BottomNav } from './BottomNav'
 interface AppShellProps {
   activePage: PageId
   onNavigate: (page: PageId) => void
+  onOpenSettings: () => void
   children: ReactNode
 }
 
@@ -15,7 +16,7 @@ interface AppShellProps {
  * Application chrome: desktop sidebar (collapsible), mobile top bar and
  * floating dock, and the main content container. Pages render as children.
  */
-export function AppShell({ activePage, onNavigate, children }: AppShellProps) {
+export function AppShell({ activePage, onNavigate, onOpenSettings, children }: AppShellProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   return (
@@ -31,8 +32,9 @@ export function AppShell({ activePage, onNavigate, children }: AppShellProps) {
         onNavigate={onNavigate}
         collapsed={sidebarCollapsed}
         onToggleCollapsed={() => setSidebarCollapsed((collapsed) => !collapsed)}
+        onOpenSettings={onOpenSettings}
       />
-      <TopBar />
+      <TopBar onOpenSettings={onOpenSettings} />
       <div
         className={cn(
           'transition-[padding] duration-300 ease-soft',

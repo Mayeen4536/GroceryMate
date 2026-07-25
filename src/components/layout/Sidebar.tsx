@@ -13,6 +13,7 @@ interface SidebarProps {
   onNavigate: (page: PageId) => void
   collapsed: boolean
   onToggleCollapsed: () => void
+  onOpenSettings: () => void
 }
 
 function SidebarNavItem({
@@ -59,7 +60,13 @@ function SidebarNavItem({
 }
 
 /** Desktop-only sidebar on the dark pine surface. Collapses to an icon rail. */
-export function Sidebar({ activePage, onNavigate, collapsed, onToggleCollapsed }: SidebarProps) {
+export function Sidebar({
+  activePage,
+  onNavigate,
+  collapsed,
+  onToggleCollapsed,
+  onOpenSettings,
+}: SidebarProps) {
   return (
     <aside
       className={cn(
@@ -106,7 +113,7 @@ export function Sidebar({ activePage, onNavigate, collapsed, onToggleCollapsed }
         ))}
       </nav>
       <div className="border-t border-white/[0.07] p-3">
-        <UserProfile user={mockUser} tone="dark" avatarOnly={collapsed} />
+        <UserProfile user={mockUser} tone="dark" avatarOnly={collapsed} onClick={onOpenSettings} />
       </div>
     </aside>
   )

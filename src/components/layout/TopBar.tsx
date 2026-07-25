@@ -5,8 +5,13 @@ import { mockHousehold, mockUser } from '../../data/mock'
 import { Brand } from './Brand'
 import { HouseholdSwitcher } from './HouseholdSwitcher'
 
+interface TopBarProps {
+  /** Opens Settings. */
+  onOpenSettings: () => void
+}
+
 /** Mobile top bar: brand on the left, household switcher and profile on the right. */
-export function TopBar() {
+export function TopBar({ onOpenSettings }: TopBarProps) {
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
@@ -29,8 +34,9 @@ export function TopBar() {
           <HouseholdSwitcher household={mockHousehold} compact />
           <button
             type="button"
-            title="Account settings are coming soon"
-            aria-label={`Signed in as ${mockUser.name}`}
+            onClick={onOpenSettings}
+            title="Settings"
+            aria-label={`Settings — signed in as ${mockUser.name}`}
             className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
           >
             <Avatar name={mockUser.name} size="sm" />

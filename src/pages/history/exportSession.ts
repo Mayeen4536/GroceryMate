@@ -1,3 +1,4 @@
+import { downloadTextFile } from '../../lib/downloadTextFile'
 import { formatTaka } from '../../data/settlements'
 import type { HistorySession } from '../../data/history'
 
@@ -29,18 +30,6 @@ function sessionReport(session: HistorySession): string {
   }
 
   return lines.join('\n')
-}
-
-function downloadTextFile(filename: string, content: string): void {
-  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  document.body.appendChild(link)
-  link.click()
-  link.remove()
-  URL.revokeObjectURL(url)
 }
 
 /** Downloads a single session as a plain-text summary. Client-side only. */

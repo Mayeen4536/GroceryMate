@@ -1,7 +1,14 @@
 import type { LucideIcon } from 'lucide-react'
 import { HandCoins, History, LayoutDashboard, Sparkles, ShoppingBasket, Users } from 'lucide-react'
 
-export type PageId = 'overview' | 'assistant' | 'groceries' | 'members' | 'settlements' | 'history'
+export type PageId =
+  | 'overview'
+  | 'assistant'
+  | 'groceries'
+  | 'members'
+  | 'settlements'
+  | 'history'
+  | 'settings'
 
 export interface NavItem {
   id: PageId

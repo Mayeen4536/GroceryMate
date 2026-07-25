@@ -32,6 +32,10 @@ const accents: Record<PageId, { tile: string; glow: string }> = {
     tile: 'from-member-sky-soft to-mint-50 text-member-sky-strong',
     glow: 'bg-member-sky-strong/10',
   },
+  settings: {
+    tile: 'from-member-violet-soft to-member-sky-soft text-member-violet-strong',
+    glow: 'bg-member-violet-strong/10',
+  },
 }
 
 /** Stand-in page body until the real screens are built. */

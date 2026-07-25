@@ -11,10 +11,12 @@ interface UserProfileProps {
   tone?: 'light' | 'dark'
   /** Avatar-only for the collapsed sidebar. */
   avatarOnly?: boolean
+  /** Opens Settings. */
+  onClick?: () => void
 }
 
-/** Placeholder user profile row for the sidebar footer. Visual only. */
-export function UserProfile({ user, tone = 'light', avatarOnly = false }: UserProfileProps) {
+/** User profile row for the sidebar footer. Opens Settings. */
+export function UserProfile({ user, tone = 'light', avatarOnly = false, onClick }: UserProfileProps) {
   const dark = tone === 'dark'
 
   if (avatarOnly) {
@@ -23,7 +25,8 @@ export function UserProfile({ user, tone = 'light', avatarOnly = false }: UserPr
         whileTap={{ scale: 0.97 }}
         transition={springSnappy}
         type="button"
-        title={`${user.name} (account settings are coming soon)`}
+        onClick={onClick}
+        title={`${user.name} — Settings`}
         className={cn(
           'mx-auto flex rounded-full p-1 transition-colors focus-visible:outline-none focus-visible:ring-2',
           dark
@@ -41,7 +44,8 @@ export function UserProfile({ user, tone = 'light', avatarOnly = false }: UserPr
         whileTap={{ scale: 0.97 }}
         transition={springSnappy}
       type="button"
-      title="Account settings are coming soon"
+      onClick={onClick}
+      title="Settings"
       className={cn(
         'flex w-full items-center gap-2.5 rounded-lg p-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2',
         dark

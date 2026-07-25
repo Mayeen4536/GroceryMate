@@ -7,6 +7,7 @@ import { GroceriesPage } from './pages/groceries/GroceriesPage'
 import { MembersPage } from './pages/members/MembersPage'
 import { SettlementsPage } from './pages/settlements/SettlementsPage'
 import { HistoryPage } from './pages/history/HistoryPage'
+import { SettingsPage } from './pages/settings/SettingsPage'
 import { Landing } from './pages/landing/Landing'
 import { NAV_ITEMS, type PageId } from './lib/navigation'
 import { easeSoft } from './lib/motion'
@@ -31,12 +32,21 @@ export default function App() {
   const [activePage, setActivePage] = useState<PageId>('overview')
   // 1 = navigating forward in the nav order, -1 = backward; drives the slide direction.
   const [direction, setDirection] = useState(1)
+  // Settings isn't a nav-order destination; remember where to return on "Back".
+  const [priorPage, setPriorPage] = useState<PageId>('overview')
   const activeItem = NAV_ITEMS.find((item) => item.id === activePage) ?? NAV_ITEMS[0]
 
   const navigate = (page: PageId) => {
     if (page === activePage) return
-    setDirection(pageIndex(page) >= pageIndex(activePage) ? 1 : -1)
+    const isSettingsTransition = page === 'settings' || activePage === 'settings'
+    setDirection(isSettingsTransition ? 1 : pageIndex(page) >= pageIndex(activePage) ? 1 : -1)
     setActivePage(page)
+  }
+
+  const openSettings = () => {
+    if (activePage === 'settings') return
+    setPriorPage(activePage)
+    navigate('settings')
   }
 
   return (
@@ -66,7 +76,7 @@ export default function App() {
               }}
               transition={{ duration: 0.28, ease: easeSoft }}
             >
-              <AppShell activePage={activePage} onNavigate={navigate}>
+              <AppShell activePage={activePage} onNavigate={navigate} onOpenSettings={openSettings}>
                 <AnimatePresence mode="wait" initial={false} custom={direction}>
                   {activePage === 'assistant' ? (
                     <AssistantPage
@@ -86,6 +96,12 @@ export default function App() {
                     />
                   ) : activePage === 'history' ? (
                     <HistoryPage key="history" direction={direction} />
+                  ) : activePage === 'settings' ? (
+                    <SettingsPage
+                      key="settings"
+                      direction={direction}
+                      onBack={() => navigate(priorPage)}
+                    />
                   ) : (
                     <PagePlaceholder key={activePage} item={activeItem} direction={direction} />
                   )}
