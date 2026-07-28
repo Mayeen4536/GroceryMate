@@ -1,8 +1,8 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { X } from 'lucide-react'
-import { cn } from '../../lib/cn'
-import { transitionFast, springPanel } from '../../lib/motion'
+import { cn } from '@/utils/cn'
+import { transitionFast, springPanel } from '@/animations/motion'
 
 type DrawerSide = 'right' | 'bottom'
 

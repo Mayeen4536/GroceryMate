@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { animate, motion, useMotionValue, useReducedMotion, useTransform } from 'framer-motion'
-import { cn } from '../../lib/cn'
-import { easeSoft } from '../../lib/motion'
+import { cn } from '@/utils/cn'
+import { easeSoft } from '@/animations/motion'
 
 export interface AnimatedNumberProps {
   value: number

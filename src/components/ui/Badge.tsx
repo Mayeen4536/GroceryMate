@@ -1,8 +1,8 @@
 import { motion, type HTMLMotionProps } from 'framer-motion'
 import type { ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
-import { cn } from '../../lib/cn'
-import { springSnappy } from '../../lib/motion'
+import { cn } from '@/utils/cn'
+import { springSnappy } from '@/animations/motion'
 
 export type BadgeTone = 'neutral' | 'brand' | 'mint' | 'success' | 'warning' | 'danger'
 

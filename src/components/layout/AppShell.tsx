@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
-import { cn } from '../../lib/cn'
-import type { PageId } from '../../lib/navigation'
+import { cn } from '@/utils/cn'
+import type { PageId } from '@/types/navigation'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
 import { BottomNav } from './BottomNav'

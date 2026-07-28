@@ -1,8 +1,8 @@
 import { motion, type HTMLMotionProps } from 'framer-motion'
 import type { KeyboardEvent, ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
-import { cn } from '../../lib/cn'
-import { springGentle } from '../../lib/motion'
+import { cn } from '@/utils/cn'
+import { springGentle } from '@/animations/motion'
 
 type CardVariant = 'default' | 'interactive' | 'highlighted'
 type CardPadding = 'none' | 'sm' | 'md' | 'lg'

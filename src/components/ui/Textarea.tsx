@@ -1,5 +1,5 @@
 import { useId, type ComponentProps } from 'react'
-import { cn } from '../../lib/cn'
+import { cn } from '@/utils/cn'
 import { Field, controlClasses, controlTone, fieldDescribedBy, type FieldOwnProps } from './field'
 
 export interface TextareaProps extends ComponentProps<'textarea'>, FieldOwnProps {}

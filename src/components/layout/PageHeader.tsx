@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
-import { SectionHeader } from '../ui'
+import { SectionHeader } from '@/components/ui'
 
 interface PageHeaderProps {
   title: string

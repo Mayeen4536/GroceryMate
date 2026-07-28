@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Avatar } from '../ui'
-import { cn } from '../../lib/cn'
-import { mockHousehold, mockUser } from '../../data/mock'
+import { Avatar } from '@/components/ui'
+import { cn } from '@/utils/cn'
+import { mockHousehold, mockUser } from '@/store/household'
 import { Brand } from './Brand'
 import { HouseholdSwitcher } from './HouseholdSwitcher'
 

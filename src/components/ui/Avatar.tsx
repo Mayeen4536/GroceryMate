@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
-import { cn } from '../../lib/cn'
-import { springSnappy } from '../../lib/motion'
+import { cn } from '@/utils/cn'
+import { springSnappy } from '@/animations/motion'
 
 type AvatarSize = 'sm' | 'md' | 'lg'
 

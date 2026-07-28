@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion'
 import { ChevronsUpDown, House } from 'lucide-react'
-import { cn } from '../../lib/cn'
-import { springSnappy } from '../../lib/motion'
-import type { MockHousehold } from '../../data/mock'
+import { cn } from '@/utils/cn'
+import { springSnappy } from '@/animations/motion'
+import type { MockHousehold } from '@/types/household'
 
 interface HouseholdSwitcherProps {
   household: MockHousehold

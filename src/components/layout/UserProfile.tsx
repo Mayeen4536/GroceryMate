@@ -1,9 +1,9 @@
 import { motion } from 'framer-motion'
 import { EllipsisVertical } from 'lucide-react'
-import { Avatar } from '../ui'
-import { cn } from '../../lib/cn'
-import { springSnappy } from '../../lib/motion'
-import type { MockUser } from '../../data/mock'
+import { Avatar } from '@/components/ui'
+import { cn } from '@/utils/cn'
+import { springSnappy } from '@/animations/motion'
+import type { MockUser } from '@/types/household'
 
 interface UserProfileProps {
   user: MockUser

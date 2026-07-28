@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { AnimatedNumber, Avatar } from '../ui'
+import { AnimatedNumber, Avatar } from '@/components/ui'
 
 /**
  * Money-flow visualization: dots travel from debtor to creditor while the

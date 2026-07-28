@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Check, HandCoins } from 'lucide-react'
-import { cn } from '../../lib/cn'
-import { transitionFast } from '../../lib/motion'
+import { cn } from '@/utils/cn'
+import { transitionFast } from '@/animations/motion'
 import { Celebration } from './Celebration'
 
 type SettleState = 'idle' | 'working' | 'done'

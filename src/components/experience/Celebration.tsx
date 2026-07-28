@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
-import { cn } from '../../lib/cn'
+import { cn } from '@/utils/cn'
 
 const PARTICLE_COLORS = [
   'bg-brand-500',

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Check, Receipt, ScanSearch, ShoppingBasket, Users, type LucideIcon } from 'lucide-react'
-import { cn } from '../../lib/cn'
-import { springPop, transitionBase } from '../../lib/motion'
+import { cn } from '@/utils/cn'
+import { springPop, transitionBase } from '@/animations/motion'
 
 interface Step {
   label: string

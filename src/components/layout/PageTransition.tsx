@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import type { ReactNode } from 'react'
-import { pageVariants } from '../../lib/motion'
+import { pageVariants } from '@/animations/motion'
 
 interface PageTransitionProps {
   /** 1 = forward in the nav order, -1 = backward; sets the slide direction. */

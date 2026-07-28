@@ -1,6 +1,6 @@
 import { useId, type ComponentProps } from 'react'
 import type { LucideIcon } from 'lucide-react'
-import { cn } from '../../lib/cn'
+import { cn } from '@/utils/cn'
 import { Field, controlClasses, controlTone, fieldDescribedBy, type FieldOwnProps } from './field'
 
 export interface InputProps extends ComponentProps<'input'>, FieldOwnProps {

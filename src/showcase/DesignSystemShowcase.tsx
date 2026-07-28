@@ -33,10 +33,10 @@ import {
   Select,
   Skeleton,
   Textarea,
-} from '../components/ui'
-import { BasketLoader, SettleButton, SettlementFlow } from '../components/experience'
-import { cn } from '../lib/cn'
-import { fadeInUp, springPop, staggerChildren } from '../lib/motion'
+} from '@/components/ui'
+import { BasketLoader, SettleButton, SettlementFlow } from '@/components/experience'
+import { cn } from '@/utils/cn'
+import { fadeInUp, springPop, staggerChildren } from '@/animations/motion'
 
 /**
  * Temporary page for reviewing the design system visually.

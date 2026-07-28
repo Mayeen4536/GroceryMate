@@ -1,8 +1,8 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Check, ChevronDown } from 'lucide-react'
-import { cn } from '../../lib/cn'
-import { transitionFast } from '../../lib/motion'
+import { cn } from '@/utils/cn'
+import { transitionFast } from '@/animations/motion'
 import { Field, controlClasses, controlTone, fieldDescribedBy, type FieldOwnProps } from './field'
 
 export interface DropdownOption {

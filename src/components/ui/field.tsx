@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { CircleAlert } from 'lucide-react'
-import { cn } from '../../lib/cn'
-import { transitionFast } from '../../lib/motion'
+import { cn } from '@/utils/cn'
+import { transitionFast } from '@/animations/motion'
 
 /** Props shared by every form control (Input, Textarea, Select). */
 export interface FieldOwnProps {

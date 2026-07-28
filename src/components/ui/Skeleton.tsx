@@ -1,4 +1,4 @@
-import { cn } from '../../lib/cn'
+import { cn } from '@/utils/cn'
 
 /**
  * Loading placeholder with a soft shimmer. Size it with className

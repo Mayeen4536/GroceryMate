@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
-import { cn } from '../../lib/cn'
+import { cn } from '@/utils/cn'
 
 type HeadingLevel = 1 | 2 | 3
 

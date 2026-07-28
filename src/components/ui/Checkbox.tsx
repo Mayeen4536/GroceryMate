@@ -1,7 +1,7 @@
 import { useId, type ComponentProps } from 'react'
 import { motion } from 'framer-motion'
-import { cn } from '../../lib/cn'
-import { springSnappy } from '../../lib/motion'
+import { cn } from '@/utils/cn'
+import { springSnappy } from '@/animations/motion'
 
 export interface CheckboxProps extends Omit<ComponentProps<'input'>, 'type'> {
   label?: string

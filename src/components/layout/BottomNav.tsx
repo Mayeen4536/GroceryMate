@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion'
-import { cn } from '../../lib/cn'
-import { springSnappy } from '../../lib/motion'
-import { NAV_ITEMS, type PageId } from '../../lib/navigation'
+import { cn } from '@/utils/cn'
+import { springSnappy } from '@/animations/motion'
+import { NAV_ITEMS } from '@/config/navigation'
+import type { PageId } from '@/types/navigation'
 
 interface BottomNavProps {
   activePage: PageId

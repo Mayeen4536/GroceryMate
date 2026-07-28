@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { ShoppingBasket } from 'lucide-react'
-import { cn } from '../../lib/cn'
+import { cn } from '@/utils/cn'
 
 const drops = [
   { color: 'bg-danger-500', left: '32%', delay: 0 },

@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { X } from 'lucide-react'
-import { transitionFast, springPanel, easeSoft } from '../../lib/motion'
+import { transitionFast, springPanel, easeSoft } from '@/animations/motion'
 
 export interface ModalProps {
   open: boolean

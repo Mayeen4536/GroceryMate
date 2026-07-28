@@ -1,53 +1,22 @@
-import { useEffect, useState } from 'react'
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion'
-import { AppShell } from './components/layout/AppShell'
-import { PagePlaceholder } from './pages/PagePlaceholder'
-import { AssistantPage } from './pages/assistant/AssistantPage'
-import { GroceriesPage } from './pages/groceries/GroceriesPage'
-import { MembersPage } from './pages/members/MembersPage'
-import { SettlementsPage } from './pages/settlements/SettlementsPage'
-import { HistoryPage } from './pages/history/HistoryPage'
-import { SettingsPage } from './pages/settings/SettingsPage'
-import { Landing } from './pages/landing/Landing'
-import { NAV_ITEMS, type PageId } from './lib/navigation'
-import { easeSoft } from './lib/motion'
-import { DesignSystemShowcase } from './showcase/DesignSystemShowcase'
-
-/** The design-system showcase stays reachable at /#design-system for component review. */
-function useShowDesignSystem(): boolean {
-  const [hash, setHash] = useState(() => window.location.hash)
-  useEffect(() => {
-    const onHashChange = () => setHash(window.location.hash)
-    window.addEventListener('hashchange', onHashChange)
-    return () => window.removeEventListener('hashchange', onHashChange)
-  }, [])
-  return hash === '#design-system'
-}
-
-const pageIndex = (page: PageId) => NAV_ITEMS.findIndex((item) => item.id === page)
+import { AppShell } from '@/components/layout/AppShell'
+import { PagePlaceholder } from '@/components/PagePlaceholder'
+import { AssistantPage } from '@/features/assistant/AssistantPage'
+import { GroceriesPage } from '@/features/groceries/GroceriesPage'
+import { MembersPage } from '@/features/members/MembersPage'
+import { SettlementsPage } from '@/features/settlements/SettlementsPage'
+import { HistoryPage } from '@/features/history/HistoryPage'
+import { SettingsPage } from '@/features/settings/SettingsPage'
+import { Landing } from '@/features/landing/Landing'
+import { useAppNavigation } from '@/hooks/useAppNavigation'
+import { useShowDesignSystem } from '@/hooks/useShowDesignSystem'
+import { easeSoft } from '@/animations/motion'
+import { DesignSystemShowcase } from '@/showcase/DesignSystemShowcase'
 
 export default function App() {
   const showDesignSystem = useShowDesignSystem()
-  const [entered, setEntered] = useState(false)
-  const [activePage, setActivePage] = useState<PageId>('overview')
-  // 1 = navigating forward in the nav order, -1 = backward; drives the slide direction.
-  const [direction, setDirection] = useState(1)
-  // Settings isn't a nav-order destination; remember where to return on "Back".
-  const [priorPage, setPriorPage] = useState<PageId>('overview')
-  const activeItem = NAV_ITEMS.find((item) => item.id === activePage) ?? NAV_ITEMS[0]
-
-  const navigate = (page: PageId) => {
-    if (page === activePage) return
-    const isSettingsTransition = page === 'settings' || activePage === 'settings'
-    setDirection(isSettingsTransition ? 1 : pageIndex(page) >= pageIndex(activePage) ? 1 : -1)
-    setActivePage(page)
-  }
-
-  const openSettings = () => {
-    if (activePage === 'settings') return
-    setPriorPage(activePage)
-    navigate('settings')
-  }
+  const { entered, enter, activePage, activeItem, direction, priorPage, navigate, openSettings } =
+    useAppNavigation()
 
   return (
     <MotionConfig reducedMotion="user">
@@ -61,7 +30,7 @@ export default function App() {
               exit={{ opacity: 0, y: -10, scale: 0.99, filter: 'blur(4px)' }}
               transition={{ duration: 0.16, ease: easeSoft }}
             >
-              <Landing onEnter={() => setEntered(true)} />
+              <Landing onEnter={enter} />
             </motion.div>
           ) : (
             <motion.div
