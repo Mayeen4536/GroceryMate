@@ -1,7 +1,10 @@
 import type { Money } from './Money'
 import type { GroceryItemId, HouseholdId, MemberId } from './ids'
 
-export type GroceryCategory = 'produce' | 'dairy' | 'bakery' | 'pantry' | 'beverages' | 'household'
+/** The single source of truth for valid categories — derive from this rather than re-listing them. */
+export const GROCERY_CATEGORIES = ['produce', 'dairy', 'bakery', 'pantry', 'beverages', 'household'] as const
+
+export type GroceryCategory = (typeof GROCERY_CATEGORIES)[number]
 
 /**
  * A single grocery purchase logged by a household. Responsibility: what

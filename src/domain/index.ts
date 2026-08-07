@@ -20,6 +20,7 @@ export type { Household } from './Household'
 export type { Member, MemberRole, ActiveMember, InvitedMember } from './Member'
 
 export type { GroceryItem, GroceryCategory } from './GroceryItem'
+export { GROCERY_CATEGORIES } from './GroceryItem'
 
 export type { Settlement, PendingSettlement, SettledSettlement } from './Settlement'
 
@@ -36,4 +37,11 @@ export type {
   FailedReceiptProcessing,
 } from './Receipt'
 
-export type { AIParsedItem, ParsedFromReceipt, ParsedFromPrompt } from './AIParsedItem'
+export type {
+  AIParsedItem,
+  ParsedFromReceipt,
+  ParsedFromPrompt,
+  SuggestedSharing,
+  SharedByEveryone,
+  SharedBySpecificMembers,
+} from './AIParsedItem'
