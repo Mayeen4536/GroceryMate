@@ -6,6 +6,7 @@ export type PageId =
   | 'groceries'
   | 'members'
   | 'settlements'
+  | 'analytics'
   | 'history'
   | 'settings'
 

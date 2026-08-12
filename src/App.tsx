@@ -1,6 +1,7 @@
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion'
 import { AppShell } from '@/components/layout/AppShell'
 import { PagePlaceholder } from '@/components/PagePlaceholder'
+import { AnalyticsPage } from '@/features/analytics/AnalyticsPage'
 import { AssistantPage } from '@/features/assistant/AssistantPage'
 import { GroceriesPage } from '@/features/groceries/GroceriesPage'
 import { MembersPage } from '@/features/members/MembersPage'
@@ -63,6 +64,8 @@ export default function App() {
                       direction={direction}
                       onAddGroceries={() => navigate('groceries')}
                     />
+                  ) : activePage === 'analytics' ? (
+                    <AnalyticsPage key="analytics" direction={direction} />
                   ) : activePage === 'history' ? (
                     <HistoryPage key="history" direction={direction} />
                   ) : activePage === 'settings' ? (

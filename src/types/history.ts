@@ -13,6 +13,8 @@ export interface HistoryItem {
   category: CategoryId
   price: string
   paidBy: string
+  /** Who consumed this item — one name means personal, more than one means shared. */
+  sharedBy: string[]
 }
 
 export interface HistoryPayment {

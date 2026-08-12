@@ -1,4 +1,4 @@
-import { HandCoins, History, LayoutDashboard, Sparkles, ShoppingBasket, Users } from 'lucide-react'
+import { BarChart3, HandCoins, History, LayoutDashboard, Sparkles, ShoppingBasket, Users } from 'lucide-react'
 import type { NavItem } from '@/types/navigation'
 
 export const NAV_ITEMS: NavItem[] = [
@@ -31,6 +31,12 @@ export const NAV_ITEMS: NavItem[] = [
     label: 'Settlements',
     icon: HandCoins,
     description: 'Who owes whom, and the simplest way to settle up.',
+  },
+  {
+    id: 'analytics',
+    label: 'Analytics',
+    icon: BarChart3,
+    description: 'Where the money actually goes, month by month.',
   },
   {
     id: 'history',

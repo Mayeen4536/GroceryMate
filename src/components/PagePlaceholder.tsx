@@ -28,6 +28,10 @@ const accents: Record<PageId, { tile: string; glow: string }> = {
     tile: 'from-member-gold-soft to-warning-50 text-member-gold-strong',
     glow: 'bg-warning-500/12',
   },
+  analytics: {
+    tile: 'from-member-teal-soft to-mint-50 text-member-teal-strong',
+    glow: 'bg-member-teal-strong/10',
+  },
   history: {
     tile: 'from-member-sky-soft to-mint-50 text-member-sky-strong',
     glow: 'bg-member-sky-strong/10',
