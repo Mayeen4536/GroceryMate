@@ -1,6 +1,7 @@
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion'
 import { AppShell } from '@/components/layout/AppShell'
 import { PagePlaceholder } from '@/components/PagePlaceholder'
+import { PWAUpdatePrompt } from '@/components/PWAUpdatePrompt'
 import { AnalyticsPage } from '@/features/analytics/AnalyticsPage'
 import { AssistantPage } from '@/features/assistant/AssistantPage'
 import { GroceriesPage } from '@/features/groceries/GroceriesPage'
@@ -21,6 +22,7 @@ export default function App() {
 
   return (
     <MotionConfig reducedMotion="user">
+      <PWAUpdatePrompt />
       {showDesignSystem ? (
         <DesignSystemShowcase />
       ) : (
