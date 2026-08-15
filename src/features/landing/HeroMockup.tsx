@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { Apple, Carrot, Check, Egg, Milk, type LucideIcon } from 'lucide-react'
 import { Avatar, Badge, Card } from '@/components/ui'
+import { FlowDots } from '@/components/experience'
 import { cn } from '@/utils/cn'
 import { springGentle } from '@/animations/motion'
 import { mockMembers } from '@/store/household'
@@ -135,16 +136,7 @@ export function HeroMockup() {
           </div>
           <div className="relative flex items-center justify-between gap-3 overflow-hidden border-t border-line bg-mint-50/70 px-5 py-4">
             {/* Money quietly flowing toward settlement */}
-            {[0, 1, 2].map((index) => (
-              <motion.span
-                key={index}
-                aria-hidden="true"
-                className="absolute top-0 size-[3px] -translate-y-1/2 rounded-full bg-brand-400"
-                initial={{ left: '-2%', opacity: 0 }}
-                animate={{ left: ['-2%', '102%'], opacity: [0, 1, 1, 0] }}
-                transition={{ duration: 2.8, delay: index * 0.9, repeat: Infinity, ease: 'linear' }}
-              />
-            ))}
+            <FlowDots axis="x" duration={2.8} staggerDelay={0.9} />
             <div>
               <p className="text-xs text-muted">Fair settlement</p>
               <p className="text-sm font-semibold text-ink">

@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { AlertTriangle, Check, Download, Trash2 } from 'lucide-react'
+import { AlertTriangle, Check, Download, RotateCcw } from 'lucide-react'
 import { Button, Modal } from '@/components/ui'
 import { transitionBase } from '@/animations/motion'
 
@@ -9,16 +9,20 @@ interface DataSectionProps {
   onConfirmDelete: () => void
 }
 
-/** Export and delete actions. Delete resets this page's own preferences only. */
+/** Export and reset actions. "Reset" only clears this page's own preferences — see the modal copy. */
 export function DataSection({ onExportAll, onConfirmDelete }: DataSectionProps) {
   const [modalOpen, setModalOpen] = useState(false)
   const [justCleared, setJustCleared] = useState(false)
+  const clearedTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  useEffect(() => () => clearTimeout(clearedTimer.current), [])
 
   const confirm = () => {
     setModalOpen(false)
     onConfirmDelete()
     setJustCleared(true)
-    window.setTimeout(() => setJustCleared(false), 3200)
+    clearTimeout(clearedTimer.current)
+    clearedTimer.current = window.setTimeout(() => setJustCleared(false), 3200)
   }
 
   return (
@@ -39,7 +43,7 @@ export function DataSection({ onExportAll, onConfirmDelete }: DataSectionProps) 
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-ink">Delete all data</p>
+          <p className="text-sm font-medium text-ink">Reset preferences</p>
           <p className="mt-0.5 text-sm text-muted">
             Resets currency, language, appearance, and notification preferences to their defaults.
           </p>
@@ -66,8 +70,8 @@ export function DataSection({ onExportAll, onConfirmDelete }: DataSectionProps) 
               transition={transitionBase}
               className="shrink-0"
             >
-              <Button variant="danger" iconLeft={Trash2} onClick={() => setModalOpen(true)}>
-                Delete all data
+              <Button variant="danger" iconLeft={RotateCcw} onClick={() => setModalOpen(true)}>
+                Reset preferences
               </Button>
             </motion.div>
           )}
@@ -77,14 +81,14 @@ export function DataSection({ onExportAll, onConfirmDelete }: DataSectionProps) 
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title="Delete all data?"
+        title="Reset preferences?"
         footer={
           <>
             <Button variant="ghost" onClick={() => setModalOpen(false)}>
               Cancel
             </Button>
-            <Button variant="danger" iconLeft={Trash2} onClick={confirm}>
-              Yes, delete everything
+            <Button variant="danger" iconLeft={RotateCcw} onClick={confirm}>
+              Yes, reset preferences
             </Button>
           </>
         }

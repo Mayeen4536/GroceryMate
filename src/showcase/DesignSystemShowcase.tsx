@@ -186,7 +186,7 @@ const motionRules = [
   'Page transitions blend opacity, a directional shift, a 1.5% scale settle, and a brief blur: 260ms in, 130ms out.',
   'Entrances are subtle (8px fade-up) and run once. Loops live only in empty-state floats, loaders, and flow visualizations.',
   'Reduced motion is respected app-wide via MotionConfig reducedMotion="user".',
-  'All presets live in src/lib/motion.ts. Do not hand-write durations in components.',
+  'All presets live in src/animations/motion.ts. Do not hand-write durations in components.',
 ]
 
 export function DesignSystemShowcase() {

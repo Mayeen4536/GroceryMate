@@ -17,14 +17,16 @@ export interface ButtonProps extends Omit<HTMLMotionProps<'button'>, 'children'>
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
+  // Gradient starts at the 600 step, not 500: white text on brand-500/danger-500
+  // measures 3.82:1, under the 4.5:1 AA text threshold. 600 clears it (5.3:1 / 5.0:1).
   primary:
-    'bg-linear-to-b from-brand-500 to-brand-700 text-white shadow-button-brand hover:brightness-[1.07] focus-visible:ring-brand-500/40',
+    'bg-linear-to-b from-brand-600 to-brand-700 text-white shadow-button-brand hover:brightness-[1.07] focus-visible:ring-brand-500/40',
   secondary:
     'bg-surface text-ink shadow-button hover:bg-sand/70 hover:text-brand-800 focus-visible:ring-brand-500/40',
   ghost:
     'text-ink-soft hover:bg-ink/[0.05] hover:text-ink focus-visible:ring-brand-500/40',
   danger:
-    'bg-linear-to-b from-danger-500 to-danger-700 text-white shadow-button-danger hover:brightness-[1.07] focus-visible:ring-danger-500/40',
+    'bg-linear-to-b from-danger-600 to-danger-700 text-white shadow-button-danger hover:brightness-[1.07] focus-visible:ring-danger-500/40',
 }
 
 const sizeClasses: Record<ButtonSize, string> = {

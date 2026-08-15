@@ -81,7 +81,7 @@ export function HistoryCard({ session, onOpen, onExport }: HistoryCardProps) {
                   event.stopPropagation()
                   onExport(session)
                 }}
-                className="flex size-8 items-center justify-center rounded-md text-muted opacity-0 transition-[background-color,color,opacity] duration-200 hover:bg-sand hover:text-ink focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 group-hover:opacity-100"
+                className="flex size-8 items-center justify-center rounded-md text-muted transition-[background-color,color,opacity] duration-200 hover:bg-sand hover:text-ink focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 sm:opacity-0 sm:group-hover:opacity-100"
               >
                 <Download size={15} aria-hidden="true" />
               </motion.button>

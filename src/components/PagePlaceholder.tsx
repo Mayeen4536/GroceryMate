@@ -8,10 +8,6 @@ import type { NavItem, PageId } from '@/types/navigation'
 
 /** Presentation-only accents so each section has its own personality. */
 const accents: Record<PageId, { tile: string; glow: string }> = {
-  overview: {
-    tile: 'from-mint-100 to-brand-100 text-brand-700',
-    glow: 'bg-brand-500/10',
-  },
   assistant: {
     tile: 'from-mint-100 to-brand-100 text-brand-700',
     glow: 'bg-brand-500/10',

@@ -5,15 +5,22 @@ import { EmptyState } from '@/components/EmptyState'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { riseChild, springGentle, transitionBase } from '@/animations/motion'
-import { useGroceries } from '@/hooks/useGroceries'
+import type { useGroceries } from '@/hooks/useGroceries'
 import { GroceryCard } from './GroceryCard'
 import { GroceryForm } from './GroceryForm'
 
 /**
  * The Grocery Flow: list, entry panel with live preview, floating CTA.
  * All state is visual mock state; calculations arrive with business logic.
+ *
+ * Takes `useGroceries()`'s return value as props rather than calling the
+ * hook itself — the Assistant page needs to add to this same list, so the
+ * state lives once in `App.tsx` and both pages share it.
  */
-export function GroceriesPage({ direction = 1 }: { direction?: number }) {
+export function GroceriesPage({
+  direction = 1,
+  ...groceries
+}: { direction?: number } & ReturnType<typeof useGroceries>) {
   const {
     items,
     panelOpen,
@@ -25,7 +32,7 @@ export function GroceriesPage({ direction = 1 }: { direction?: number }) {
     closePanel,
     handleSubmit,
     handleDelete,
-  } = useGroceries()
+  } = groceries
 
   return (
     <>
@@ -90,21 +97,27 @@ export function GroceriesPage({ direction = 1 }: { direction?: number }) {
         </motion.div>
       </PageTransition>
 
-      {/* Floating CTA. Lives outside the page transform so `fixed` means the viewport. */}
-      <motion.button
-        type="button"
-        onClick={openAdd}
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1, transition: { ...springGentle, delay: 0.25 } }}
-        exit={{ scale: 0, opacity: 0, transition: { duration: 0.12 } }}
-        whileHover={{ scale: 1.04, y: -2 }}
-        whileTap={{ scale: 0.95 }}
-        transition={springGentle}
-        className="fixed bottom-24 right-4 z-40 flex h-14 items-center gap-2 rounded-full bg-linear-to-b from-brand-500 to-brand-700 pl-5 pr-6 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.18),0_2px_6px_rgb(16_58_38/0.3),0_10px_28px_-6px_rgb(33_122_80/0.55)] transition-[filter] duration-200 hover:brightness-[1.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas lg:bottom-8 lg:right-8"
-      >
-        <Plus size={19} aria-hidden="true" />
-        Add grocery
-      </motion.button>
+      {/* Floating CTA. Lives outside the page transform so `fixed` means the viewport.
+          Hidden while the add/edit drawer is open, so its own exit animation can fire
+          instead of sitting behind the drawer unnoticed. */}
+      <AnimatePresence>
+        {!panelOpen && (
+          <motion.button
+            type="button"
+            onClick={openAdd}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1, transition: { ...springGentle, delay: 0.25 } }}
+            exit={{ scale: 0, opacity: 0, transition: { duration: 0.12 } }}
+            whileHover={{ scale: 1.04, y: -2 }}
+            whileTap={{ scale: 0.95 }}
+            transition={springGentle}
+            className="fixed bottom-24 right-4 z-40 flex h-14 items-center gap-2 rounded-full bg-linear-to-b from-brand-500 to-brand-700 pl-5 pr-6 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.18),0_2px_6px_rgb(16_58_38/0.3),0_10px_28px_-6px_rgb(33_122_80/0.55)] transition-[filter] duration-200 hover:brightness-[1.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas lg:bottom-8 lg:right-8"
+          >
+            <Plus size={19} aria-hidden="true" />
+            Add grocery
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       <Drawer
         open={panelOpen}

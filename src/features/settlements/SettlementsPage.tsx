@@ -40,22 +40,28 @@ export function SettlementsPage({ direction = 1, onAddGroceries }: SettlementsPa
       </motion.div>
 
       <div className="space-y-6">
-        {allSettled ? (
-          <motion.div
-            key="all-settled"
-            initial={{ opacity: 0, y: 14, scale: 0.99 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={transitionBase}
-          >
-            <AllSettled onAddGroceries={onAddGroceries} />
-          </motion.div>
-        ) : (
-          <>
-            <motion.div variants={riseChild}>
-              <SummaryCard pendingCount={pending.length} />
+        <AnimatePresence mode="wait" initial={false}>
+          {allSettled ? (
+            <motion.div
+              key="all-settled"
+              initial={{ opacity: 0, y: 14, scale: 0.99 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.15 } }}
+              transition={transitionBase}
+            >
+              <AllSettled onAddGroceries={onAddGroceries} />
             </motion.div>
+          ) : (
+            <motion.div
+              key="pending"
+              initial={{ opacity: 0, y: 14, scale: 0.99 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.15 } }}
+              transition={transitionBase}
+              className="space-y-6"
+            >
+              <SummaryCard pendingCount={pending.length} />
 
-            <motion.div variants={riseChild}>
               <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 <AnimatePresence initial={false}>
                   {pending.map((settlement) => (
@@ -73,8 +79,8 @@ export function SettlementsPage({ direction = 1, onAddGroceries }: SettlementsPa
                 </AnimatePresence>
               </ul>
             </motion.div>
-          </>
-        )}
+          )}
+        </AnimatePresence>
 
         <motion.div variants={riseChild}>
           <Timeline events={timeline} />

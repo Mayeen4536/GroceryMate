@@ -20,6 +20,8 @@ export interface CardProps extends Omit<HTMLMotionProps<'div'>, 'children'> {
   title?: string
   /** Muted line under the title. */
   subtitle?: string
+  /** Semantic heading level for `title`. Defaults to 3 — pass 2 when a Card's title is a page's only section heading directly under its `h1` (no intervening h2), so heading order doesn't skip a level. */
+  headingLevel?: 2 | 3
 }
 
 const variantClasses: Record<CardVariant, string> = {
@@ -69,6 +71,7 @@ export function Card({
   icon: Icon,
   title,
   subtitle,
+  headingLevel = 3,
   onClick,
   onKeyDown,
   className,
@@ -79,6 +82,7 @@ export function Card({
   const clickable = variant === 'interactive' && onClick != null
   const accentStyle = accent ? accentStyles[accent] : undefined
   const hasHeader = Boolean(title || Icon)
+  const TitleHeading = `h${headingLevel}` as const
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     onKeyDown?.(event)
@@ -131,9 +135,9 @@ export function Card({
           )}
           <div className="min-w-0">
             {title && (
-              <h3 className="text-[0.9375rem] font-semibold tracking-[-0.01em] text-ink">
+              <TitleHeading className="text-[0.9375rem] font-semibold tracking-[-0.01em] text-ink">
                 {title}
-              </h3>
+              </TitleHeading>
             )}
             {subtitle && <p className="mt-0.5 text-[0.8125rem] text-muted">{subtitle}</p>}
           </div>

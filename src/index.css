@@ -2,6 +2,34 @@
 @import '@fontsource-variable/inter/opsz.css';
 
 /*
+  Patches a single glyph Inter Variable doesn't cover: the Bengali Taka
+  sign (৳, U+09F3), used throughout the app as GroceryMate's default
+  currency symbol (formatTaka, the Analytics/History/Settlements
+  displays, the currency picker in Settings). Inter's shipped subsets
+  (latin/latin-ext/cyrillic/cyrillic-ext/greek/greek-ext/vietnamese)
+  don't cover the Bengali block at all, so without this the browser
+  silently substitutes whatever font the OS picks for that one
+  character — usually a visible weight/size mismatch against Inter's
+  numerals, or a missing-glyph box on a machine with no Bengali font.
+  `unicode-range` scopes this rule to just that codepoint; every source
+  is `local()` — no font file to fetch, just naming known-good,
+  commonly-preinstalled Bengali fonts in priority order (Windows ships
+  Nirmala UI by default, Android/ChromeOS ship Noto Sans Bengali, iOS/
+  macOS ship Kohinoor Bangla) so the glyph is deliberate and correct
+  rather than left to unpredictable last-resort OS substitution.
+*/
+@font-face {
+  font-family: 'Inter Variable';
+  src:
+    local('Noto Sans Bengali'),
+    local('Nirmala UI'),
+    local('Kohinoor Bangla'),
+    local('Vrinda');
+  unicode-range: U+09F3;
+  font-weight: 100 900;
+}
+
+/*
   GroceryMate design tokens.
   Every value here becomes both a CSS variable and a Tailwind utility
   (e.g. --color-brand-600 -> bg-brand-600 / text-brand-600).
@@ -82,9 +110,9 @@
   --color-member-gold-soft: #f8efd8;
   --color-member-gold-strong: #8a6215;
   --color-member-rose-soft: #f9e6ee;
-  --color-member-rose-strong: #a94e74;
+  --color-member-rose-strong: #a64c72; /* darkened 2% from #a94e74 for 4.5:1 AA text contrast on rose-soft */
   --color-member-teal-soft: #dff2f0;
-  --color-member-teal-strong: #1f7a70;
+  --color-member-teal-strong: #1e786e; /* darkened 2% from #1f7a70 for 4.5:1 AA text contrast on teal-soft */
 
   /* Chart series - validated categorical palette (analytics only).
      A separate set from the member/category accents above: those are

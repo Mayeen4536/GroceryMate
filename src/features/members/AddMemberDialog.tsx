@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Check, Copy, Dices, Send, UserPlus } from 'lucide-react'
 import {
@@ -32,6 +32,19 @@ export function AddMemberDialog({ open, initialTab, onClose, onAdd, onInvite }: 
   const [inviteEmail, setInviteEmail] = useState('')
   const [copied, setCopied] = useState(false)
   const [inviteSent, setInviteSent] = useState(false)
+  const [nameAttempted, setNameAttempted] = useState(false)
+  const [inviteAttempted, setInviteAttempted] = useState(false)
+
+  // Both toasts auto-dismiss on a timer; tracked here so closing the dialog
+  // mid-timer (or unmounting) cancels it instead of setting state on a gone component.
+  const copiedTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const inviteSentTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  useEffect(() => {
+    return () => {
+      clearTimeout(copiedTimer.current)
+      clearTimeout(inviteSentTimer.current)
+    }
+  }, [])
 
   // Reset per open; keyed by `open` from the parent via remount.
   const shuffleTone = () => {
@@ -42,20 +55,28 @@ export function AddMemberDialog({ open, initialTab, onClose, onAdd, onInvite }: 
   const handleCopy = () => {
     navigator.clipboard?.writeText(INVITE_LINK).catch(() => undefined)
     setCopied(true)
-    setTimeout(() => setCopied(false), 1600)
+    clearTimeout(copiedTimer.current)
+    copiedTimer.current = setTimeout(() => setCopied(false), 1600)
   }
 
   const handleAdd = () => {
-    if (!name.trim()) return
+    if (!name.trim()) {
+      setNameAttempted(true)
+      return
+    }
     onAdd({ name: name.trim(), email: email.trim(), tone })
   }
 
   const handleInvite = () => {
-    if (!inviteEmail.trim()) return
+    if (!inviteEmail.trim()) {
+      setInviteAttempted(true)
+      return
+    }
     onInvite(inviteEmail.trim())
     setInviteSent(true)
     setInviteEmail('')
-    setTimeout(() => setInviteSent(false), 2200)
+    clearTimeout(inviteSentTimer.current)
+    inviteSentTimer.current = setTimeout(() => setInviteSent(false), 2200)
   }
 
   return (
@@ -103,8 +124,10 @@ export function AddMemberDialog({ open, initialTab, onClose, onAdd, onInvite }: 
               label="Name"
               placeholder="e.g. Omar Siddiqui"
               autoFocus
+              required
               value={name}
               onChange={(event) => setName(event.target.value)}
+              error={nameAttempted && !name.trim() ? 'Enter a name for this member.' : undefined}
             />
             <Input
               label="Email"
@@ -129,7 +152,7 @@ export function AddMemberDialog({ open, initialTab, onClose, onAdd, onInvite }: 
               <Button variant="ghost" onClick={onClose}>
                 Cancel
               </Button>
-              <Button iconLeft={UserPlus} disabled={!name.trim()} onClick={handleAdd}>
+              <Button iconLeft={UserPlus} onClick={handleAdd}>
                 Add member
               </Button>
             </div>
@@ -174,16 +197,13 @@ export function AddMemberDialog({ open, initialTab, onClose, onAdd, onInvite }: 
                 label="Email"
                 type="email"
                 placeholder="fatima@flat4b.home"
+                required
                 value={inviteEmail}
                 onChange={(event) => setInviteEmail(event.target.value)}
+                error={inviteAttempted && !inviteEmail.trim() ? 'Enter an email to invite.' : undefined}
                 className="flex-1"
               />
-              <Button
-                iconLeft={Send}
-                disabled={!inviteEmail.trim()}
-                onClick={handleInvite}
-                className="shrink-0"
-              >
+              <Button iconLeft={Send} onClick={handleInvite} className="shrink-0">
                 Send invite
               </Button>
             </div>

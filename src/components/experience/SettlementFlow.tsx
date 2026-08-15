@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { AnimatedNumber, Avatar } from '@/components/ui'
+import { FlowDots } from './FlowDots'
 
 /**
  * Money-flow visualization: dots travel from debtor to creditor while the
@@ -25,16 +26,16 @@ export function SettlementFlow() {
             aria-hidden="true"
             className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-line"
           />
-          {[0, 1, 2].map((index) => (
-            <motion.span
-              key={index}
-              aria-hidden="true"
-              className="absolute top-1/2 size-1.5 -translate-y-1/2 rounded-full bg-brand-500"
-              initial={{ left: '0%', opacity: 0 }}
-              animate={{ left: ['0%', '100%'], opacity: [0, 1, 1, 0] }}
-              transition={{ duration: 1.8, delay: index * 0.6, repeat: Infinity, ease: 'easeInOut' }}
-            />
-          ))}
+          <FlowDots
+            axis="x"
+            duration={1.8}
+            staggerDelay={0.6}
+            ease="easeInOut"
+            size={6}
+            colorClassName="bg-brand-500"
+            crossAxisPosition="center"
+            overshoot={0}
+          />
         </div>
         <div className="flex flex-col items-center gap-1.5">
           <Avatar name="Aisha Khan" />

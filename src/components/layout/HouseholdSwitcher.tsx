@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { ChevronsUpDown, House } from 'lucide-react'
+import { House } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { springSnappy } from '@/animations/motion'
 import type { MockHousehold } from '@/types/household'
@@ -29,12 +29,12 @@ export function HouseholdSwitcher({
         whileTap={{ scale: 0.97 }}
         transition={springSnappy}
         type="button"
+        disabled
+        aria-label={`${household.name} — household switching is coming soon`}
         title={`${household.name} (household switching is coming soon)`}
         className={cn(
-          'mx-auto flex size-10 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2',
-          dark
-            ? 'bg-pine-mint/15 text-pine-mint hover:bg-pine-mint/25 focus-visible:ring-pine-mint/50'
-            : 'bg-mint-100 text-mint-700 hover:bg-mint-200 focus-visible:ring-brand-500/40',
+          'mx-auto flex size-10 items-center justify-center rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-70',
+          dark ? 'bg-pine-mint/15 text-pine-mint' : 'bg-mint-100 text-mint-700',
         )}
       >
         <House size={17} aria-hidden="true" />
@@ -48,27 +48,31 @@ export function HouseholdSwitcher({
         whileTap={{ scale: 0.97 }}
         transition={springSnappy}
         type="button"
+        disabled
+        aria-label={`${household.name} — household switching is coming soon`}
         title="Household switching is coming soon"
-        className="flex h-9 items-center gap-1.5 rounded-md bg-surface px-2.5 text-sm font-medium text-ink shadow-button transition-colors hover:bg-sand/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40"
+        className="flex h-9 items-center gap-1.5 rounded-md bg-surface px-2.5 text-sm font-medium text-ink shadow-button disabled:cursor-not-allowed disabled:opacity-70"
       >
         <House size={14} aria-hidden="true" className="text-brand-600" />
         <span className="max-w-24 truncate">{household.name}</span>
-        <ChevronsUpDown size={13} aria-hidden="true" className="text-muted" />
+        <span className="rounded-full bg-sand px-1.5 py-0.5 text-[0.625rem] font-semibold uppercase tracking-wide text-muted">
+          Soon
+        </span>
       </motion.button>
     )
   }
 
   return (
     <motion.button
-        whileTap={{ scale: 0.97 }}
-        transition={springSnappy}
+      whileTap={{ scale: 0.97 }}
+      transition={springSnappy}
       type="button"
+      disabled
+      aria-label={`${household.name}, ${household.memberCount} members — household switching is coming soon`}
       title="Household switching is coming soon"
       className={cn(
-        'flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2',
-        dark
-          ? 'bg-white/[0.06] ring-1 ring-white/10 hover:bg-white/[0.09] focus-visible:ring-pine-mint/50'
-          : 'bg-canvas ring-1 ring-line hover:ring-brand-300 focus-visible:ring-brand-500/40',
+        'flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-80',
+        dark ? 'bg-white/[0.06] ring-1 ring-white/10' : 'bg-canvas ring-1 ring-line',
       )}
     >
       <span
@@ -92,11 +96,14 @@ export function HouseholdSwitcher({
           {household.memberCount} members
         </span>
       </span>
-      <ChevronsUpDown
-        size={14}
-        aria-hidden="true"
-        className={cn('shrink-0', dark ? 'text-pine-muted' : 'text-muted')}
-      />
+      <span
+        className={cn(
+          'shrink-0 rounded-full px-1.5 py-0.5 text-[0.625rem] font-semibold uppercase tracking-wide',
+          dark ? 'bg-white/10 text-pine-muted' : 'bg-sand text-muted',
+        )}
+      >
+        Soon
+      </span>
     </motion.button>
   )
 }

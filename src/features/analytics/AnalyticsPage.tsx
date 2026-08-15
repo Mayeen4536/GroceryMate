@@ -45,25 +45,25 @@ export function AnalyticsPage({ direction = 1 }: { direction?: number }) {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <motion.div variants={riseChild} className="lg:col-span-2">
-          <Card icon={BarChart3} title="Monthly spending" subtitle="Total logged per month, oldest to newest.">
+          <Card icon={BarChart3} title="Monthly spending" headingLevel={2} subtitle="Total logged per month, oldest to newest.">
             <MonthlySpendChart data={monthlySpend} />
           </Card>
         </motion.div>
 
         <motion.div variants={riseChild} className="lg:col-span-2">
-          <Card icon={PieChart} title="Category breakdown" subtitle="Share of total spend by grocery category.">
+          <Card icon={PieChart} title="Category breakdown" headingLevel={2} subtitle="Share of total spend by grocery category.">
             <CategoryBreakdownChart data={categoryBreakdown} />
           </Card>
         </motion.div>
 
         <motion.div variants={riseChild}>
-          <Card icon={Receipt} title="Most expensive groceries" subtitle="Ranked by total spent, across every session.">
+          <Card icon={Receipt} title="Most expensive groceries" headingLevel={2} subtitle="Ranked by total spent, across every session.">
             <TopGroceriesChart data={topGroceries} />
           </Card>
         </motion.div>
 
         <motion.div variants={riseChild}>
-          <Card icon={Wallet} title="Member contribution" subtitle="Who paid for what, in total.">
+          <Card icon={Wallet} title="Member contribution" headingLevel={2} subtitle="Who paid for what, in total.">
             <MemberContributionChart data={memberContribution} />
           </Card>
         </motion.div>
@@ -72,6 +72,7 @@ export function AnalyticsPage({ direction = 1 }: { direction?: number }) {
           <Card
             icon={ShoppingBasket}
             title="Personal vs. shared spending"
+            headingLevel={2}
             subtitle="Each member's fair share of items only they consumed vs. items split with others."
           >
             <PersonalSharedChart data={memberPersonalShared} />

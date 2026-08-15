@@ -151,6 +151,10 @@ export function Dropdown({
                 const isSelected = option.value === value
                 const isActive = index === activeIndex
                 return (
+                  // Keyboard focus never moves to this <li>: the trigger button above owns all
+                  // keyboard interaction (arrows/Enter/Home/End) and tracks the "active" option
+                  // via aria-activedescendant. This element is a pointer-only hit target by design.
+                  /* eslint-disable jsx-a11y/click-events-have-key-events */
                   <li
                     key={option.value}
                     id={`${id}-option-${index}`}
@@ -168,6 +172,7 @@ export function Dropdown({
                     <span className="truncate">{option.label}</span>
                     {isSelected && <Check size={15} aria-hidden="true" className="shrink-0 text-brand-600" />}
                   </li>
+                  /* eslint-enable jsx-a11y/click-events-have-key-events */
                 )
               })}
             </motion.ul>

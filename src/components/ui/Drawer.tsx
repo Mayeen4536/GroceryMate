@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { X } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { transitionFast, springPanel } from '@/animations/motion'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 
 type DrawerSide = 'right' | 'bottom'
 
@@ -41,6 +42,7 @@ export function Drawer({
 }: DrawerProps) {
   const titleId = useId()
   const panelRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(open, panelRef)
 
   useEffect(() => {
     if (!open) return

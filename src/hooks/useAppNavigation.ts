@@ -7,11 +7,11 @@ const pageIndex = (page: PageId) => NAV_ITEMS.findIndex((item) => item.id === pa
 /** Owns the app shell's top-level navigation state: landing gate, active page, and slide direction. */
 export function useAppNavigation() {
   const [entered, setEntered] = useState(false)
-  const [activePage, setActivePage] = useState<PageId>('overview')
+  const [activePage, setActivePage] = useState<PageId>('groceries')
   // 1 = navigating forward in the nav order, -1 = backward; drives the slide direction.
   const [direction, setDirection] = useState(1)
   // Settings isn't a nav-order destination; remember where to return on "Back".
-  const [priorPage, setPriorPage] = useState<PageId>('overview')
+  const [priorPage, setPriorPage] = useState<PageId>('groceries')
   const activeItem = NAV_ITEMS.find((item) => item.id === activePage) ?? NAV_ITEMS[0]
 
   const navigate = (page: PageId) => {

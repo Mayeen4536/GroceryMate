@@ -38,19 +38,28 @@ function makeBurst(seed: number): Particle[] {
  * One-shot confetti burst. Increment `trigger` to fire; the burst radiates
  * from the center of the nearest `relative` ancestor and clears itself in
  * about a second. Reserved for completed settlements; honors reduced motion.
+ *
+ * Each firing remounts `CelebrationBurst` via `key` rather than resetting
+ * internal state from an effect — the burst is computed once per mount
+ * (a lazy `useState` initializer) and the only effect-driven `setState` is
+ * inside the auto-clear timer's own callback, not the effect body itself.
  */
 export function Celebration({ trigger }: { trigger: number }) {
   const reducedMotion = useReducedMotion()
-  const [burst, setBurst] = useState<Particle[] | null>(null)
+  if (trigger <= 0 || reducedMotion) return null
+  return <CelebrationBurst key={trigger} seed={trigger} />
+}
+
+function CelebrationBurst({ seed }: { seed: number }) {
+  const [burst] = useState(() => makeBurst(seed))
+  const [visible, setVisible] = useState(true)
 
   useEffect(() => {
-    if (trigger <= 0 || reducedMotion) return
-    setBurst(makeBurst(trigger))
-    const timer = setTimeout(() => setBurst(null), 1000)
+    const timer = setTimeout(() => setVisible(false), 1000)
     return () => clearTimeout(timer)
-  }, [trigger, reducedMotion])
+  }, [])
 
-  if (!burst) return null
+  if (!visible) return null
 
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 flex items-center justify-center">

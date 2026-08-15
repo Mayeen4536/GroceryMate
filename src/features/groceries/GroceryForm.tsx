@@ -73,6 +73,11 @@ export function GroceryForm({ initial, onSubmit, onCancel }: GroceryFormProps) {
   const [paidBy, setPaidBy] = useState<string | null>(initial?.paidBy ?? mockMembers[0])
   const [sharedBy, setSharedBy] = useState<string[]>(initial?.sharedBy ?? [...mockMembers])
   const [notes, setNotes] = useState(initial?.notes ?? '')
+  const [attemptedSubmit, setAttemptedSubmit] = useState(false)
+
+  const nameError = attemptedSubmit && !name.trim() ? 'Enter a name for this item.' : undefined
+  const sharedByError =
+    attemptedSubmit && sharedBy.length === 0 ? 'Pick at least one person sharing this item.' : undefined
 
   const draft: GroceryItem = {
     id: initial?.id ?? 'preview',
@@ -92,7 +97,10 @@ export function GroceryForm({ initial, onSubmit, onCancel }: GroceryFormProps) {
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
-    if (!name.trim()) return
+    if (!name.trim() || sharedBy.length === 0) {
+      setAttemptedSubmit(true)
+      return
+    }
     onSubmit({
       name: name.trim(),
       price,
@@ -117,8 +125,10 @@ export function GroceryForm({ initial, onSubmit, onCancel }: GroceryFormProps) {
         label="Grocery name"
         placeholder="e.g. Milk (2L)"
         autoFocus
+        required
         value={name}
         onChange={(event) => setName(event.target.value)}
+        error={nameError}
       />
 
       <div className="grid grid-cols-2 gap-4">
@@ -147,6 +157,7 @@ export function GroceryForm({ initial, onSubmit, onCancel }: GroceryFormProps) {
         members={mockMembers}
         selected={sharedBy}
         onChange={setSharedBy}
+        error={sharedByError}
       />
 
       <Textarea
@@ -161,7 +172,7 @@ export function GroceryForm({ initial, onSubmit, onCancel }: GroceryFormProps) {
         <Button variant="ghost" type="button" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" disabled={!name.trim()} iconLeft={editing ? Check : Plus}>
+        <Button type="submit" iconLeft={editing ? Check : Plus}>
           {editing ? 'Save changes' : 'Add grocery'}
         </Button>
       </div>

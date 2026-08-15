@@ -1,8 +1,9 @@
+import { useId } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Check } from 'lucide-react'
+import { Check, CircleAlert } from 'lucide-react'
 import { Avatar } from '@/components/ui'
 import { cn } from '@/utils/cn'
-import { springPop, springSnappy } from '@/animations/motion'
+import { springPop, springSnappy, transitionFast } from '@/animations/motion'
 import { firstName } from '@/utils/name'
 
 interface MemberChipPickerProps {
@@ -10,13 +11,15 @@ interface MemberChipPickerProps {
   members: string[]
   selected: string[]
   onChange: (selected: string[]) => void
+  error?: string
 }
 
 /**
  * Multi-select as tactile member chips: avatar, name, and a check that
  * pops onto the avatar when selected. Everyone/no-one shortcut included.
  */
-export function MemberChipPicker({ label, members, selected, onChange }: MemberChipPickerProps) {
+export function MemberChipPicker({ label, members, selected, onChange, error }: MemberChipPickerProps) {
+  const errorId = useId()
   const allSelected = selected.length === members.length
 
   const toggle = (name: string) => {
@@ -39,7 +42,7 @@ export function MemberChipPicker({ label, members, selected, onChange }: MemberC
           {allSelected ? 'Clear' : 'Everyone'}
         </button>
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div role="group" aria-label={label} aria-describedby={error ? errorId : undefined} className="flex flex-wrap gap-2">
         {members.map((name) => {
           const isSelected = selected.includes(name)
           return (
@@ -80,6 +83,22 @@ export function MemberChipPicker({ label, members, selected, onChange }: MemberC
           )
         })}
       </div>
+      <AnimatePresence mode="wait" initial={false}>
+        {error && (
+          <motion.p
+            key="error"
+            id={errorId}
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={transitionFast}
+            className="flex items-center gap-1.5 text-sm text-danger-700"
+          >
+            <CircleAlert size={15} aria-hidden="true" className="shrink-0" />
+            {error}
+          </motion.p>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

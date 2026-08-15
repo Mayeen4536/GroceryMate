@@ -102,6 +102,7 @@ export function SettingsPage({ direction = 1, onBack }: SettingsPageProps) {
           <motion.div variants={riseChild}>
             <Card
               title="Appearance"
+              headingLevel={2}
               subtitle="How GroceryMate looks on this device."
               icon={Palette}
               accent="violet"
@@ -127,12 +128,16 @@ export function SettingsPage({ direction = 1, onBack }: SettingsPageProps) {
                   />
                 </div>
               </div>
+              <p className="mt-4 text-xs text-muted">
+                Appearance settings are saved here, but not yet applied to the app — coming soon.
+              </p>
             </Card>
           </motion.div>
 
           <motion.div variants={riseChild}>
             <Card
               title="Preferences"
+              headingLevel={2}
               subtitle="Currency and language for your household."
               icon={Banknote}
               accent="sky"
@@ -151,12 +156,17 @@ export function SettingsPage({ direction = 1, onBack }: SettingsPageProps) {
                   options={LANGUAGE_OPTIONS}
                 />
               </div>
+              <p className="mt-4 text-xs text-muted">
+                Currency and language are saved here, but the rest of the app is illustrative
+                until they're wired through it.
+              </p>
             </Card>
           </motion.div>
 
           <motion.div variants={riseChild}>
             <Card
               title="Notifications"
+              headingLevel={2}
               subtitle="Choose what GroceryMate lets you know about."
               icon={Bell}
               accent="gold"
@@ -182,6 +192,7 @@ export function SettingsPage({ direction = 1, onBack }: SettingsPageProps) {
           <motion.div variants={riseChild}>
             <Card
               title="Your data"
+              headingLevel={2}
               subtitle="Export a snapshot, or clear preferences on this page."
               icon={Database}
               accent="brand"
@@ -193,6 +204,7 @@ export function SettingsPage({ direction = 1, onBack }: SettingsPageProps) {
           <motion.div variants={riseChild}>
             <Card
               title="Support"
+              headingLevel={2}
               subtitle="Learn more, or tell us what you think."
               icon={Info}
               accent="rose"

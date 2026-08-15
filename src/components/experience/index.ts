@@ -1,6 +1,7 @@
 export { AIThinking } from './AIThinking'
 export { BasketLoader } from './BasketLoader'
 export { Celebration } from './Celebration'
+export { FlowDots, type FlowDotsProps } from './FlowDots'
 export { GeneratingSteps } from './GeneratingSteps'
 export { SettleButton, type SettleButtonProps } from './SettleButton'
 export { SettlementFlow } from './SettlementFlow'

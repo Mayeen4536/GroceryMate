@@ -1,5 +1,6 @@
-import { HandCoins, ShoppingBasket, Sparkles, Trash2, type LucideIcon } from 'lucide-react'
-import { AnimatedNumber, Avatar, Badge, Button, Drawer, MEMBER_TONES, SwatchPicker } from '@/components/ui'
+import { useState } from 'react'
+import { AlertTriangle, HandCoins, ShoppingBasket, Sparkles, Trash2, type LucideIcon } from 'lucide-react'
+import { AnimatedNumber, Avatar, Badge, Button, Drawer, MEMBER_TONES, Modal, SwatchPicker } from '@/components/ui'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { STATUS_META } from '@/constants/memberStatus'
 import { firstName } from '@/utils/name'
@@ -22,6 +23,13 @@ const activityFor = (member: Member): Array<{ icon: LucideIcon; text: string; wh
 export function MemberProfileDrawer({ member, onClose, onChangeTone, onRemove }: MemberProfileDrawerProps) {
   const isDesktop = useMediaQuery('(min-width: 1024px)')
   const status = member ? STATUS_META[member.status] : null
+  const [confirmOpen, setConfirmOpen] = useState(false)
+
+  const confirmRemove = () => {
+    if (!member) return
+    setConfirmOpen(false)
+    onRemove(member.id)
+  }
 
   return (
     <Drawer
@@ -35,7 +43,7 @@ export function MemberProfileDrawer({ member, onClose, onChangeTone, onRemove }:
           <Button
             variant="ghost"
             iconLeft={Trash2}
-            onClick={() => onRemove(member.id)}
+            onClick={() => setConfirmOpen(true)}
             className="text-danger-600 hover:bg-danger-50 hover:text-danger-700"
           >
             Remove from household
@@ -43,6 +51,34 @@ export function MemberProfileDrawer({ member, onClose, onChangeTone, onRemove }:
         ) : undefined
       }
     >
+      {member && (
+        <Modal
+          open={confirmOpen}
+          onClose={() => setConfirmOpen(false)}
+          title={`Remove ${firstName(member.name)} from the household?`}
+          footer={
+            <>
+              <Button variant="ghost" onClick={() => setConfirmOpen(false)}>
+                Cancel
+              </Button>
+              <Button variant="danger" iconLeft={Trash2} onClick={confirmRemove}>
+                Yes, remove them
+              </Button>
+            </>
+          }
+        >
+          <div className="flex gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-danger-50 text-danger-600">
+              <AlertTriangle size={19} aria-hidden="true" />
+            </span>
+            <p className="text-sm leading-relaxed text-ink-soft">
+              {member.role === 'owner'
+                ? `${member.name} is this household's owner. Removing them can't be undone from here.`
+                : `${member.name} will lose access to this household's groceries and settlements. This can't be undone from here.`}
+            </p>
+          </div>
+        </Modal>
+      )}
       {member && status && (
         <div className="flex flex-col gap-6 pb-4">
           <div className="flex items-center gap-4">

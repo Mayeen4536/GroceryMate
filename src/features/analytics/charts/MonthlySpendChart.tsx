@@ -35,9 +35,10 @@ export function MonthlySpendChart({ data }: { data: MonthlySpend[] }) {
               aria-label={`${point.monthLabel}: ${formatTaka(point.total)}`}
               onFocus={() => setActiveIndex(index)}
               onBlur={() => setActiveIndex(null)}
-              initial={{ height: 0 }}
-              animate={{ height: `${(point.total / max) * 100}%` }}
+              initial={{ scaleY: 0 }}
+              animate={{ scaleY: 1 }}
               transition={transitionBase}
+              style={{ height: `${(point.total / max) * 100}%`, transformOrigin: 'bottom' }}
               className="w-6 rounded-t-[4px] bg-series-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-700"
             />
           </div>

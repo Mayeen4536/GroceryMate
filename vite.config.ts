@@ -36,6 +36,10 @@ export default defineConfig({
         // backend, fonts ship as local build assets), so precaching every built asset
         // is sufficient for full offline support — no runtime caching rules needed.
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        // Inter Variable ships 7 unicode-range subsets; the UI is English-only, so
+        // only latin/latin-ext ever render. Precaching the rest would roughly double
+        // the font payload with Cyrillic/Greek/Vietnamese glyphs no one will use.
+        globIgnores: ['**/inter-{cyrillic,cyrillic-ext,greek,greek-ext,vietnamese}-*.woff2'],
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
       },

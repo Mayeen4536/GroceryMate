@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { X } from 'lucide-react'
 import { transitionFast, springPanel, easeSoft } from '@/animations/motion'
+import { useFocusTrap } from '@/hooks/useFocusTrap'
 
 export interface ModalProps {
   open: boolean
@@ -16,6 +17,7 @@ export interface ModalProps {
 export function Modal({ open, onClose, title, children, footer }: ModalProps) {
   const titleId = useId()
   const panelRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(open, panelRef)
 
   useEffect(() => {
     if (!open) return
@@ -54,9 +56,9 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
             initial={{ opacity: 0, scale: 0.96, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0, transition: springPanel }}
             exit={{ opacity: 0, scale: 0.97, y: 8, transition: { duration: 0.12, ease: easeSoft } }}
-            className="relative w-full max-w-md rounded-xl bg-surface p-6 shadow-lifted focus:outline-none"
+            className="relative flex max-h-[90vh] w-full max-w-md flex-col rounded-xl bg-surface p-6 shadow-lifted focus:outline-none"
           >
-            <div className="mb-4 flex items-start justify-between gap-4">
+            <div className="mb-4 flex shrink-0 items-start justify-between gap-4">
               <h2 id={titleId} className="text-lg font-semibold tracking-tight text-ink">
                 {title}
               </h2>
@@ -73,8 +75,8 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
                 />
               </button>
             </div>
-            {children}
-            {footer && <div className="mt-6 flex justify-end gap-2">{footer}</div>}
+            <div className="min-h-0 overflow-y-auto">{children}</div>
+            {footer && <div className="mt-6 flex shrink-0 justify-end gap-2">{footer}</div>}
           </motion.div>
         </div>
       )}

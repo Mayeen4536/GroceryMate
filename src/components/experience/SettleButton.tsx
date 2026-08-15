@@ -60,6 +60,7 @@ export function SettleButton({
         layout
         type="button"
         onClick={start}
+        aria-live="polite"
         className={cn(
           'relative flex h-11 items-center justify-center overflow-hidden rounded-md px-5 text-sm font-semibold text-white',
           'transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas',

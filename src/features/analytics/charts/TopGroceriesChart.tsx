@@ -25,9 +25,10 @@ export function TopGroceriesChart({ data }: { data: TopGroceryItem[] }) {
             </div>
             <div className="mt-1.5 h-2 rounded-full bg-sand">
               <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${(item.total / max) * 100}%` }}
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
                 transition={transitionBase}
+                style={{ width: `${(item.total / max) * 100}%`, transformOrigin: 'left' }}
                 className="h-full rounded-full bg-series-1"
               />
             </div>

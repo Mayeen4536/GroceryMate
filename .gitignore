@@ -4,12 +4,19 @@ node_modules
 # Build output
 dist
 dist-ssr
+dev-dist
 *.tsbuildinfo
+coverage
 
 # Logs
 logs
 *.log
 npm-debug.log*
+
+# Env / secrets
+.env
+.env.*
+!.env.example
 
 # Editor / OS
 .vscode/*

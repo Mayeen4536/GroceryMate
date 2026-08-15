@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import { CATEGORIES } from '@/constants/groceryCategories'
 import { initialHistory } from '@/store/history'
@@ -203,21 +204,24 @@ function buildSummary(
 
 /**
  * Derives every analytics view from the household's grocery history — pure
- * aggregation over the existing mock store, no new state. Recomputed on
- * every render; cheap for this data size and always in sync with
- * `initialHistory`, so nothing here can drift out of date the way a cached
- * derived value could.
+ * aggregation over the existing mock store, no new state. `initialHistory`
+ * is a fixed constant today, so this only ever runs once per mount
+ * (`useMemo` with an empty dependency array); the moment it's replaced by
+ * real per-household data, that data belongs in the dependency array so
+ * this recomputes when it actually changes rather than on every render.
  */
 export function useAnalytics(): AnalyticsData {
-  const items = flattenItems()
-  const totalSpend = items.reduce((sum, item) => sum + item.priceValue, 0)
+  return useMemo(() => {
+    const items = flattenItems()
+    const totalSpend = items.reduce((sum, item) => sum + item.priceValue, 0)
 
-  const monthlySpend = buildMonthlySpend(items)
-  const topGroceries = buildTopGroceries(items, 6)
-  const categoryBreakdown = buildCategoryBreakdown(items, totalSpend)
-  const memberContribution = buildMemberContribution(items, totalSpend)
-  const memberPersonalShared = buildMemberPersonalShared(items)
-  const summary = buildSummary(items, categoryBreakdown, memberContribution)
+    const monthlySpend = buildMonthlySpend(items)
+    const topGroceries = buildTopGroceries(items, 6)
+    const categoryBreakdown = buildCategoryBreakdown(items, totalSpend)
+    const memberContribution = buildMemberContribution(items, totalSpend)
+    const memberPersonalShared = buildMemberPersonalShared(items)
+    const summary = buildSummary(items, categoryBreakdown, memberContribution)
 
-  return { monthlySpend, topGroceries, categoryBreakdown, memberContribution, memberPersonalShared, summary }
+    return { monthlySpend, topGroceries, categoryBreakdown, memberContribution, memberPersonalShared, summary }
+  }, [])
 }

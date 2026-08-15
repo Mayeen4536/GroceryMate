@@ -1,13 +1,7 @@
-import { BarChart3, HandCoins, History, LayoutDashboard, Sparkles, ShoppingBasket, Users } from 'lucide-react'
+import { BarChart3, HandCoins, History, Sparkles, ShoppingBasket, Users } from 'lucide-react'
 import type { NavItem } from '@/types/navigation'
 
 export const NAV_ITEMS: NavItem[] = [
-  {
-    id: 'overview',
-    label: 'Overview',
-    icon: LayoutDashboard,
-    description: "A snapshot of your household's groceries and what needs settling.",
-  },
   {
     id: 'assistant',
     label: 'Assistant',

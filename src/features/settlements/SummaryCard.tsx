@@ -1,5 +1,5 @@
-import { motion } from 'framer-motion'
 import { AnimatedNumber, Avatar, Badge, Card } from '@/components/ui'
+import { FlowDots } from '@/components/experience'
 import { summaryMock } from '@/store/settlements'
 import { formatTaka } from '@/utils/currency'
 import { firstName } from '@/utils/name'
@@ -27,16 +27,7 @@ export function SummaryCard({ pendingCount }: { pendingCount: number }) {
   return (
     <Card variant="highlighted" padding="lg" className="relative overflow-hidden">
       {/* Money quietly flowing along the top edge */}
-      {[0, 1, 2].map((index) => (
-        <motion.span
-          key={index}
-          aria-hidden="true"
-          className="absolute top-0 size-[3px] -translate-y-1/2 rounded-full bg-brand-400"
-          initial={{ left: '-2%', opacity: 0 }}
-          animate={{ left: ['-2%', '102%'], opacity: [0, 1, 1, 0] }}
-          transition={{ duration: 2.8, delay: index * 0.9, repeat: Infinity, ease: 'linear' }}
-        />
-      ))}
+      <FlowDots axis="x" duration={2.8} staggerDelay={0.9} />
 
       <div className="relative flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
         <div>

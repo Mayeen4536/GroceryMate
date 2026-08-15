@@ -24,9 +24,10 @@ export function MemberContributionChart({ data }: { data: MemberSpend[] }) {
             </div>
             <div className="mt-1.5 h-2 rounded-full bg-sand">
               <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${(member.total / max) * 100}%` }}
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
                 transition={transitionBase}
+                style={{ width: `${(member.total / max) * 100}%`, transformOrigin: 'left' }}
                 className={`h-full rounded-full ${seriesBgClass(member.colorSlot)}`}
               />
             </div>

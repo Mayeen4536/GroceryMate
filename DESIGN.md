@@ -79,7 +79,7 @@ dock.
 
 ## Motion
 
-Presets in [src/lib/motion.ts](src/lib/motion.ts); do not hand-write durations in components.
+Presets in [src/animations/motion.ts](src/animations/motion.ts); do not hand-write durations in components.
 
 - Durations: 150ms (press/hover), 220ms (reveals), 320ms max
 - Easing: `ease-soft` = cubic-bezier(0.22, 1, 0.36, 1) for tweens. Springs:
