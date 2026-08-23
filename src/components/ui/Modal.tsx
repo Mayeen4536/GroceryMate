@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { X } from 'lucide-react'
 import { transitionFast, springPanel, easeSoft } from '@/animations/motion'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
+import { cn } from '@/utils/cn'
 
 export interface ModalProps {
   open: boolean
@@ -11,10 +12,17 @@ export interface ModalProps {
   children: ReactNode
   /** Slot for actions, right-aligned under the content. */
   footer?: ReactNode
+  /**
+   * Keeps the modal centered even on narrow viewports, instead of anchoring
+   * to the bottom like a sheet. Use this when the modal can be opened while
+   * a bottom-anchored `Drawer` is already open — two stacked bottom sheets
+   * visually collide, so the topmost confirmation needs to stay unambiguous.
+   */
+  alwaysCentered?: boolean
 }
 
 /** Centered dialog. Scales in naturally, closes on Escape or backdrop click. */
-export function Modal({ open, onClose, title, children, footer }: ModalProps) {
+export function Modal({ open, onClose, title, children, footer, alwaysCentered = false }: ModalProps) {
   const titleId = useId()
   const panelRef = useRef<HTMLDivElement>(null)
   useFocusTrap(open, panelRef)
@@ -37,7 +45,12 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
+        <div
+          className={cn(
+            'fixed inset-0 z-50 flex justify-center p-4',
+            alwaysCentered ? 'items-center' : 'items-end sm:items-center',
+          )}
+        >
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

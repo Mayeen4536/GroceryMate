@@ -56,6 +56,7 @@ export function MemberProfileDrawer({ member, onClose, onChangeTone, onRemove }:
           open={confirmOpen}
           onClose={() => setConfirmOpen(false)}
           title={`Remove ${firstName(member.name)} from the household?`}
+          alwaysCentered
           footer={
             <>
               <Button variant="ghost" onClick={() => setConfirmOpen(false)}>

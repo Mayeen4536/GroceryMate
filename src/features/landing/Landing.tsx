@@ -49,8 +49,10 @@ function HeroCta({ onClick }: { onClick: () => void }) {
         'group relative inline-flex h-12 items-center gap-2 rounded-lg px-7 text-base font-semibold text-white',
         'bg-linear-to-r from-brand-600 via-brand-500 to-brand-700 bg-[length:200%_100%] bg-left hover:bg-right',
         'shadow-button-brand hover:shadow-[inset_0_1px_0_rgb(255_255_255/0.2),0_2px_4px_rgb(16_58_38/0.3),0_10px_32px_-6px_rgb(33_122_80/0.65)]',
-        'transition-[background-position,box-shadow] duration-300 ease-soft',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas',
+        // box-shadow renders the focus-visible ring below, so it's kept out of
+        // the transition — see Button.tsx for the same fix and the reasoning.
+        'transition-[background-position] duration-300 ease-soft',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas',
       )}
     >
       Start splitting fairly

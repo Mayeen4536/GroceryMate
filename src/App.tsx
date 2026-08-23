@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion'
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
-import { PagePlaceholder } from '@/components/PagePlaceholder'
 import { PWAUpdatePrompt } from '@/components/PWAUpdatePrompt'
 import { Landing } from '@/features/landing/Landing'
 import { useAppNavigation } from '@/hooks/useAppNavigation'
@@ -33,10 +33,69 @@ function PageLoading() {
   )
 }
 
+/**
+ * The seven app-shell routes. A real path per page (rather than in-memory
+ * state) is what makes browser Back/Forward and refresh-on-route work.
+ */
+function AppRoutes({ groceries }: { groceries: ReturnType<typeof useGroceries> }) {
+  const location = useLocation()
+  const { activePage, direction, priorPage, navigate, openSettings } = useAppNavigation()
+
+  return (
+    <AppShell activePage={activePage} onNavigate={navigate} onOpenSettings={openSettings}>
+      <Suspense fallback={<PageLoading />}>
+        <AnimatePresence mode="wait" initial={false} custom={direction}>
+          <Routes location={location} key={location.pathname}>
+            <Route
+              path="/assistant"
+              element={
+                <AssistantPage
+                  key="assistant"
+                  direction={direction}
+                  onAddGroceries={() => {
+                    groceries.addGenerated(MOCK_GENERATED_ITEMS)
+                    navigate('groceries')
+                  }}
+                />
+              }
+            />
+            <Route
+              path="/groceries"
+              element={<GroceriesPage key="groceries" direction={direction} {...groceries} />}
+            />
+            <Route path="/members" element={<MembersPage key="members" direction={direction} />} />
+            <Route
+              path="/settlements"
+              element={
+                <SettlementsPage
+                  key="settlements"
+                  direction={direction}
+                  onAddGroceries={() => navigate('groceries')}
+                />
+              }
+            />
+            <Route path="/analytics" element={<AnalyticsPage key="analytics" direction={direction} />} />
+            <Route path="/history" element={<HistoryPage key="history" direction={direction} />} />
+            <Route
+              path="/settings"
+              element={
+                <SettingsPage key="settings" direction={direction} onBack={() => navigate(priorPage)} />
+              }
+            />
+            {/* Any other path under the app shell falls back to the default page. */}
+            <Route path="*" element={<Navigate to="/groceries" replace />} />
+          </Routes>
+        </AnimatePresence>
+      </Suspense>
+    </AppShell>
+  )
+}
+
 export default function App() {
   const showDesignSystem = useShowDesignSystem()
-  const { entered, enter, activePage, activeItem, direction, priorPage, navigate, openSettings } =
-    useAppNavigation()
+  const location = useLocation()
+  const navigate = useNavigate()
+  const isLanding = location.pathname === '/'
   // Owned here, not inside GroceriesPage: the Assistant page adds to this same
   // list, so both pages need to share one instance rather than each holding
   // their own copy.
@@ -51,13 +110,13 @@ export default function App() {
         </Suspense>
       ) : (
         <AnimatePresence mode="wait" initial={false}>
-          {!entered ? (
+          {isLanding ? (
             <motion.div
               key="landing"
               exit={{ opacity: 0, y: -10, scale: 0.99, filter: 'blur(4px)' }}
               transition={{ duration: 0.16, ease: easeSoft }}
             >
-              <Landing onEnter={enter} />
+              <Landing onEnter={() => navigate('/groceries')} />
             </motion.div>
           ) : (
             <motion.div
@@ -72,44 +131,7 @@ export default function App() {
               }}
               transition={{ duration: 0.28, ease: easeSoft }}
             >
-              <AppShell activePage={activePage} onNavigate={navigate} onOpenSettings={openSettings}>
-                <Suspense fallback={<PageLoading />}>
-                  <AnimatePresence mode="wait" initial={false} custom={direction}>
-                    {activePage === 'assistant' ? (
-                      <AssistantPage
-                        key="assistant"
-                        direction={direction}
-                        onAddGroceries={() => {
-                          groceries.addGenerated(MOCK_GENERATED_ITEMS)
-                          navigate('groceries')
-                        }}
-                      />
-                    ) : activePage === 'groceries' ? (
-                      <GroceriesPage key="groceries" direction={direction} {...groceries} />
-                    ) : activePage === 'members' ? (
-                      <MembersPage key="members" direction={direction} />
-                    ) : activePage === 'settlements' ? (
-                      <SettlementsPage
-                        key="settlements"
-                        direction={direction}
-                        onAddGroceries={() => navigate('groceries')}
-                      />
-                    ) : activePage === 'analytics' ? (
-                      <AnalyticsPage key="analytics" direction={direction} />
-                    ) : activePage === 'history' ? (
-                      <HistoryPage key="history" direction={direction} />
-                    ) : activePage === 'settings' ? (
-                      <SettingsPage
-                        key="settings"
-                        direction={direction}
-                        onBack={() => navigate(priorPage)}
-                      />
-                    ) : (
-                      <PagePlaceholder key={activePage} item={activeItem} direction={direction} />
-                    )}
-                  </AnimatePresence>
-                </Suspense>
-              </AppShell>
+              <AppRoutes groceries={groceries} />
             </motion.div>
           )}
         </AnimatePresence>
