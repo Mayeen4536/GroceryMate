@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Check, Minus, Plus } from 'lucide-react'
 import { Button, Dropdown, Input, Textarea } from '@/components/ui'
@@ -74,6 +74,8 @@ export function GroceryForm({ initial, onSubmit, onCancel }: GroceryFormProps) {
   const [sharedBy, setSharedBy] = useState<string[]>(initial?.sharedBy ?? [...mockMembers])
   const [notes, setNotes] = useState(initial?.notes ?? '')
   const [attemptedSubmit, setAttemptedSubmit] = useState(false)
+  const formRef = useRef<HTMLFormElement>(null)
+  const sharedByGroupRef = useRef<HTMLDivElement>(null)
 
   const nameError = attemptedSubmit && !name.trim() ? 'Enter a name for this item.' : undefined
   const sharedByError =
@@ -99,6 +101,14 @@ export function GroceryForm({ initial, onSubmit, onCancel }: GroceryFormProps) {
     event.preventDefault()
     if (!name.trim() || sharedBy.length === 0) {
       setAttemptedSubmit(true)
+      // Move focus to the first invalid field, same as native constraint
+      // validation would have — but reliably, since noValidate below stops
+      // the browser from doing (and getting in the way of) that itself.
+      if (!name.trim()) {
+        formRef.current?.querySelector<HTMLInputElement>('#grocery-form-name')?.focus()
+      } else {
+        sharedByGroupRef.current?.focus()
+      }
       return
     }
     onSubmit({
@@ -113,7 +123,7 @@ export function GroceryForm({ initial, onSubmit, onCancel }: GroceryFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5 pb-2">
+    <form ref={formRef} onSubmit={handleSubmit} noValidate className="flex flex-col gap-5 pb-2">
       <motion.div layout transition={transitionFast}>
         <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">
           Live preview
@@ -122,6 +132,7 @@ export function GroceryForm({ initial, onSubmit, onCancel }: GroceryFormProps) {
       </motion.div>
 
       <Input
+        id="grocery-form-name"
         label="Grocery name"
         placeholder="e.g. Milk (2L)"
         autoFocus
@@ -158,6 +169,7 @@ export function GroceryForm({ initial, onSubmit, onCancel }: GroceryFormProps) {
         selected={sharedBy}
         onChange={setSharedBy}
         error={sharedByError}
+        groupRef={sharedByGroupRef}
       />
 
       <Textarea

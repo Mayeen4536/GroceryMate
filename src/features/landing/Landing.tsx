@@ -104,7 +104,7 @@ export function Landing({ onEnter }: { onEnter: () => void }) {
               <HeroCta onClick={onEnter} />
               <a
                 href="#how-it-works"
-                className="group inline-flex h-12 items-center gap-1.5 rounded-lg px-4 text-base font-medium text-ink-soft transition-colors hover:bg-ink/[0.04] hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40"
+                className="group inline-flex h-12 items-center gap-1.5 rounded-lg px-4 text-base font-medium text-ink-soft transition-colors hover:bg-ink/[0.04] hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600"
               >
                 See how it works
                 <ChevronDown

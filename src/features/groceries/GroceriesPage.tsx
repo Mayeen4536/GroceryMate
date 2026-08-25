@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { Apple, Carrot, Egg, Plus, ShoppingBasket } from 'lucide-react'
-import { Badge, Button, Drawer } from '@/components/ui'
+import { Badge, Button, Drawer, Toast } from '@/components/ui'
 import { EmptyState } from '@/components/EmptyState'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PageTransition } from '@/components/layout/PageTransition'
@@ -27,11 +27,14 @@ export function GroceriesPage({
     editingItem,
     lastAddedId,
     isDesktop,
+    pendingDeletes,
     openAdd,
     openEdit,
     closePanel,
     handleSubmit,
     handleDelete,
+    undoDelete,
+    dismissDelete,
   } = groceries
 
   return (
@@ -133,6 +136,23 @@ export function GroceriesPage({
           onCancel={closePanel}
         />
       </Drawer>
+
+      {/* Undo toasts for deleted items. Sits above the FAB's own row (rather
+          than sharing it) so the two never crowd each other, and clears the
+          mobile bottom nav dock underneath both. */}
+      <div className="pointer-events-none fixed inset-x-4 bottom-40 z-40 flex flex-col items-start gap-2 lg:bottom-24">
+        <AnimatePresence initial={false}>
+          {pendingDeletes.map((pending) => (
+            <Toast
+              key={pending.id}
+              message={`${pending.name} deleted`}
+              actionLabel="Undo"
+              onAction={() => undoDelete(pending.id)}
+              onDismiss={() => dismissDelete(pending.id)}
+            />
+          ))}
+        </AnimatePresence>
+      </div>
     </>
   )
 }

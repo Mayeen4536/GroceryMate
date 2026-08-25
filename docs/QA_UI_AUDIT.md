@@ -1,7 +1,7 @@
 # GroceryMate — Exploratory UI/UX QA Audit
 
-**Type:** Discovery audit (2026-08-23), plus a fix pass on the three approved High-severity defects (2026-08-24).
-**Date:** 2026-08-23 (audit) / 2026-08-24 (fixes)
+**Type:** Discovery audit (2026-08-23), a fix pass on the three approved High-severity defects (2026-08-24), and a fix pass on the four approved Medium-severity defects plus one accessibility follow-up (2026-08-25).
+**Date:** 2026-08-23 (audit) / 2026-08-24 (High fixes) / 2026-08-25 (Medium fixes)
 **Environment:** Local dev server (`npm run dev`, Vite, `http://localhost:5173/`)
 **Tooling:** Playwright (Chromium), driven by a scripted interaction harness plus manual visual review of the resulting screenshots.
 **Viewports tested:** Desktop (1280×800) and Mobile (390×844, iPhone 13 emulation, touch enabled).
@@ -19,12 +19,12 @@
 |---|---|---|
 | Critical | 0 | — |
 | High | 3 | **All 3 fixed and verified (2026-08-24)** — QA-001, QA-002, QA-003 |
-| Medium | 4 | Not in scope for this fix pass — untouched |
+| Medium | 4 | **All 4 fixed and verified (2026-08-25)** — QA-004, QA-005, QA-006, QA-007 |
 | Low | 2 | Not in scope for this fix pass — untouched |
 | **Total defects** | **9** | |
-| UX improvement suggestions | 7 | Not in scope for this fix pass — untouched |
+| UX improvement suggestions | 7 | Not in scope for either fix pass — untouched (UX-001 and UX-002 are effectively addressed as a side effect of the QA-005/QA-006 fixes below, but weren't separately re-reviewed as standalone suggestions) |
 
-**Remaining High-severity issues: 0.**
+**Remaining High-severity issues: 0. Remaining Medium-severity issues: 0.**
 
 ---
 
@@ -134,7 +134,7 @@
 
 *Files changed:* `src/components/ui/Button.tsx`, `src/features/landing/Landing.tsx`.
 
-*Note on remaining scope:* The "See how it works" link on Landing (a plain `<a>`, not the shared `Button` or `HeroCta`) uses the same low-contrast `ring-brand-500/40` pattern and would measure the same ~1.6:1 — but it isn't one of the "two primary CTAs" this defect named, so it was left as-is to keep this fix scoped to the approved item. Worth a follow-up if you want full consistency.
+*Note on remaining scope (resolved 2026-08-25):* The "See how it works" link was flagged here as using the same low-contrast pattern without being one of the two named CTAs, so it was left alone at the time. As part of the 2026-08-25 Medium-severity fix pass, it was folded into the same accessibility cleanup: its `focus-visible:ring-brand-500/40` became `focus-visible:ring-brand-600` (`src/features/landing/Landing.tsx`) — the same solid, ~5:1-contrast token used everywhere else, a one-class-value change with no other change to the control (it never had the box-shadow-transition timing issue the other two CTAs had, since its `transition-colors` doesn't include `box-shadow`, so only the color needed correcting). Re-verified at all 4 required viewports: renders a solid, immediate ring identical in treatment to the other two CTAs.
 
 *Verification:* Re-sampled computed `box-shadow` at delay 0ms post-fix: both buttons now show a solid `rgb(33, 122, 80)` (brand-600) ring at full strength immediately, with no fade-in — confirmed stable at 0ms/300ms/600ms samples. Re-checked at all 4 required viewports: `openAppHasVisibleRing: true` and `heroCtaHasVisibleRing: true` in every case. Screenshot below shows the rendered ring.
 
@@ -143,6 +143,8 @@
 ---
 
 ### QA-004 — GroceryForm's native HTML5 validation suppresses the app's own custom validation UI
+
+**Status: FIXED and VERIFIED (2026-08-25)**
 
 **Severity:** Medium
 **Page:** Groceries → "Add grocery" drawer
@@ -164,9 +166,23 @@
 
 **Suggested improvement:** Add `noValidate` to the `<form>` in `GroceryForm.tsx` (the codebase already has working custom validation logic sitting right next to the native `required` attribute — it just never gets a chance to run) so the existing `nameError`/`sharedByError` messaging always fires, matching the Members dialog's behavior.
 
+**Fix applied:** Added `noValidate` to the `<form>` in `GroceryForm.tsx` — the browser's constraint validation no longer intercepts submission, so the existing `nameError`/`sharedByError` logic (already correct, just previously unreachable) now always runs and renders. The `required` attribute on the name field was deliberately **kept** (not removed) — it still conveys required-ness to assistive tech via the accessibility tree, `noValidate` only stops the browser's own blocking UI, not the field's semantics. Two small additions beyond the minimum fix, both requested explicitly: (1) focus now moves to the first invalid field on a failed submit — the name input (given an explicit `id`) or, if only "Shared by" is invalid, a new `groupRef` added to `MemberChipPicker` so its group container is focusable — replicating what native validation used to do, but reliably; (2) the shared `Field` component's error message (used by every `Input`/`Textarea`/`Select` app-wide) and `MemberChipPicker`'s own error message both gained `role="alert"` so screen readers announce the error text as soon as it appears, not only when focus happens to land on the described field. Empty price and an unselected/default payer remain **not** required — that's existing, intentional behavior (price can be filled in later, payer defaults sensibly), not something this defect asked to change; negative price entry is prevented by the existing keystroke-level input mask, unrelated to this fix and reconfirmed unchanged.
+
+*Files changed:* `src/features/groceries/GroceryForm.tsx`, `src/features/groceries/MemberChipPicker.tsx`, `src/components/ui/field.tsx`.
+
+*Behavior before:* Submitting with an empty name showed only the browser's native "Please fill out this field." tooltip; the styled "Enter a name for this item." text never appeared.
+
+*Behavior after:* The native tooltip no longer appears; the styled error shows immediately, `aria-invalid="true"` is set on the field, the error carries `role="alert"`, and focus moves to the name input (or the "Shared by" group, if that's the only invalid field).
+
+*Playwright verification:* Re-ran the original repro (now shows the custom error, not the native one) plus the full requested test list — empty name, empty price, negative price (masking), missing payer, no shared members, valid submission after correcting errors, and Enter-key submission — all confirmed working at all 4 required viewports (390×844, 430×932, 1366×768, 1440×900). Zero console errors.
+
+*Regression checks:* Grocery edit flow (not just add) still saves correctly; keyboard (Enter-to-submit) still works; the Members "Add member" dialog (a different, already-correct form not wrapped in a native `<form>`) is unaffected.
+
 ---
 
 ### QA-005 — Deleting a grocery item requires zero confirmation
+
+**Status: FIXED and VERIFIED (2026-08-25)** — implemented as a reversible delete + Undo (product decision), not an added confirmation dialog.
 
 **Severity:** Medium
 **Page:** Groceries
@@ -188,9 +204,27 @@
 
 **Suggested improvement:** Either add a lightweight confirm step (matching Members), or add an "Undo" snackbar for a few seconds after delete — cheaper on the interaction cost than a modal, while still preventing accidental data loss.
 
+**Fix applied:** Delete still removes the item immediately (no added dialog), but `useGroceries.ts` now keeps the deleted item recoverable for 5 seconds behind a small `pendingDeletes` queue (item + its original index + a timer, tracked in a ref so a duplicate/late "Undo" click is a synchronous, guarded no-op rather than a double-restore). A new shared `Toast` UI primitive (`src/components/ui/Toast.tsx` — no third-party toast library added, since none existed to reuse and Framer Motion/Tailwind were already sufficient) renders one row per pending delete — message, "Undo" action, dismiss button — stacked in `GroceriesPage.tsx` above both the FAB and the mobile bottom nav dock. Undo restores the exact item back to its original position (clamped if the list has since changed length). Multiple deletions in a row each get their own independent toast and timer, so undoing one doesn't affect another.
+
+*Files changed:* `src/hooks/useGroceries.ts`, `src/components/ui/Toast.tsx` (new), `src/components/ui/index.ts`, `src/features/groceries/GroceriesPage.tsx`.
+
+*Behavior before:* Trash icon → item gone, permanently, instantly.
+
+*Behavior after:* Trash icon → item gone from the list immediately, a toast appears ("`<name>` deleted", with "Undo") for 5 seconds → Undo restores it to its exact prior position; letting the toast expire (or dismissing it) makes the deletion final.
+
+*Playwright verification:* delete, undo (restores at the original index), delete-without-undo (toast expires after 5s, deletion stays final), multiple sequential deletions (two independent toasts, both undoable independently, no cross-talk), rapid interaction (three near-simultaneous clicks on the same Undo button restore the item exactly once, not zero or multiple times), and keyboard activation (Tab to "Undo", Enter restores) — all confirmed at 1280×800 and 390×844, and the core flow re-confirmed at all 4 required viewports.
+
+*Regression checks:* Grocery add/edit untouched; toast positioning was iterated on after an initial visual check showed it colliding with the "Add grocery" FAB on mobile (see screenshots) — moved to sit above the FAB's row instead of sharing it, re-verified clean on both mobile and desktop afterward. Zero console errors throughout.
+
+| Desktop | Mobile |
+|---|---|
+| ![undo toast desktop](qa-screenshots/med-issue2-after-fix-undo-toast.png) | ![undo toast mobile](qa-screenshots/med-issue2-after-fix-undo-toast-mobile.png) |
+
 ---
 
 ### QA-006 — Invite-by-email accepts any string, creating a garbage member record
+
+**Status: FIXED and VERIFIED (2026-08-25)**
 
 **Severity:** Medium
 **Page:** Members → "Add member" dialog → "Invite link" tab
@@ -213,9 +247,25 @@
 
 **Suggested improvement:** Add basic email-format validation (a simple regex is sufficient) to the invite field, matching the "required" check that's already there for the name field in the same dialog.
 
+**Fix applied:** `AddMemberDialog.tsx`'s `handleInvite` now trims the input and checks it against a deliberately simple `/^[^\s@]+@[^\s@]+\.[^\s@]+$/` pattern (local-part@domain.tld, no whitespace — not full RFC 5322, which the task explicitly didn't ask for) before calling `onInvite`. On failure, the existing error-display wiring shows "Enter a valid email address." (or "Enter an email to invite." for empty input) and no member is created. Valid input's behavior is unchanged: trimmed, member created, success toast shown, field cleared.
+
+*Files changed:* `src/features/members/AddMemberDialog.tsx`.
+
+*Behavior before:* Any non-empty string (e.g. `not-an-email`) was accepted, created a member named after the garbage string, and showed a success toast.
+
+*Behavior after:* Only strings matching basic email syntax create a member; anything else shows an inline error and creates nothing.
+
+*Playwright verification:* plain text, missing `@`, missing domain, leading/trailing spaces (trimmed and accepted), a valid email, an empty submit, and repeated-submit-of-invalid-input (no member created on any of three rapid clicks) and repeated-submit-of-valid-input (only one member created) — all confirmed at all 4 required viewports.
+
+*Regression checks:* The "New member" tab (name-only, no email requirement) is untouched and still works; zero console errors.
+
+![invalid email error](qa-screenshots/med-issue3-after-fix-invalid-email-error.png)
+
 ---
 
 ### QA-007 — Escape key closes both a confirm modal and its parent drawer simultaneously
+
+**Status: FIXED and VERIFIED (2026-08-25)**
 
 **Severity:** Medium
 **Page:** Members → Member Profile Drawer → "Remove from household"
@@ -239,6 +289,18 @@
 **User impact:** A user who presses Escape intending to back out of just the confirmation ("actually, don't remove them, let me look at their profile again") instead gets dropped all the way back to the Members list, which is a small but real surprise in an otherwise polished interaction.
 
 **Suggested improvement:** Track dialog stacking (e.g. a simple shared stack/context of open dialogs) so Escape only closes the top-most one, or have nested dialogs check "is a deeper dialog than me currently open" before acting on their own Escape handler.
+
+**Fix applied:** Exactly the reusable stacking approach suggested above, built into the hook every `Modal` and `Drawer` already calls (`useFocusTrap.ts`) rather than a one-off timing hack. A module-level stack of overlay ids now records open/close order; each overlay pushes its own id when it opens and removes it on close (same effect that already ran for focus-trap setup/teardown). The hook returns a stable `isTopOverlay()` check (memoized via `useCallback` so it doesn't cause the Escape-listener effect to re-subscribe every render), and both `Modal.tsx` and `Drawer.tsx`'s Escape handlers now call `onClose()` only when `isTopOverlay()` is true. Tab-key focus trapping (already correctly scoped per-panel, confirmed working in the original audit) is untouched. Backdrop click-outside is untouched — it was never the buggy part; each dialog's own backdrop already only ever closed that one dialog, and still does.
+
+*Files changed:* `src/hooks/useFocusTrap.ts`, `src/components/ui/Modal.tsx`, `src/components/ui/Drawer.tsx`.
+
+*Behavior before:* One Escape press with the confirm modal open closed both the modal and the Member Profile Drawer beneath it.
+
+*Behavior after:* First Escape closes only the confirm modal, leaving the drawer open; a second Escape then closes the drawer, exactly like closing it directly would.
+
+*Playwright verification:* Confirmed the exact required sequence — before any Escape both are open; after one Escape the confirm is closed and the drawer is **still open**; after a second Escape the drawer also closes — at both desktop (1280×800) and mobile (390×844), and re-confirmed at all 4 required viewports as part of the combined sweep.
+
+*Regression checks:* Click-outside (backdrop click) still closes only the confirm modal when nested, and still closes the drawer normally when opened alone (no confirm on top) — both explicitly re-tested. Single, non-nested dialogs elsewhere in the app (the Add Member dialog, Settings' "Reset preferences?" confirm, the History preview drawer, a lone Add/Edit grocery drawer) all still close on the **first** Escape press, confirming the stack-awareness doesn't regress the common single-dialog case. Zero console errors.
 
 ---
 

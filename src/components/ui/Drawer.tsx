@@ -42,12 +42,14 @@ export function Drawer({
 }: DrawerProps) {
   const titleId = useId()
   const panelRef = useRef<HTMLDivElement>(null)
-  useFocusTrap(open, panelRef)
+  const { isTopOverlay } = useFocusTrap(open, panelRef)
 
   useEffect(() => {
     if (!open) return
     const onKey = (event: globalThis.KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
+      // Only the front-most overlay reacts, so Escape backs out one dialog
+      // at a time instead of closing every open Modal/Drawer at once.
+      if (event.key === 'Escape' && isTopOverlay()) onClose()
     }
     document.addEventListener('keydown', onKey)
     const prevOverflow = document.body.style.overflow
@@ -57,7 +59,7 @@ export function Drawer({
       document.removeEventListener('keydown', onKey)
       document.body.style.overflow = prevOverflow
     }
-  }, [open, onClose])
+  }, [open, onClose, isTopOverlay])
 
   return (
     <AnimatePresence>

@@ -24,6 +24,10 @@ interface AddMemberDialogProps {
 
 const INVITE_LINK = 'grocerymate.app/join/flat-4b'
 
+// Deliberately simple (not full RFC 5322): local@domain.tld, no whitespace. Good
+// enough to reject obvious garbage without pretending to verify deliverability.
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 export function AddMemberDialog({ open, initialTab, onClose, onAdd, onInvite }: AddMemberDialogProps) {
   const [tab, setTab] = useState<AddMemberTab>(initialTab)
   const [name, setName] = useState('')
@@ -68,12 +72,14 @@ export function AddMemberDialog({ open, initialTab, onClose, onAdd, onInvite }: 
   }
 
   const handleInvite = () => {
-    if (!inviteEmail.trim()) {
+    const trimmed = inviteEmail.trim()
+    if (!trimmed || !EMAIL_PATTERN.test(trimmed)) {
       setInviteAttempted(true)
       return
     }
-    onInvite(inviteEmail.trim())
+    onInvite(trimmed)
     setInviteSent(true)
+    setInviteAttempted(false)
     setInviteEmail('')
     clearTimeout(inviteSentTimer.current)
     inviteSentTimer.current = setTimeout(() => setInviteSent(false), 2200)
@@ -200,7 +206,13 @@ export function AddMemberDialog({ open, initialTab, onClose, onAdd, onInvite }: 
                 required
                 value={inviteEmail}
                 onChange={(event) => setInviteEmail(event.target.value)}
-                error={inviteAttempted && !inviteEmail.trim() ? 'Enter an email to invite.' : undefined}
+                error={
+                  inviteAttempted && !inviteEmail.trim()
+                    ? 'Enter an email to invite.'
+                    : inviteAttempted && !EMAIL_PATTERN.test(inviteEmail.trim())
+                      ? 'Enter a valid email address.'
+                      : undefined
+                }
                 className="flex-1"
               />
               <Button iconLeft={Send} onClick={handleInvite} className="shrink-0">

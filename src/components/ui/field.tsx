@@ -79,6 +79,7 @@ export function Field({ id, label, helperText, error, className, children }: Fie
           <motion.p
             key="error"
             id={errorId}
+            role="alert"
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}

@@ -1,4 +1,4 @@
-import { useId } from 'react'
+import { useId, type RefObject } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Check, CircleAlert } from 'lucide-react'
 import { Avatar } from '@/components/ui'
@@ -12,13 +12,15 @@ interface MemberChipPickerProps {
   selected: string[]
   onChange: (selected: string[]) => void
   error?: string
+  /** Lets a caller (e.g. a form's submit handler) move focus here on validation failure. */
+  groupRef?: RefObject<HTMLDivElement | null>
 }
 
 /**
  * Multi-select as tactile member chips: avatar, name, and a check that
  * pops onto the avatar when selected. Everyone/no-one shortcut included.
  */
-export function MemberChipPicker({ label, members, selected, onChange, error }: MemberChipPickerProps) {
+export function MemberChipPicker({ label, members, selected, onChange, error, groupRef }: MemberChipPickerProps) {
   const errorId = useId()
   const allSelected = selected.length === members.length
 
@@ -42,7 +44,14 @@ export function MemberChipPicker({ label, members, selected, onChange, error }: 
           {allSelected ? 'Clear' : 'Everyone'}
         </button>
       </div>
-      <div role="group" aria-label={label} aria-describedby={error ? errorId : undefined} className="flex flex-wrap gap-2">
+      <div
+        ref={groupRef}
+        tabIndex={-1}
+        role="group"
+        aria-label={label}
+        aria-describedby={error ? errorId : undefined}
+        className="flex flex-wrap gap-2 focus:outline-none"
+      >
         {members.map((name) => {
           const isSelected = selected.includes(name)
           return (
@@ -88,6 +97,7 @@ export function MemberChipPicker({ label, members, selected, onChange, error }: 
           <motion.p
             key="error"
             id={errorId}
+            role="alert"
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
