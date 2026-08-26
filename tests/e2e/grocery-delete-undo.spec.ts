@@ -1,0 +1,94 @@
+import { test, expect, type Locator } from '@playwright/test'
+import { enterApp } from './helpers'
+
+// Regression coverage for QA-005 (grocery deletion used to be instant and
+// permanent, with no recovery). The product decision was a reversible
+// delete: the item disappears immediately, and an "Undo" toast keeps it
+// recoverable for a short window before the deletion becomes final.
+
+/** The item's name lives in its own accessible name, not a CSS class — read it from there. */
+async function nameOf(deleteButton: Locator) {
+  const label = await deleteButton.getAttribute('aria-label')
+  return label!.replace(/^Delete /, '')
+}
+
+test('deleting a grocery removes it immediately, and Undo restores it', async ({ page }) => {
+  await enterApp(page)
+  const deleteButton = page.locator('main li').first().getByRole('button', { name: /^Delete /i })
+  const itemName = await nameOf(deleteButton)
+
+  await deleteButton.click()
+  await expect(page.getByRole('button', { name: `Delete ${itemName}` })).toHaveCount(0)
+  const undoButton = page.getByRole('button', { name: 'Undo' })
+  await expect(undoButton).toBeVisible()
+  await expect(page.getByRole('status')).toContainText(`${itemName} deleted`)
+
+  await undoButton.click()
+  await expect(page.getByRole('button', { name: `Delete ${itemName}` })).toBeVisible()
+})
+
+test.describe('Delete and undo details', () => {
+  test.beforeEach(({ isMobile }) => {
+    test.skip(isMobile, 'these checks exercise state logic, not layout; desktop coverage is sufficient')
+  })
+
+  test('Undo restores the grocery to its original position among the others', async ({ page }) => {
+    await enterApp(page)
+    const deleteButtons = () => page.locator('main li').getByRole('button', { name: /^Delete /i })
+    const namesBefore = await deleteButtons().evaluateAll((buttons) =>
+      buttons.map((b) => b.getAttribute('aria-label')?.replace(/^Delete /, '')),
+    )
+    expect(namesBefore.length).toBeGreaterThan(1)
+
+    // Delete the second item specifically, so restoring "at the end" (a bug)
+    // would be distinguishable from restoring "in place" (correct).
+    const targetName = namesBefore[1]
+    await page.getByRole('button', { name: `Delete ${targetName}` }).click()
+    await expect(page.getByRole('button', { name: `Delete ${targetName}` })).toHaveCount(0)
+
+    await page.getByRole('button', { name: 'Undo' }).click()
+    await expect(page.getByRole('button', { name: `Delete ${targetName}` })).toBeVisible()
+
+    const namesAfter = await deleteButtons().evaluateAll((buttons) =>
+      buttons.map((b) => b.getAttribute('aria-label')?.replace(/^Delete /, '')),
+    )
+    expect(namesAfter).toEqual(namesBefore)
+  })
+
+  test('a deletion that is not undone stays deleted once the undo window passes', async ({ page }) => {
+    await enterApp(page)
+    // Install the clock only now (after the landing/entry animations have
+    // already played with real time) and virtually fast-forward instead of
+    // waiting out the real undo window, so this test isn't slow or flaky.
+    await page.clock.install()
+
+    const deleteButton = page.locator('main li').first().getByRole('button', { name: /^Delete /i })
+    const itemName = await nameOf(deleteButton)
+    await deleteButton.click()
+    await expect(page.getByRole('button', { name: 'Undo' })).toBeVisible()
+
+    await page.clock.fastForward('00:06')
+
+    await expect(page.getByRole('button', { name: 'Undo' })).not.toBeVisible()
+    await expect(page.getByRole('button', { name: `Delete ${itemName}` })).toHaveCount(0)
+  })
+
+  test('clicking Undo rapidly does not restore the grocery more than once', async ({ page }) => {
+    await enterApp(page)
+    const countBefore = await page.locator('main li').count()
+    const deleteButton = page.locator('main li').first().getByRole('button', { name: /^Delete /i })
+    const itemName = await nameOf(deleteButton)
+    await deleteButton.click()
+
+    const undoButton = page.getByRole('button', { name: 'Undo' })
+    await expect(undoButton).toBeVisible()
+    await Promise.all([
+      undoButton.click({ force: true }).catch(() => {}),
+      undoButton.click({ force: true }).catch(() => {}),
+      undoButton.click({ force: true }).catch(() => {}),
+    ])
+
+    await expect(page.getByRole('button', { name: `Delete ${itemName}` })).toHaveCount(1)
+    await expect(page.locator('main li')).toHaveCount(countBefore)
+  })
+})

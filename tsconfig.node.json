@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2023",
-    "lib": ["ES2023"],
+    // DOM is here for tests/**: Playwright's page.evaluate() callbacks run
+    // in-browser and reference DOM globals, even though this tsconfig also
+    // covers plain Node config files (vite.config.ts, playwright.config.ts)
+    // that never touch DOM types themselves.
+    "lib": ["ES2023", "DOM"],
     "module": "ESNext",
     "skipLibCheck": true,
 
