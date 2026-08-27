@@ -2,18 +2,17 @@ import { useEffect, useRef } from 'react'
 import { animate, motion, useMotionValue, useReducedMotion, useTransform } from 'framer-motion'
 import { cn } from '@/utils/cn'
 import { easeSoft } from '@/animations/motion'
+import { formatAmount } from '@/utils/money'
 
 export interface AnimatedNumberProps {
   value: number
-  /** Formats the displayed value; defaults to a rounded locale string. */
+  /** Formats the displayed value; defaults to the shared amount formatter (see `src/utils/money.ts`). */
   format?: (value: number) => string
   className?: string
 }
 
-const defaultFormat = (value: number) => Math.round(value).toLocaleString()
-
 /** Counts smoothly toward `value` whenever it changes. Uses tabular digits. */
-export function AnimatedNumber({ value, format = defaultFormat, className }: AnimatedNumberProps) {
+export function AnimatedNumber({ value, format = formatAmount, className }: AnimatedNumberProps) {
   const motionValue = useMotionValue(value)
   const previous = useRef(value)
   const reducedMotion = useReducedMotion()

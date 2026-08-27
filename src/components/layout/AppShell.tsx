@@ -43,7 +43,7 @@ export function AppShell({ activePage, onNavigate, onOpenSettings, children }: A
       >
         <main
           id="main"
-          className="mx-auto w-full max-w-5xl px-4 pb-32 pt-6 sm:px-6 lg:px-10 lg:pb-16 lg:pt-12"
+          className="mx-auto w-full max-w-5xl px-4 pt-6 pb-[calc(var(--mobile-nav-clearance)+2.5rem)] sm:px-6 lg:px-10 lg:pt-12 lg:pb-16"
         >
           {children}
         </main>

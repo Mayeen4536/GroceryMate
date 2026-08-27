@@ -372,3 +372,255 @@ These are recommendations, not bugs — nothing here is broken today.
 - Settings honestly discloses which controls aren't wired up yet ("saved here, but not yet applied to the app — coming soon" for Appearance; similar copy for Preferences) rather than silently no-op'ing, which avoids user confusion about Dark Mode/Theme/Currency/Language not visibly doing anything yet.
 - Price-field input masking (`GroceryForm`) correctly rejects letters/negative signs and truncates to 2 decimals under direct typing pressure.
 - Feedback form correctly disables Send for empty and whitespace-only input, not just empty.
+
+---
+
+# Exploratory QA Round 2 — Pre-Backend Release Gate
+
+**Type:** Discovery only. No application code was modified during this session.
+**Date:** 2026-08-27
+**Trigger:** Final focused pass across previously-untested territory (the Assistant page), a revisit of the two open Low findings, and a cross-cutting sweep (real-world data, interaction stress, accessibility, product trust, animation) before pausing UI work to start the real product/backend phase.
+**Tooling:** Playwright (Chromium), scripted interaction + manual visual review of screenshots, plus direct DOM/value inspection (not just screenshots) to confirm several findings precisely rather than by eye.
+**Viewports:** Desktop (1280×800) and Mobile (390×844, 430×932 — both required for Area 2).
+
+## Scope note
+
+The Assistant page (`src/features/assistant/`) is a **fully mocked, local, deterministic flow** — `idle → thinking → generating → done`, driven entirely by fixed `setTimeout`s (no network calls, no failure branches exist in the code). Per instructions, this audit does not evaluate the *quality* of what it "generates" (it always returns the same fixed 5-item mock list, `MOCK_GENERATED_ITEMS`, regardless of prompt) — only the surrounding product behavior and UX.
+
+## Summary
+
+| Severity | Count |
+|---|---|
+| Critical | 0 |
+| High | 2 |
+| Medium | 1 |
+| Low | 3 |
+| Polish | 0 |
+| **Total new findings** | **6** |
+
+No Critical or Polish-only findings were identified. Severities were not inflated to pad this count — a large majority of what was tested this round (listed under "What held up well," below) worked correctly and is deliberately **not** written up as a finding.
+
+---
+
+## Findings
+
+### QA-010 — On mobile, the Assistant's "Add to groceries" button can be intercepted by the bottom nav dock during a natural partial scroll
+
+**Status: FIXED and VERIFIED (2026-08-27)**
+
+**Category:** Assistant / Mobile Navigation
+**Severity:** High
+**Page:** Assistant (`/assistant`), the "done" reveal after a generation completes
+**Viewport:** Confirmed at 390×844. Re-tested at 430×932 with the same interaction pattern and did **not** reproduce there — narrower/shorter phones are the affected range.
+
+**Steps to reproduce:**
+1. On a 390×844 viewport, open Assistant, type any prompt, click Generate, and wait for "Your groceries are ready."
+2. Scroll down just far enough that the "Add to groceries" button becomes visible (e.g. the browser's own "scroll element into view" behavior, or a user's natural scroll gesture that stops as soon as the button is on-screen) — **not** all the way to the true bottom of the page.
+3. Tap where "Add to groceries" appears to be.
+
+**Expected:** The tap adds the generated groceries to the list.
+
+**Actual:** Measured precisely (not just by eye): at this scroll position the button's bounding box (y: 798–842) overlaps the floating bottom nav dock's bounding box (y: 766–830, spanning almost the full screen width). `document.elementFromPoint()` at the button's center resolves to the **"Groceries" nav button**, not "Add to groceries." A tap there silently navigates to `/groceries` instead of adding anything — confirmed by dispatching a real coordinate-based click (not Playwright's element-locator click, which refuses to click through an obstruction and would have masked this). Scrolling all the way to the true end of the page *does* clear the dock (button lands at y: 616–660, dock at 766–830) and the button becomes genuinely clickable — so this is not a permanent blocker, but the dangerous middle ground is easy to land in with an ordinary scroll gesture.
+
+![Add to groceries button sitting under the nav dock](qa-screenshots/round2/qa-010-mobile-button-under-dock.png)
+
+**User impact:** The user believes they tapped "Add to groceries" — the button was visibly there — and instead gets silently redirected to the Groceries page with **nothing added**. Because Assistant state resets on navigation (see QA-011's neighboring note below), their generated list is gone with no error, no undo, and no indication anything went wrong. This is the single most consequential finding in this round: it's the terminal action of an entire feature, on a real device size, with a plausible everyday scroll gesture triggering it.
+
+**Suggested direction:** This is the same root cause as the already-tracked Low findings QA-008/QA-009 (the floating dock has no reserved, enforced clearance from page content) — but here it produces a functional failure, not just a cosmetic one. Worth prioritizing a real fix (e.g., guarantee bottom padding/scroll-margin on any page ending in a primary action button, or make the dock's occlusion zone truly inert-proof by testing "does the last actionable element's full bounding box, at every reachable scroll position, avoid the dock's box" as a repeatable check) ahead of the two purely-cosmetic Low findings it's related to.
+
+**Root cause confirmed:** `<main>`'s own bottom padding (`pb-32`, 128px) is already enough clearance at the true scroll maximum. The bug is specifically in `scrollIntoViewIfNeeded()` (and any `scrollIntoView()` call — what a keyboard Tab focus does under the hood): it scrolls only the *minimum* distance needed to bring the target's box into the viewport, which can land it exactly inside the dock's reserved footprint band without ever reaching true bottom-of-page.
+
+**Fix applied:** Layout-level, not a one-off margin on the Assistant button. Added a `--mobile-nav-clearance: 6rem` custom property (`src/index.css`), and set `scroll-padding-bottom: var(--mobile-nav-clearance)` on `html` inside a `max-width: 1023.98px` media query — this changes what "in view" means for `scrollIntoView`/`scrollIntoViewIfNeeded`/keyboard-focus-scroll specifically, forcing them to also respect the dock's clearance, app-wide, for any current or future bottom-of-page control. `AppShell.tsx`'s `<main>` bottom padding was expressed in terms of the same variable (`pb-[calc(var(--mobile-nav-clearance)+2.5rem)]` on mobile) so the reserved zone and the dock's own footprint can never drift apart. The Groceries page's floating "Add grocery" FAB and its Undo-toast stack were also re-anchored off the same variable (previously hardcoded `bottom-24`/`bottom-40` magic numbers) so they inherit the same guarantee rather than needing a separate fix later.
+
+*Files changed:* `src/index.css`, `src/components/layout/AppShell.tsx`, `src/features/groceries/GroceriesPage.tsx`.
+
+*Verification:* Reproduced first with the exact repro method (390×844, `scrollIntoViewIfNeeded()` on "Add to groceries", then `document.elementFromPoint()` at the button's rendered center, then a real coordinate click) — confirmed broken before the fix (`elementAtCenter` was the nav dock), confirmed fixed after (`elementAtCenter` is "Add to groceries", a coordinate click reaches it). Re-checked at 430×932. Re-verified specifically against the taller "done" screen introduced by the QA-011 fix below, to confirm the layout-level fix generalizes rather than being coincidentally tied to the old page height. Also checked adjacent surfaces for the same class of bug: the Members drawer's "Remove from household" footer button (unaffected, drawer z-index sits above the dock), and the Analytics page (a long page can still reach its true scroll end — `scrollY === maxScroll` — without content getting stuck). Playwright regression coverage added in `tests/e2e/mobile-nav-clearance.spec.ts` (2 tests, mobile-only): both pass.
+
+---
+
+### QA-011 — The Assistant silently assigns "who paid" and "who shared" with no confirmation before adding to groceries
+
+**Status: FIXED and VERIFIED (2026-08-27)**
+
+**Category:** Assistant / Product Trust
+**Severity:** High
+**Page:** Assistant → Groceries
+**Viewport:** Desktop and Mobile (identical)
+
+**Steps to reproduce:**
+1. Generate a list via the Assistant and look at the preview on the "done" screen.
+2. Click "Add to groceries."
+3. Look at the same items now on the Groceries page.
+
+**Expected:** Either the preview already shows what will be charged to whom, or the user gets a chance to review/assign payer and sharers before the items become real entries.
+
+**Actual:** Every item in the preview reads **"Paid by … · not shared yet"** (verified for all 5 mock items, not just the first). The instant "Add to groceries" is clicked, every item is silently rewritten to **"Paid by Aisha" (the current user) and "4 sharing" (the entire household)** — confirmed via `useGroceries.addGenerated()`, which fills `paidBy: item.paidBy || mockUser.name` and `sharedBy: sharedBy.length ? sharedBy : mockMembers`. The user never sees or confirms this assignment; it happens between one click and the next screen.
+
+![Preview shows no payer/sharer before Add](qa-screenshots/round2/qa-010-011-assistant-preview-no-payer-sharer.png)
+
+**User impact:** This is exactly the category of thing Area 6 asks about directly: "Can I tell who paid? Can I tell who shared an item?" For AI-generated items, the honest answer is no — not until after they're already committed with an assumption baked in. If the assumed payer/sharers are wrong (a very plausible everyday case — maybe someone else paid, or not everyone shares), the user has to notice and manually fix every item afterward. For an app whose entire purpose is getting shared-money math right, silently guessing on "who owes whom" inputs — even correctably — undercuts trust in a way that's more damaging than an outright bug, because nothing *looks* wrong.
+
+**Suggested direction:** Let the preview itself be editable (reuse the existing `GroceryForm`/`MemberChipPicker` payer+sharer controls inline, or a lightweight per-item picker), or at minimum default to the *last-used* payer/sharers with a visible "you can change this before adding" affordance, rather than assigning silently on click.
+
+**Product principle adopted:** GroceryMate must never silently invent financially meaningful information. If the Assistant doesn't know who paid or who shared, it must say so and require the user to resolve it — never quietly default to "you paid" or "everyone shares."
+
+**Fix applied:** The silent-defaulting logic was removed entirely from `useGroceries.addGenerated()` (it previously did `paidBy: item.paidBy || mockUser.name` and `sharedBy: sharedBy.length ? sharedBy : mockMembers` — both deleted; it now only re-keys IDs and inserts whatever it's given). The guarantee is enforced structurally in the review UI itself: `GeneratedGroceries.tsx` was rewritten so each generated item is editable inline (reusing the existing `Dropdown` for "Paid by" and the existing `MemberChipPicker` for "Shared by" — no new picker components were built), with a visible "Needs payer" / "Needs sharers" badge on anything unresolved. "Add to groceries" is disabled from succeeding while any item is unresolved: clicking it while incomplete keeps the user on the Assistant page, surfaces a count of how many items still need attention, and shows a `role="alert"` inline error on each unresolved field — it never partially submits. The mock data (`src/store/assistantGenerated.ts`) was changed from all-blank to a deliberate mix (both missing, payer-only known, sharers-only known, fully known) specifically so this couldn't be verified only against the all-or-nothing case. No real AI was implemented; the mocked/local generation timing and copy are unchanged.
+
+*Files changed:* `src/store/assistantGenerated.ts`, `src/features/assistant/GeneratedGroceries.tsx`, `src/features/assistant/AssistantPage.tsx`, `src/App.tsx`, `src/hooks/useGroceries.ts`.
+
+*Verification:* Manually walked all required cases (known payer + known sharers → no warning shown and pre-filled correctly; missing payer only; missing sharers only; both missing; multiple items resolved independently in one session; user correcting a value before submit; successful submit only once every item is resolved; Cancel via "Try another prompt" discards cleanly with no crash) before formalizing as Playwright coverage. `tests/e2e/assistant-review.spec.ts` (5 tests, desktop) codifies these: an unresolved item is visibly flagged; a fully-resolved item shows no warning and preserves its known value; submitting while unresolved is blocked and adds nothing; resolving every item lets submit succeed using exactly the values chosen (not overwritten to a default — confirmed a partially-known item's *pre-existing* sharers survive untouched rather than being reset to "Everyone"); "Try another prompt" discards in-progress edits. All 5 pass.
+
+---
+
+### QA-012 — All monetary amounts display rounded to the nearest whole Taka, silently discarding the decimal precision the form itself accepts
+
+**Status: FIXED and VERIFIED (2026-08-27)**
+
+**Category:** Real-World Data / Product Trust
+**Severity:** Medium
+**Page:** Every page that displays a price/amount (Groceries, Members, Settlements, Analytics, History)
+**Viewport:** Desktop and Mobile (identical — this is a formatting function, not a layout issue)
+
+**Steps to reproduce:**
+1. Add a grocery item with price `0.01`.
+2. Look at it in the Groceries list.
+3. Re-open it for editing.
+
+**Expected:** Either the form doesn't offer 2-decimal precision it won't honor, or the displayed amount reflects what was entered.
+
+**Actual:** The list shows the item's price as **"0"** — indistinguishable from a genuinely free item. Re-opening the edit form shows the underlying value is still correctly `"0.01"` — confirmed by direct field inspection, not just a screenshot — so **no data is lost or corrupted**; this is a display-only rounding effect from `AnimatedNumber`'s default formatter and `formatTaka()`, both of which call `Math.round(value)` before formatting. The same rounding applies everywhere an amount is shown: `1234.56` displays as `1,235`; a household member's "Paid this month" and every Settlements/Analytics total are all whole-number-rounded the same way, while the price *input* itself accepts and stores 2 decimal places.
+
+![0.01 and 1234.56 both round in the list](qa-screenshots/round2/qa-012-price-rounding.png)
+
+**User impact:** For a currency where casual whole-unit display is common, this may be an entirely deliberate simplification — but as implemented it's silent and total-number-invisible: nothing in the UI indicates rounding happened, so a careful user manually adding up the displayed line items could get a different sum than what the app's own math (which presumably uses full precision internally) produces, making the totals feel inconsistent even when they're not. This is exactly the "does the financial result feel untrustworthy" question Area 6 asks about.
+
+**Suggested direction:** Product decision, not a pure bug fix: either commit to whole-unit display consistently and stop accepting sub-unit precision in the price field (so entry and display always agree), or display 2 decimals wherever `AnimatedNumber`/`formatTaka` currently round. Either is defensible; the current silent mismatch between what's accepted and what's shown is the actual problem.
+
+**Product decision:** Display 2 decimals whenever an amount has meaningful fractional value; keep whole amounts clean (no trailing `.00`). ৳0.01 must never visually become ৳0.
+
+**Fix applied:** Centralized the rounding/formatting logic that was previously duplicated in two places (`AnimatedNumber`'s inline `defaultFormat`, which did `Math.round(value).toLocaleString()`, and `currency.ts`'s `formatTaka`, which had the same bug) into a single new module, `src/utils/money.ts`. `formatAmount()` rounds to cent precision (`Math.round(value * 100) / 100`, avoiding float noise like `0.1 + 0.2`) and then formats with `toLocaleString`, using `minimumFractionDigits`/`maximumFractionDigits` of 0 for whole numbers and 2 otherwise — so ৳100 stays "100", ৳100.50 shows "100.50", and ৳0.01 shows "0.01" instead of vanishing to "0". `formatTaka()` prefixes the currency symbol. `currency.ts` now just re-exports `formatTaka` from `money.ts` (kept as a thin re-export rather than updating all 23 importing files individually, so the logic is consolidated at its one real source without unrelated churn). `AnimatedNumber`'s default formatter now calls `formatAmount` instead of its own inline rounding — safe for its other use (plain item counts), since integers format identically either way. The formatter is presentation-only: it does not touch stored or calculated values, and introduces no new calculation logic, so it stays clear of the future settlement domain's arithmetic.
+
+*Files changed:* `src/utils/money.ts` (new), `src/utils/money.test.ts` (new), `src/utils/currency.ts` (rewritten as a re-export), `src/components/ui/AnimatedNumber.tsx`.
+
+*Verification:* `src/utils/money.test.ts` adds 16 unit tests covering the required cases (0, 0.01, 0.10, 1, 1.50, 100, 100.50, 999999, a large amount with decimals, float-noise inputs, `NaN`/`Infinity` fallback to 0, non-mutation of the input, plus `formatTaka`'s `৳` prefix) — all pass. `tests/e2e/money-display.spec.ts` adds one integration check confirming the real Groceries UI (not just the unit under test) renders a ৳0.01 item with its decimals visible and no bare "0" — pass. Audited all 23 files that displayed money and confirmed each already routed through one of these two functions (no inline rounding existed anywhere else), so no per-component migration was needed beyond the two shared functions themselves.
+
+---
+
+### QA-013 — Analytics page skips a heading level (H1 straight to H3)
+
+**Status: DEFERRED (2026-08-27)** — out of scope for this fix batch by explicit product decision; not fixed.
+
+**Category:** Accessibility
+**Severity:** Low
+**Page:** Analytics
+**Viewport:** Desktop and Mobile (identical — DOM structure, not layout)
+
+**Steps to reproduce:** Inspect the heading structure on `/analytics` (e.g. a screen-reader user navigating by heading, or `document.querySelectorAll('h1,h2,h3...')`).
+
+**Expected:** Heading levels descend one step at a time (H1 → H2 → H3), per the app's own convention elsewhere (confirmed clean on Groceries, Members, Settlements, History, and Assistant — all descend correctly with no skips).
+
+**Actual:** The page is `H1 "Analytics"` → `H3 "Total spent"` → `H3 "Items logged"` → `H3 "Top category"` → `H3 "Top spender"` → *then* `H2 "Monthly spending"`, `H2 "Category breakdown"`, etc. The four stat tiles render as H3 with nothing at H2 above them.
+
+**User impact:** Minor — sighted users are unaffected; a screen-reader user browsing by heading level gets a slightly confusing structure (an apparent H2 "missing" between the title and the first heading), which is the kind of thing Area 5 asks to check for at a practical, non-certification level.
+
+**Suggested direction:** `src/components/ui/Card.tsx` already exposes a `headingLevel` prop for exactly this situation (its own doc comment explains it's for "a Card's title is a page's only section heading directly under its `h1`"). The four stat-tile `Card`s on Analytics likely just need `headingLevel={2}` explicitly set instead of defaulting to 3.
+
+---
+
+### QA-014 — The Assistant's prompt box gives no visual hint that typed text is scrolling out of view
+
+**Status: DEFERRED (2026-08-27)** — out of scope for this fix batch by explicit product decision; not fixed.
+
+**Category:** Assistant / Polish
+**Severity:** Low
+**Page:** Assistant
+**Viewport:** Desktop and Mobile (identical)
+
+**Steps to reproduce:** Type several sentences (enough to exceed 3 lines) into the "Ask GroceryMate" box.
+
+**Expected:** Either the box grows to fit, or there's some visible indication (scrollbar, fade) that there's more text above what's shown.
+
+**Actual:** The `<textarea>` has a fixed `rows={3}` height with `resize-none`. Once text exceeds that, it scrolls internally with no visible scrollbar and no gradient/fade cue — confirmed the box's `scrollHeight` (416px) is over 5× its `clientHeight` (78px) after a long paste, yet nothing on screen signals the extra content exists.
+
+**User impact:** Low — a long prompt still submits correctly in full (verified: nothing is truncated in the underlying value), so this is purely a "can the user re-read what they wrote" affordance gap, not a data or submission bug.
+
+**Suggested direction:** Auto-growing textarea (common pattern, e.g. up to a max-height then scroll), or at minimum a subtle bottom fade/shadow when `scrollHeight > clientHeight`.
+
+---
+
+### QA-015 — Navigating away from the Assistant mid-flow (or after generating, before adding) silently discards everything, with no warning
+
+**Status: DEFERRED (2026-08-27)** — out of scope for this fix batch by explicit product decision; not fixed. Re-verified while fixing QA-011 that this remains a known, accepted characteristic (navigating away mid-review still discards cleanly with no crash) rather than something newly broken by that fix.
+
+**Category:** Assistant / Product Trust
+**Severity:** Low
+**Page:** Assistant → any other page → back to Assistant
+**Viewport:** Desktop and Mobile (identical)
+
+**Steps to reproduce:**
+1. Type a prompt (or get all the way to a generated "done" list) on Assistant.
+2. Click any other nav item, then click back into Assistant.
+
+**Expected:** Either the in-progress prompt/result survives the trip, or the user is warned before it's discarded.
+
+**Actual:** Assistant returns to a completely fresh idle state — prompt cleared, any generated list gone — with no confirmation prompt at any point. Root cause: `useAssistant()`'s state lives inside `AssistantPage` itself (unlike `useGroceries()`, which is deliberately lifted to `App.tsx` so it survives page switches) — the component unmounts on navigation and remounts fresh.
+
+**User impact:** Low today specifically because nothing here is "real" data yet — an AI-generated list that was never added to Groceries has no financial consequence to lose. It's included here because it's directly relevant to Area 6's "could I accidentally lose data?" question, and because once a real backend/LLM is behind this flow (with real latency, real cost per generation), silently discarding an in-progress or completed generation on an accidental nav-tap will feel much worse than it does today.
+
+**Suggested direction:** Worth a product decision before the backend phase: either lift Assistant state alongside Groceries' (same pattern already established), or add a lightweight "leave without saving?" guard once a real generation exists.
+
+---
+
+## What held up well (tested, not flawed — left alone per instructions)
+
+**Assistant:** empty input correctly disables Generate; rapid repeated clicks on Generate don't create duplicate or stuck sequences; keyboard Tab order through the composer and toolbar is logical; very long input, emoji, mixed-script (Bengali/Chinese/Arabic) input, and HTML-look-alike text (`<b>bold?</b>`) all render safely as plain text with correct wrapping and no crashes; the mocked voice/receipt/photo attachment flows are honest about being mocked and work consistently (including rapid mic-toggle spam); loading states use proper `role="status"`/`aria-live="polite"`; no error state exists to test because the flow has no failure branch (fully deterministic mock, as expected).
+
+**Mobile Navigation:** bottom nav tap targets measure ~54–59×52px, well clear of the 44×44 minimum; active-page indication (`aria-current="page"` plus the visual pill) is correct; the two previously-reported Low findings (truncated labels, content peeking under the dock) are both still present and still genuinely low-impact on their own — see QA-010 above for why the underlying root cause deserves more attention than either alone would suggest.
+
+**Real-world data:** the four requested member names (`A`, `Md. Abdullah Al Mamun`, `বাংলা নাম`, `José García`) and four grocery names (including `চাল` and `🥛 Milk & Eggs`) all rendered cleanly with no overflow, truncation, or broken cards — including correct avatar-initial extraction for non-Latin scripts; a very large amount (999,999) formats with correct thousands separators; invalid price characters (`abc!@#$%^&*()`) are fully rejected by the existing input mask with no partial/garbled value.
+
+**Interaction stress:** browser Back with a dialog open correctly closes it and lands on the right prior route; refreshing with a dialog open recovers cleanly; canceling a partially-filled form and reopening it shows genuinely empty fields (fresh remount, no stale draft leaking); rapid double-submission on Add Member creates exactly one member; six back-to-back nav-item clicks fired with zero delay between them settle correctly on the final page with zero console errors. One scenario worth calling out specifically: clicking a nav item while a drawer/modal is open does **not** silently navigate away — a real coordinate-based click (not a locator click, which would have hidden this) lands on the overlay's own backdrop first, closing the drawer without navigating; only a second, deliberate click actually changes pages. This is correct, standard modal behavior, confirmed rather than assumed.
+
+**Accessibility:** the focus trap inside a dialog held for 15 consecutive Tab presses without escaping; focus correctly returns to the exact element that opened a drawer once it's closed via keyboard; validation errors carry `role="alert"` and are genuinely announced (confirms the earlier fix holds); heading hierarchy is clean on every page except Analytics (QA-013).
+
+**Animation:** page transitions correctly gate on real content being present rather than allowing clicks on a not-yet-existent destination; nothing was found that's clickable before it's visually ready. No excessive or gratuitous motion was observed anywhere in this pass — the current amount of animation is purposeful and brief (150–300ms range) and consistent with the project's own documented motion system; "more animation" is not a direction this audit recommends.
+
+---
+
+## Round 2 Severity Counts
+
+- **Critical:** 0
+- **High:** 2 (QA-010, QA-011)
+- **Medium:** 1 (QA-012)
+- **Low:** 3 (QA-013, QA-014, QA-015)
+- **Polish:** 0
+
+**By area:**
+- Assistant findings: QA-010, QA-011, QA-014, QA-015 (4)
+- Mobile Navigation findings: QA-010 (shared with Assistant; the two pre-existing Low findings were revisited, not re-numbered)
+- Accessibility findings: QA-013 (1)
+- Financial/Product-Trust findings: QA-011, QA-012 (2; QA-010 and QA-015 are also trust-relevant but categorized primarily under Assistant)
+- Animation findings: 0 (this pass found the current animation approach sound — no findings, only confirmations, under "What held up well")
+
+## Release-gate recommendation
+
+**RELEASE BLOCKERS BEFORE BACKEND:** None of these findings block wiring up a real backend — none touch data integrity, and none are Critical. If "release" means shipping the Assistant feature specifically with a real LLM behind it, QA-010 and QA-011 are the two I'd want resolved first, since a real (paid, latent) generation being silently lost or silently mis-attributed is a meaningfully worse experience than it is today with a free, instant mock.
+
+**SHOULD FIX BEFORE BACKEND:** QA-010 (mobile button interception — small, well-understood fix) and QA-011 (silent payer/sharer assignment — worth a product decision now, since it shapes how the real generation-review UI should work once it exists).
+
+**CAN SAFELY DEFER:** QA-012 (rounding — a display/product decision, not urgent), QA-013 (heading level — cheap but not user-facing-urgent), QA-014 and QA-015 (both minor polish/UX notes with no current data-loss consequence).
+
+## Round 2 Fix Status (2026-08-27)
+
+QA-010, QA-011, and QA-012 were fixed and verified in this batch — see each finding above for root cause, fix, files changed, and verification detail. QA-013, QA-014, and QA-015 were deliberately left unfixed (explicit product decision to scope this batch to only the two High findings plus the one Medium) and remain DEFERRED, open for a future pass.
+
+| ID | Severity | Status |
+|---|---|---|
+| QA-010 | High | FIXED and VERIFIED |
+| QA-011 | High | FIXED and VERIFIED |
+| QA-012 | Medium | FIXED and VERIFIED |
+| QA-013 | Low | DEFERRED |
+| QA-014 | Low | DEFERRED |
+| QA-015 | Low | DEFERRED |
+
+Full verification suite run after these fixes: TypeScript typecheck clean, ESLint 0 errors (5 pre-existing unrelated warnings), Vitest 246/246 passing (230 pre-existing + 16 new in `money.test.ts`), Playwright 29/29 executed tests passing (23 skipped by design — viewport-scoped tests that only apply to one of Desktop/Mobile Chrome), production build succeeds.

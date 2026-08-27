@@ -14,3 +14,16 @@ export async function enterApp(page: Page) {
   // (count, names, order) don't race that entrance animation.
   await expect(page.locator('main li').first()).toBeVisible()
 }
+
+/**
+ * From inside the app, navigates to Assistant and runs its (fully mocked,
+ * local) generate flow through to the review screen. Shared because both
+ * the mobile-nav-clearance and Assistant-review specs need this same setup.
+ */
+export async function generateAssistantGroceries(page: Page, prompt: string) {
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Assistant', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'AI Assistant', exact: true })).toBeVisible()
+  await page.getByLabel('Describe what your household needs').fill(prompt)
+  await page.getByRole('button', { name: 'Generate' }).click()
+  await expect(page.getByText('Your groceries are ready')).toBeVisible({ timeout: 8000 })
+}

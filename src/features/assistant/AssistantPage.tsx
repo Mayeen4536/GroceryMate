@@ -7,6 +7,7 @@ import { riseChild, transitionBase } from '@/animations/motion'
 import { useAssistant } from '@/hooks/useAssistant'
 import type { Attachment } from '@/hooks/useAssistant'
 import { MOCK_GENERATED_ITEMS } from '@/store/assistantGenerated'
+import type { GroceryItem } from '@/types/grocery'
 import { PromptComposer } from './PromptComposer'
 import { ExamplePrompts } from './ExamplePrompts'
 import { SuggestionGrid } from './SuggestionGrid'
@@ -51,7 +52,7 @@ export function AssistantPage({
   onAddGroceries,
 }: {
   direction?: number
-  onAddGroceries: () => void
+  onAddGroceries: (items: GroceryItem[]) => void
 }) {
   const {
     phase,

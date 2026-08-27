@@ -234,6 +234,36 @@
 @layer base {
   html {
     background-color: var(--color-canvas);
+
+    /*
+      Reserved clearance above the floating mobile bottom-nav dock (its own
+      height plus its offset from the viewport edge, plus a little breathing
+      room — see BottomNav.tsx for the dock's actual dimensions this is
+      sized against). This is the single source of truth every place that
+      needs to keep content clear of the dock reads from — AppShell's
+      bottom padding, the Groceries FAB, and scroll-padding-bottom below —
+      instead of each picking its own ad hoc number.
+    */
+    --mobile-nav-clearance: 6rem;
+  }
+
+  @media (max-width: 1023.98px) {
+    html {
+      /*
+        Makes scroll-into-view operations (keyboard Tab focus landing on a
+        control near the bottom of the page, or any future
+        element.scrollIntoView() call) stop short of the dock's clearance
+        zone rather than the bare minimum needed to reveal the target's own
+        edge — which is exactly what let a control end up visible-but-
+        covered by the dock (QA-010). Manual touch scrolling isn't
+        constrained by this (only these browser-driven scroll operations
+        are), which is why AppShell's bottom padding below still matters:
+        together they keep the reserved zone clear both when the browser
+        scrolls something into view and when a user scrolls all the way
+        down themselves.
+      */
+      scroll-padding-bottom: var(--mobile-nav-clearance);
+    }
   }
 
   body {

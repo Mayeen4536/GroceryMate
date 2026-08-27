@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { initialGroceries } from '@/store/groceries'
-import { mockMembers, mockUser } from '@/store/household'
 import type { GroceryItem } from '@/types/grocery'
 
 /** The shape a grocery form submits: every field except the generated id. */
@@ -102,21 +101,21 @@ export function useGroceries() {
   }
 
   /**
-   * Appends a batch of AI-suggested items (e.g. from the Assistant), filling
-   * in a payer/sharers when the source didn't have any yet — an AI
-   * suggestion has no real payer or sharers until a member reviews it, so
-   * this fills in the sensible default (whoever's using the app, shared by
-   * the whole household) rather than leaving items with no one attached.
+   * Appends a batch of AI-suggested items (e.g. from the Assistant) once
+   * they've already been reviewed and confirmed — GroceryMate never invents
+   * a payer or sharers on its own (that's a product principle, not just an
+   * implementation detail), so by the time items reach here every one of
+   * them must already have a real `paidBy` and non-empty `sharedBy`; the
+   * Assistant's review step (`GeneratedGroceries`) is what enforces that
+   * before this is ever called. This just re-keys them and adds them.
    */
   const addGenerated = (generated: GroceryItem[]) => {
-    const withDefaults = generated.map((item, index) => ({
+    const reKeyed = generated.map((item, index) => ({
       ...item,
       id: `g-${Date.now()}-${index}`,
-      paidBy: item.paidBy || mockUser.name,
-      sharedBy: item.sharedBy.length > 0 ? item.sharedBy : mockMembers,
     }))
-    setItems((current) => [...withDefaults, ...current])
-    setLastAddedId(withDefaults[0]?.id ?? null)
+    setItems((current) => [...reKeyed, ...current])
+    setLastAddedId(reKeyed[0]?.id ?? null)
   }
 
   return {

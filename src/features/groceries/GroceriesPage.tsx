@@ -114,7 +114,7 @@ export function GroceriesPage({
             whileHover={{ scale: 1.04, y: -2 }}
             whileTap={{ scale: 0.95 }}
             transition={springGentle}
-            className="fixed bottom-24 right-4 z-40 flex h-14 items-center gap-2 rounded-full bg-linear-to-b from-brand-500 to-brand-700 pl-5 pr-6 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.18),0_2px_6px_rgb(16_58_38/0.3),0_10px_28px_-6px_rgb(33_122_80/0.55)] transition-[filter] duration-200 hover:brightness-[1.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas lg:bottom-8 lg:right-8"
+            className="fixed right-4 bottom-[var(--mobile-nav-clearance)] z-40 flex h-14 items-center gap-2 rounded-full bg-linear-to-b from-brand-500 to-brand-700 pl-5 pr-6 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.18),0_2px_6px_rgb(16_58_38/0.3),0_10px_28px_-6px_rgb(33_122_80/0.55)] transition-[filter] duration-200 hover:brightness-[1.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas lg:right-8 lg:bottom-8"
           >
             <Plus size={19} aria-hidden="true" />
             Add grocery
@@ -140,7 +140,7 @@ export function GroceriesPage({
       {/* Undo toasts for deleted items. Sits above the FAB's own row (rather
           than sharing it) so the two never crowd each other, and clears the
           mobile bottom nav dock underneath both. */}
-      <div className="pointer-events-none fixed inset-x-4 bottom-40 z-40 flex flex-col items-start gap-2 lg:bottom-24">
+      <div className="pointer-events-none fixed inset-x-4 z-40 flex flex-col items-start gap-2 bottom-[calc(var(--mobile-nav-clearance)+4rem)] lg:bottom-24">
         <AnimatePresence initial={false}>
           {pendingDeletes.map((pending) => (
             <Toast

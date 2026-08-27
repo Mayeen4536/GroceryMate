@@ -7,7 +7,6 @@ import { Landing } from '@/features/landing/Landing'
 import { useAppNavigation } from '@/hooks/useAppNavigation'
 import { useGroceries } from '@/hooks/useGroceries'
 import { useShowDesignSystem } from '@/hooks/useShowDesignSystem'
-import { MOCK_GENERATED_ITEMS } from '@/store/assistantGenerated'
 import { easeSoft } from '@/animations/motion'
 
 // Code-split every destination past the landing page: a first visit only
@@ -52,8 +51,8 @@ function AppRoutes({ groceries }: { groceries: ReturnType<typeof useGroceries> }
                 <AssistantPage
                   key="assistant"
                   direction={direction}
-                  onAddGroceries={() => {
-                    groceries.addGenerated(MOCK_GENERATED_ITEMS)
+                  onAddGroceries={(items) => {
+                    groceries.addGenerated(items)
                     navigate('groceries')
                   }}
                 />
