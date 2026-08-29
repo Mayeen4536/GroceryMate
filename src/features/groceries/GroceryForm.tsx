@@ -3,9 +3,11 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Check, Minus, Plus } from 'lucide-react'
 import { Button, Dropdown, Input, Textarea } from '@/components/ui'
 import { transitionFast, springSnappy } from '@/animations/motion'
-import { mockMembers } from '@/store/household'
+import { mockUser } from '@/store/household'
 import { type GroceryDraft } from '@/hooks/useGroceries'
+import { useMemberOptions } from '@/hooks/useMemberOptions'
 import type { CategoryId, GroceryItem } from '@/types/grocery'
+import type { Member } from '@/types/member'
 import { GroceryCard } from './GroceryCard'
 import { CategoryPicker } from './CategoryPicker'
 import { MemberChipPicker } from './MemberChipPicker'
@@ -13,6 +15,8 @@ import { MemberChipPicker } from './MemberChipPicker'
 interface GroceryFormProps {
   /** Item being edited, or null when adding. */
   initial: GroceryItem | null
+  /** The household's current roster — the only source financial participant selection reads from. */
+  members: readonly Member[]
   onSubmit: (draft: GroceryDraft) => void
   onCancel: () => void
 }
@@ -63,23 +67,50 @@ function QuantityStepper({ value, onChange }: { value: number; onChange: (value:
   )
 }
 
+/**
+ * Resolves an existing item's stored payer/sharer names (see `src/adapters`
+ * for why grocery data is name-keyed) to the current roster's ids, for
+ * pre-filling the pickers below. A name that no longer matches exactly one
+ * current, selectable member — removed, renamed, or now ambiguous — is
+ * simply left out rather than guessed at; the picker can only ever offer
+ * ids it actually has an option for.
+ */
+function resolveInitialSelection(initial: GroceryItem | null, memberOptions: ReturnType<typeof useMemberOptions>) {
+  if (!initial) return { paidById: null, sharedByIds: [] as string[] }
+  return {
+    paidById: memberOptions.resolveIdForName(initial.paidBy),
+    sharedByIds: initial.sharedBy
+      .map((name) => memberOptions.resolveIdForName(name))
+      .filter((id): id is string => id !== null),
+  }
+}
+
 /** Entry panel body: live preview on top, fields below. Purely visual. */
-export function GroceryForm({ initial, onSubmit, onCancel }: GroceryFormProps) {
+export function GroceryForm({ initial, members, onSubmit, onCancel }: GroceryFormProps) {
   const editing = initial != null
+  const memberOptions = useMemberOptions(members)
   const [name, setName] = useState(initial?.name ?? '')
   const [price, setPrice] = useState(initial?.price ?? '')
   const [quantity, setQuantity] = useState(initial?.quantity ?? 1)
   const [category, setCategory] = useState<CategoryId>(initial?.category ?? 'produce')
-  const [paidBy, setPaidBy] = useState<string | null>(initial?.paidBy ?? mockMembers[0])
-  const [sharedBy, setSharedBy] = useState<string[]>(initial?.sharedBy ?? [...mockMembers])
+  const [paidById, setPaidById] = useState<string | null>(() => {
+    if (initial) return resolveInitialSelection(initial, memberOptions).paidById
+    const currentUserOption = memberOptions.options.find((option) => option.name === mockUser.name)
+    return currentUserOption?.id ?? memberOptions.options[0]?.id ?? null
+  })
+  const [sharedByIds, setSharedByIds] = useState<string[]>(() => {
+    if (initial) return resolveInitialSelection(initial, memberOptions).sharedByIds
+    return memberOptions.options.map((option) => option.id)
+  })
   const [notes, setNotes] = useState(initial?.notes ?? '')
   const [attemptedSubmit, setAttemptedSubmit] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
   const sharedByGroupRef = useRef<HTMLDivElement>(null)
 
   const nameError = attemptedSubmit && !name.trim() ? 'Enter a name for this item.' : undefined
+  const paidByError = attemptedSubmit && !paidById ? 'Choose who paid for this item.' : undefined
   const sharedByError =
-    attemptedSubmit && sharedBy.length === 0 ? 'Pick at least one person sharing this item.' : undefined
+    attemptedSubmit && sharedByIds.length === 0 ? 'Pick at least one person sharing this item.' : undefined
 
   const draft: GroceryItem = {
     id: initial?.id ?? 'preview',
@@ -87,8 +118,8 @@ export function GroceryForm({ initial, onSubmit, onCancel }: GroceryFormProps) {
     price,
     quantity,
     category,
-    paidBy: paidBy ?? '',
-    sharedBy,
+    paidBy: memberOptions.nameForId(paidById),
+    sharedBy: sharedByIds.map((id) => memberOptions.nameForId(id)),
     notes,
   }
 
@@ -99,13 +130,15 @@ export function GroceryForm({ initial, onSubmit, onCancel }: GroceryFormProps) {
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
-    if (!name.trim() || sharedBy.length === 0) {
+    if (!name.trim() || !paidById || sharedByIds.length === 0) {
       setAttemptedSubmit(true)
       // Move focus to the first invalid field, same as native constraint
       // validation would have — but reliably, since noValidate below stops
       // the browser from doing (and getting in the way of) that itself.
       if (!name.trim()) {
         formRef.current?.querySelector<HTMLInputElement>('#grocery-form-name')?.focus()
+      } else if (!paidById) {
+        formRef.current?.querySelector<HTMLButtonElement>('#grocery-form-paid-by')?.focus()
       } else {
         sharedByGroupRef.current?.focus()
       }
@@ -116,8 +149,8 @@ export function GroceryForm({ initial, onSubmit, onCancel }: GroceryFormProps) {
       price,
       quantity,
       category,
-      paidBy: paidBy ?? '',
-      sharedBy,
+      paidBy: memberOptions.nameForId(paidById),
+      sharedBy: sharedByIds.map((id) => memberOptions.nameForId(id)),
       notes: notes.trim(),
     })
   }
@@ -156,18 +189,20 @@ export function GroceryForm({ initial, onSubmit, onCancel }: GroceryFormProps) {
       <CategoryPicker value={category} onChange={setCategory} />
 
       <Dropdown
+        id="grocery-form-paid-by"
         label="Paid by"
         placeholder="Choose a member"
-        options={mockMembers.map((member) => ({ value: member, label: member }))}
-        value={paidBy}
-        onChange={setPaidBy}
+        options={memberOptions.options.map((member) => ({ value: member.id, label: member.name }))}
+        value={paidById}
+        onChange={setPaidById}
+        error={paidByError}
       />
 
       <MemberChipPicker
         label="Shared by"
-        members={mockMembers}
-        selected={sharedBy}
-        onChange={setSharedBy}
+        members={memberOptions.options}
+        selected={sharedByIds}
+        onChange={setSharedByIds}
         error={sharedByError}
         groupRef={sharedByGroupRef}
       />

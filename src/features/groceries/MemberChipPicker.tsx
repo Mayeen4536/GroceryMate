@@ -6,11 +6,17 @@ import { cn } from '@/utils/cn'
 import { springPop, springSnappy, transitionFast } from '@/animations/motion'
 import { firstName } from '@/utils/name'
 
+export interface MemberChipOption {
+  readonly id: string
+  readonly name: string
+}
+
 interface MemberChipPickerProps {
   label: string
-  members: string[]
-  selected: string[]
-  onChange: (selected: string[]) => void
+  members: readonly MemberChipOption[]
+  /** Selected member ids — not names, so two members sharing a display name are never confused with each other. */
+  selected: readonly string[]
+  onChange: (selectedIds: string[]) => void
   error?: string
   /** Lets a caller (e.g. a form's submit handler) move focus here on validation failure. */
   groupRef?: RefObject<HTMLDivElement | null>
@@ -19,16 +25,20 @@ interface MemberChipPickerProps {
 /**
  * Multi-select as tactile member chips: avatar, name, and a check that
  * pops onto the avatar when selected. Everyone/no-one shortcut included.
+ *
+ * Selection is tracked by member id, not display name: two members who
+ * happen to share a name (a realistic case, not a hypothetical one) must
+ * still toggle independently rather than both reacting to one chip.
  */
 export function MemberChipPicker({ label, members, selected, onChange, error, groupRef }: MemberChipPickerProps) {
   const errorId = useId()
   const allSelected = selected.length === members.length
 
-  const toggle = (name: string) => {
+  const toggle = (id: string) => {
     onChange(
-      selected.includes(name)
-        ? selected.filter((member) => member !== name)
-        : [...selected, name],
+      selected.includes(id)
+        ? selected.filter((memberId) => memberId !== id)
+        : [...selected, id],
     )
   }
 
@@ -38,7 +48,7 @@ export function MemberChipPicker({ label, members, selected, onChange, error, gr
         <span className="text-sm font-medium text-ink">{label}</span>
         <button
           type="button"
-          onClick={() => onChange(allSelected ? [] : [...members])}
+          onClick={() => onChange(allSelected ? [] : members.map((member) => member.id))}
           className="rounded text-xs font-medium text-brand-700 transition-colors hover:text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40"
         >
           {allSelected ? 'Clear' : 'Everyone'}
@@ -52,13 +62,13 @@ export function MemberChipPicker({ label, members, selected, onChange, error, gr
         aria-describedby={error ? errorId : undefined}
         className="flex flex-wrap gap-2 focus:outline-none"
       >
-        {members.map((name) => {
-          const isSelected = selected.includes(name)
+        {members.map((member) => {
+          const isSelected = selected.includes(member.id)
           return (
             <motion.button
-              key={name}
+              key={member.id}
               type="button"
-              onClick={() => toggle(name)}
+              onClick={() => toggle(member.id)}
               aria-pressed={isSelected}
               whileTap={{ scale: 0.93 }}
               transition={springSnappy}
@@ -72,7 +82,7 @@ export function MemberChipPicker({ label, members, selected, onChange, error, gr
               )}
             >
               <span className="relative">
-                <Avatar name={name} size="sm" />
+                <Avatar name={member.name} size="sm" />
                 <AnimatePresence>
                   {isSelected && (
                     <motion.span
@@ -87,7 +97,7 @@ export function MemberChipPicker({ label, members, selected, onChange, error, gr
                   )}
                 </AnimatePresence>
               </span>
-              {firstName(name)}
+              {firstName(member.name)}
             </motion.button>
           )
         })}

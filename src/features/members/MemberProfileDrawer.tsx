@@ -11,6 +11,8 @@ interface MemberProfileDrawerProps {
   onClose: () => void
   onChangeTone: (id: string, tone: number) => void
   onRemove: (id: string) => void
+  /** See the same prop on `MemberCard` — the calculation currently can't run, so financial fields show as unavailable rather than a number that can no longer be trusted. */
+  financialsUnavailable?: boolean
 }
 
 /** Mock activity rows; display only. */
@@ -20,7 +22,13 @@ const activityFor = (member: Member): Array<{ icon: LucideIcon; text: string; wh
   { icon: Sparkles, text: `Joined Flat 4B`, when: member.joinedLabel },
 ]
 
-export function MemberProfileDrawer({ member, onClose, onChangeTone, onRemove }: MemberProfileDrawerProps) {
+export function MemberProfileDrawer({
+  member,
+  onClose,
+  onChangeTone,
+  onRemove,
+  financialsUnavailable = false,
+}: MemberProfileDrawerProps) {
   const isDesktop = useMediaQuery('(min-width: 1024px)')
   const status = member ? STATUS_META[member.status] : null
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -91,7 +99,11 @@ export function MemberProfileDrawer({ member, onClose, onChangeTone, onRemove }:
               <p className="truncate text-sm text-muted">{member.email}</p>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {member.role === 'owner' && <Badge tone="brand">Owner</Badge>}
-                <Badge tone={status.tone}>{status.label}</Badge>
+                {financialsUnavailable ? (
+                  <Badge tone="neutral">Unavailable</Badge>
+                ) : (
+                  <Badge tone={status.tone}>{status.label}</Badge>
+                )}
               </div>
             </div>
           </div>
@@ -111,7 +123,7 @@ export function MemberProfileDrawer({ member, onClose, onChangeTone, onRemove }:
             <div className="card-surface rounded-lg p-4 shadow-soft">
               <p className="text-xs text-muted">Paid this month</p>
               <p className="mt-1 text-xl font-bold tabular-nums tracking-tight text-ink">
-                <AnimatedNumber value={Number.parseFloat(member.amountPaid) || 0} />
+                {financialsUnavailable ? '—' : <AnimatedNumber value={Number.parseFloat(member.amountPaid) || 0} />}
               </p>
             </div>
             <div className="card-surface rounded-lg p-4 shadow-soft">

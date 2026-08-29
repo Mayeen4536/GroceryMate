@@ -8,6 +8,7 @@ import { useAssistant } from '@/hooks/useAssistant'
 import type { Attachment } from '@/hooks/useAssistant'
 import { MOCK_GENERATED_ITEMS } from '@/store/assistantGenerated'
 import type { GroceryItem } from '@/types/grocery'
+import type { Member } from '@/types/member'
 import { PromptComposer } from './PromptComposer'
 import { ExamplePrompts } from './ExamplePrompts'
 import { SuggestionGrid } from './SuggestionGrid'
@@ -49,9 +50,11 @@ function PromptRecap({ prompt, attachments }: { prompt: string; attachments: Att
  */
 export function AssistantPage({
   direction = 1,
+  members,
   onAddGroceries,
 }: {
   direction?: number
+  members: readonly Member[]
   onAddGroceries: (items: GroceryItem[]) => void
 }) {
   const {
@@ -158,6 +161,7 @@ export function AssistantPage({
                 >
                   <GeneratedGroceries
                     items={MOCK_GENERATED_ITEMS}
+                    members={members}
                     onAddGroceries={onAddGroceries}
                     onReset={resetToIdle}
                   />

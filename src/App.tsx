@@ -58,6 +58,7 @@ function AppRoutes({
                 <AssistantPage
                   key="assistant"
                   direction={direction}
+                  members={members.members}
                   onAddGroceries={(items) => {
                     groceries.addGenerated(items)
                     navigate('groceries')
@@ -67,7 +68,9 @@ function AppRoutes({
             />
             <Route
               path="/groceries"
-              element={<GroceriesPage key="groceries" direction={direction} {...groceries} />}
+              element={
+                <GroceriesPage key="groceries" direction={direction} members={members.members} {...groceries} />
+              }
             />
             <Route
               path="/members"

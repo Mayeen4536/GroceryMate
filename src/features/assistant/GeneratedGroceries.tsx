@@ -3,19 +3,40 @@ import { motion } from 'framer-motion'
 import { AlertTriangle, Check, RotateCcw, Sparkles } from 'lucide-react'
 import { Badge, Button, Dropdown } from '@/components/ui'
 import { riseChild, staggerChildren, transitionBase } from '@/animations/motion'
-import { mockMembers } from '@/store/household'
+import { useMemberOptions } from '@/hooks/useMemberOptions'
 import { categoryById } from '@/utils/groceryCategory'
 import { formatTaka } from '@/utils/money'
 import type { GroceryItem } from '@/types/grocery'
+import type { Member } from '@/types/member'
 import { MemberChipPicker } from '@/features/groceries/MemberChipPicker'
 
 interface GeneratedGroceriesProps {
   items: GroceryItem[]
+  /** The household's current roster — the only source financial participant selection reads from. */
+  members: readonly Member[]
   onAddGroceries: (items: GroceryItem[]) => void
   onReset: () => void
 }
 
-const PAYER_OPTIONS = mockMembers.map((member) => ({ value: member, label: member }))
+/**
+ * Whether an item's stored payer/sharer names both resolve to a member on
+ * the *current* roster — not just whether the strings happen to be
+ * non-empty. A generated item's suggested payer could name someone no
+ * longer in the household (removed after this mock content was written,
+ * or never a real match); treating that as "resolved" because the string
+ * isn't blank would let an unresolvable reference reach the real grocery
+ * list, where the settlement engine would only refuse it later.
+ */
+export function isFullyResolved(item: GroceryItem, memberOptions: ReturnType<typeof useMemberOptions>): boolean {
+  const hasPayer = memberOptions.resolveIdForName(item.paidBy) !== null
+  // Every name must resolve, not just one of them: a mix of one valid and
+  // one stale sharer must still count as unresolved, or the stale name
+  // would ride along untouched into the real grocery list the moment the
+  // user submits without ever having to open this item's picker.
+  const hasSharers =
+    item.sharedBy.length > 0 && item.sharedBy.every((name) => memberOptions.resolveIdForName(name) !== null)
+  return hasPayer && hasSharers
+}
 
 /**
  * One generated item, editable in place. AI-suggested items may not state
@@ -25,16 +46,26 @@ const PAYER_OPTIONS = mockMembers.map((member) => ({ value: member, label: membe
  */
 function GeneratedItemReview({
   item,
+  memberOptions,
   showErrors,
   onChange,
 }: {
   item: GroceryItem
+  memberOptions: ReturnType<typeof useMemberOptions>
   showErrors: boolean
   onChange: (patch: Partial<Pick<GroceryItem, 'paidBy' | 'sharedBy'>>) => void
 }) {
   const category = categoryById(item.category)
-  const needsPayer = !item.paidBy
-  const needsSharers = item.sharedBy.length === 0
+  const paidById = memberOptions.resolveIdForName(item.paidBy)
+  const sharedByIds = item.sharedBy
+    .map((name) => memberOptions.resolveIdForName(name))
+    .filter((id): id is string => id !== null)
+  const needsPayer = paidById === null
+  // Flags a partially-stale list too (one valid sharer plus one that no
+  // longer resolves), not just an empty one — matches `isFullyResolved`'s
+  // stricter "every name must resolve" rule below, so the badge and the
+  // submit gate never disagree about whether this item is really done.
+  const needsSharers = item.sharedBy.length === 0 || sharedByIds.length !== item.sharedBy.length
 
   return (
     <motion.li variants={riseChild} className="card-surface space-y-4 rounded-lg p-4 shadow-soft">
@@ -71,16 +102,16 @@ function GeneratedItemReview({
         <Dropdown
           label="Paid by"
           placeholder="Choose who paid"
-          options={PAYER_OPTIONS}
-          value={item.paidBy || null}
-          onChange={(paidBy) => onChange({ paidBy })}
+          options={memberOptions.options.map((member) => ({ value: member.id, label: member.name }))}
+          value={paidById}
+          onChange={(id) => onChange({ paidBy: memberOptions.nameForId(id) })}
           error={showErrors && needsPayer ? 'Choose who paid for this item.' : undefined}
         />
         <MemberChipPicker
           label="Shared by"
-          members={mockMembers}
-          selected={item.sharedBy}
-          onChange={(sharedBy) => onChange({ sharedBy })}
+          members={memberOptions.options}
+          selected={sharedByIds}
+          onChange={(ids) => onChange({ sharedBy: ids.map((id) => memberOptions.nameForId(id)) })}
           error={showErrors && needsSharers ? 'Pick at least one person sharing this item.' : undefined}
         />
       </div>
@@ -89,17 +120,17 @@ function GeneratedItemReview({
 }
 
 /** The reveal once generation finishes: the AI's suggested list, reviewed and confirmed before it becomes real. */
-export function GeneratedGroceries({ items, onAddGroceries, onReset }: GeneratedGroceriesProps) {
+export function GeneratedGroceries({ items, members, onAddGroceries, onReset }: GeneratedGroceriesProps) {
   const [drafts, setDrafts] = useState<GroceryItem[]>(() => items.map((item) => ({ ...item })))
   const [attemptedSubmit, setAttemptedSubmit] = useState(false)
+  const memberOptions = useMemberOptions(members)
 
   const updateDraft = (id: string, patch: Partial<Pick<GroceryItem, 'paidBy' | 'sharedBy'>>) => {
     setDrafts((current) => current.map((draft) => (draft.id === id ? { ...draft, ...patch } : draft)))
   }
 
-  const isResolved = (item: GroceryItem) => Boolean(item.paidBy) && item.sharedBy.length > 0
-  const allResolved = drafts.every(isResolved)
-  const unresolvedCount = drafts.filter((item) => !isResolved(item)).length
+  const allResolved = drafts.every((item) => isFullyResolved(item, memberOptions))
+  const unresolvedCount = drafts.filter((item) => !isFullyResolved(item, memberOptions)).length
 
   const handleAdd = () => {
     if (!allResolved) {
@@ -142,6 +173,7 @@ export function GeneratedGroceries({ items, onAddGroceries, onReset }: Generated
           <GeneratedItemReview
             key={item.id}
             item={item}
+            memberOptions={memberOptions}
             showErrors={attemptedSubmit}
             onChange={(patch) => updateDraft(item.id, patch)}
           />

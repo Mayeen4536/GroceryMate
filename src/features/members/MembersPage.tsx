@@ -100,12 +100,18 @@ export function MembersPage({
               }
             />
           </motion.div>
-        ) : settlementResult.status === 'error' ? (
-          <motion.div variants={riseChild}>
-            <FinancialDataError message={settlementResult.userMessage} />
-          </motion.div>
         ) : (
           <>
+            {/* A calculation failure (e.g. a grocery referencing a member who's
+                since been removed) only means the financial numbers below
+                can't be trusted — it's not a reason to also block adding,
+                removing, or searching members, none of which depend on it. */}
+            {settlementResult.status === 'error' && (
+              <motion.div variants={riseChild} className="mb-5">
+                <FinancialDataError message={settlementResult.userMessage} />
+              </motion.div>
+            )}
+
             <motion.div
               variants={riseChild}
               className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
@@ -158,9 +164,14 @@ export function MembersPage({
                         transition={transitionBase}
                       >
                         <MemberCard
-                          member={withRealFinancials(member, settlementResult.viewModel)}
+                          member={
+                            settlementResult.status === 'ok'
+                              ? withRealFinancials(member, settlementResult.viewModel)
+                              : member
+                          }
                           onOpen={setProfileId}
                           highlight={member.id === lastAddedId}
+                          financialsUnavailable={settlementResult.status === 'error'}
                         />
                       </motion.li>
                     ))}
@@ -191,6 +202,7 @@ export function MembersPage({
         onClose={() => setProfileId(null)}
         onChangeTone={handleChangeTone}
         onRemove={handleRemove}
+        financialsUnavailable={settlementResult.status === 'error'}
       />
     </>
   )

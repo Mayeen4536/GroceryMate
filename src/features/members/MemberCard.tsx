@@ -10,9 +10,18 @@ interface MemberCardProps {
   onOpen: (id: string) => void
   /** One-shot mint flash for freshly added members. */
   highlight?: boolean
+  /**
+   * True when the household's settlement calculation currently can't run
+   * (e.g. a grocery item references a member who's since been removed —
+   * see `useSettlementResult`). Shows a plain "Unavailable" in place of
+   * `member.status`/`amountPaid` rather than a number that can no longer
+   * be trusted, without hiding the card (and its Remove/search/add
+   * actions, which don't depend on the calculation) entirely.
+   */
+  financialsUnavailable?: boolean
 }
 
-export function MemberCard({ member, onOpen, highlight = false }: MemberCardProps) {
+export function MemberCard({ member, onOpen, highlight = false, financialsUnavailable = false }: MemberCardProps) {
   const status = STATUS_META[member.status]
   const tone = MEMBER_TONES[member.tone % MEMBER_TONES.length]
   const invited = member.status === 'invited'
@@ -44,7 +53,11 @@ export function MemberCard({ member, onOpen, highlight = false }: MemberCardProp
 
       <div className="relative flex items-start justify-between gap-3">
         <Avatar name={member.name} tone={member.tone} size="lg" />
-        <Badge tone={status.tone}>{status.label}</Badge>
+        {financialsUnavailable ? (
+          <Badge tone="neutral">Unavailable</Badge>
+        ) : (
+          <Badge tone={status.tone}>{status.label}</Badge>
+        )}
       </div>
 
       <div className="relative mt-3 min-w-0">
@@ -60,6 +73,8 @@ export function MemberCard({ member, onOpen, highlight = false }: MemberCardProp
           <p className="text-xs text-muted">{invited ? 'Waiting on' : 'Paid this month'}</p>
           {invited ? (
             <p className="text-sm font-semibold text-ink-soft">First shop</p>
+          ) : financialsUnavailable ? (
+            <p className="text-sm font-semibold text-ink-soft">—</p>
           ) : (
             <p className="text-sm font-semibold tabular-nums text-ink">
               <AnimatedNumber value={Number.parseFloat(member.amountPaid) || 0} />

@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { riseChild, springGentle, transitionBase } from '@/animations/motion'
 import type { useGroceries } from '@/hooks/useGroceries'
+import type { Member } from '@/types/member'
 import { GroceryCard } from './GroceryCard'
 import { GroceryForm } from './GroceryForm'
 
@@ -15,12 +16,15 @@ import { GroceryForm } from './GroceryForm'
  *
  * Takes `useGroceries()`'s return value as props rather than calling the
  * hook itself — the Assistant page needs to add to this same list, so the
- * state lives once in `App.tsx` and both pages share it.
+ * state lives once in `App.tsx` and both pages share it. `members` is
+ * threaded through the same way, purely so the add/edit form's payer and
+ * shared-by pickers always reflect the current household roster.
  */
 export function GroceriesPage({
   direction = 1,
+  members,
   ...groceries
-}: { direction?: number } & ReturnType<typeof useGroceries>) {
+}: { direction?: number; members: readonly Member[] } & ReturnType<typeof useGroceries>) {
   const {
     items,
     panelOpen,
@@ -132,6 +136,7 @@ export function GroceriesPage({
         <GroceryForm
           key={editingItem?.id ?? 'new'}
           initial={editingItem}
+          members={members}
           onSubmit={handleSubmit}
           onCancel={closePanel}
         />
