@@ -209,5 +209,97 @@ describe('computeSettlement', () => {
       const result = computeSettlement([makeMember('aisha')], [], CURRENCIES.USD)
       expect(result.currency).toEqual(CURRENCIES.USD)
     })
+
+    it('returns an empty, transfer-free result for a brand-new household with no members and no groceries', () => {
+      const result = computeSettlement([], [], TEST_CURRENCY)
+      expect(result.memberBalances).toEqual([])
+      expect(result.transfers).toEqual([])
+    })
+  })
+
+  describe('one member, one payer, edge amounts', () => {
+    it('settles a one-paisa (1 minor unit) item without rounding it away to nothing', () => {
+      // bilal pays; splitEvenly's sorted-id rule (see splitEvenly.ts) hands the single minor
+      // unit to "aisha" (alphabetically first) — so aisha ends up owing bilal exactly ৳0.01,
+      // not ৳0 and not ৳0.02. The 1 minor unit is real money and must produce a real transfer.
+      const members = [makeMember('aisha'), makeMember('bilal')]
+      const groceries = [makeGroceryItem({ id: 'g1', paidBy: 'bilal', sharedBy: ['aisha', 'bilal'], unitPriceMinorUnits: 1 })]
+
+      const result = computeSettlement(members, groceries, TEST_CURRENCY)
+
+      expectLedgerIntegrity(result)
+      const totalConsumed = result.memberBalances.reduce((sum, m) => sum + m.consumedMinorUnits, 0)
+      expect(totalConsumed).toBe(1)
+      expect(result.transfers).toEqual([{ from: 'aisha', to: 'bilal', amountMinorUnits: 1 }])
+    })
+
+    it('handles a very large monetary value without losing precision', () => {
+      // ৳9,999,999.99 — 999999999 minor units. Comfortably inside Number.MAX_SAFE_INTEGER,
+      // but large enough to expose any float-based (rather than integer) arithmetic bug.
+      const members = [makeMember('aisha'), makeMember('bilal'), makeMember('chloe')]
+      const groceries = [
+        makeGroceryItem({
+          id: 'g1',
+          paidBy: 'aisha',
+          sharedBy: ['aisha', 'bilal', 'chloe'],
+          unitPriceMinorUnits: 999_999_999,
+        }),
+      ]
+
+      const result = computeSettlement(members, groceries, TEST_CURRENCY)
+
+      expectLedgerIntegrity(result)
+      const totalConsumed = result.memberBalances.reduce((sum, m) => sum + m.consumedMinorUnits, 0)
+      expect(totalConsumed).toBe(999_999_999)
+      expect(Number.isSafeInteger(totalConsumed)).toBe(true)
+    })
+
+    it('lets a payer who consumed none of what they bought end up owed the full amount', () => {
+      // aisha buys a birthday gift entirely for bilal; she shares none of it herself.
+      const members = [makeMember('aisha'), makeMember('bilal')]
+      const groceries = [makeGroceryItem({ id: 'g1', paidBy: 'aisha', sharedBy: ['bilal'], unitPriceMinorUnits: 2000 })]
+
+      const result = computeSettlement(members, groceries, TEST_CURRENCY)
+
+      expectLedgerIntegrity(result)
+      const aishaBalance = result.memberBalances.find((b) => b.memberId === 'aisha')!
+      expect(aishaBalance.spentMinorUnits).toBe(2000)
+      expect(aishaBalance.consumedMinorUnits).toBe(0)
+      expect(aishaBalance.netBalanceMinorUnits).toBe(2000)
+      expect(result.transfers).toEqual([{ from: 'bilal', to: 'aisha', amountMinorUnits: 2000 }])
+    })
+
+    it('lets a consumer who never once paid for anything end up owing the full amount', () => {
+      // bilal shares in every item but never pays for one himself.
+      const members = [makeMember('aisha'), makeMember('bilal')]
+      const groceries = [
+        makeGroceryItem({ id: 'g1', paidBy: 'aisha', sharedBy: ['aisha', 'bilal'], unitPriceMinorUnits: 400 }),
+        makeGroceryItem({ id: 'g2', paidBy: 'aisha', sharedBy: ['aisha', 'bilal'], unitPriceMinorUnits: 600 }),
+      ]
+
+      const result = computeSettlement(members, groceries, TEST_CURRENCY)
+
+      expectLedgerIntegrity(result)
+      const bilalBalance = result.memberBalances.find((b) => b.memberId === 'bilal')!
+      expect(bilalBalance.spentMinorUnits).toBe(0)
+      expect(bilalBalance.consumedMinorUnits).toBe(500)
+      expect(bilalBalance.netBalanceMinorUnits).toBe(-500)
+      expect(result.transfers).toEqual([{ from: 'bilal', to: 'aisha', amountMinorUnits: 500 }])
+    })
+
+    it('routes every transfer to a single member when that member paid for every item in the household', () => {
+      const members = [makeMember('aisha'), makeMember('bilal'), makeMember('chloe'), makeMember('daniyal')]
+      const groceries = [
+        makeGroceryItem({ id: 'g1', paidBy: 'aisha', sharedBy: ['aisha', 'bilal'], unitPriceMinorUnits: 200 }),
+        makeGroceryItem({ id: 'g2', paidBy: 'aisha', sharedBy: ['aisha', 'chloe', 'daniyal'], unitPriceMinorUnits: 300 }),
+        makeGroceryItem({ id: 'g3', paidBy: 'aisha', sharedBy: ['bilal', 'chloe', 'daniyal'], unitPriceMinorUnits: 90 }),
+      ]
+
+      const result = computeSettlement(members, groceries, TEST_CURRENCY)
+
+      expectLedgerIntegrity(result)
+      expect(result.transfers.every((t) => t.to === 'aisha')).toBe(true)
+      expect(result.transfers.every((t) => t.from !== 'aisha')).toBe(true)
+    })
   })
 })

@@ -6,6 +6,7 @@ import { PWAUpdatePrompt } from '@/components/PWAUpdatePrompt'
 import { Landing } from '@/features/landing/Landing'
 import { useAppNavigation } from '@/hooks/useAppNavigation'
 import { useGroceries } from '@/hooks/useGroceries'
+import { useMembers } from '@/hooks/useMembers'
 import { useShowDesignSystem } from '@/hooks/useShowDesignSystem'
 import { easeSoft } from '@/animations/motion'
 
@@ -36,7 +37,13 @@ function PageLoading() {
  * The seven app-shell routes. A real path per page (rather than in-memory
  * state) is what makes browser Back/Forward and refresh-on-route work.
  */
-function AppRoutes({ groceries }: { groceries: ReturnType<typeof useGroceries> }) {
+function AppRoutes({
+  groceries,
+  members,
+}: {
+  groceries: ReturnType<typeof useGroceries>
+  members: ReturnType<typeof useMembers>
+}) {
   const location = useLocation()
   const { activePage, direction, priorPage, navigate, openSettings } = useAppNavigation()
 
@@ -62,7 +69,10 @@ function AppRoutes({ groceries }: { groceries: ReturnType<typeof useGroceries> }
               path="/groceries"
               element={<GroceriesPage key="groceries" direction={direction} {...groceries} />}
             />
-            <Route path="/members" element={<MembersPage key="members" direction={direction} />} />
+            <Route
+              path="/members"
+              element={<MembersPage key="members" direction={direction} groceries={groceries.items} {...members} />}
+            />
             <Route
               path="/settlements"
               element={
@@ -70,6 +80,8 @@ function AppRoutes({ groceries }: { groceries: ReturnType<typeof useGroceries> }
                   key="settlements"
                   direction={direction}
                   onAddGroceries={() => navigate('groceries')}
+                  members={members.members}
+                  groceries={groceries.items}
                 />
               }
             />
@@ -99,6 +111,11 @@ export default function App() {
   // list, so both pages need to share one instance rather than each holding
   // their own copy.
   const groceries = useGroceries()
+  // Owned here, not inside MembersPage: Settlements needs the same live
+  // roster (to resolve who's who in the real settlement calculation), so
+  // both pages share one instance rather than each holding their own copy —
+  // the same reasoning `groceries` above already followed.
+  const members = useMembers()
 
   return (
     <MotionConfig reducedMotion="user">
@@ -130,7 +147,7 @@ export default function App() {
               }}
               transition={{ duration: 0.28, ease: easeSoft }}
             >
-              <AppRoutes groceries={groceries} />
+              <AppRoutes groceries={groceries} members={members} />
             </motion.div>
           )}
         </AnimatePresence>

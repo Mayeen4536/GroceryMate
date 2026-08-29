@@ -1,8 +1,8 @@
 import { AnimatedNumber, Avatar, Badge, Card } from '@/components/ui'
 import { FlowDots } from '@/components/experience'
-import { summaryMock } from '@/store/settlements'
 import { formatTaka } from '@/utils/currency'
 import { firstName } from '@/utils/name'
+import type { SettlementSummaryViewModel } from '@/adapters'
 
 function AmountRow({ name, amount, tone }: { name: string; amount: string; tone: 'receive' | 'owe' }) {
   return (
@@ -22,8 +22,13 @@ function AmountRow({ name, amount, tone }: { name: string; amount: string; tone:
   )
 }
 
-/** Outstanding-balance summary. Values are mock placeholders. */
-export function SummaryCard({ pendingCount }: { pendingCount: number }) {
+interface SummaryCardProps {
+  pendingCount: number
+  summary: SettlementSummaryViewModel
+}
+
+/** Outstanding-balance summary, derived from the real settlement engine result. */
+export function SummaryCard({ pendingCount, summary }: SummaryCardProps) {
   return (
     <Card variant="highlighted" padding="lg" className="relative overflow-hidden">
       {/* Money quietly flowing along the top edge */}
@@ -34,7 +39,7 @@ export function SummaryCard({ pendingCount }: { pendingCount: number }) {
           <p className="text-xs text-muted">Outstanding across Flat 4B</p>
           <p className="mt-1 text-3xl font-bold tabular-nums tracking-tight text-ink">
             <AnimatedNumber
-              value={Number.parseFloat(summaryMock.outstanding) || 0}
+              value={Number.parseFloat(summary.outstanding) || 0}
               format={formatTaka}
             />
           </p>
@@ -52,7 +57,7 @@ export function SummaryCard({ pendingCount }: { pendingCount: number }) {
             Should receive
           </p>
           <ul className="space-y-2">
-            {summaryMock.receivers.map((entry) => (
+            {summary.receivers.map((entry) => (
               <AmountRow key={entry.name} name={entry.name} amount={entry.amount} tone="receive" />
             ))}
           </ul>
@@ -65,7 +70,7 @@ export function SummaryCard({ pendingCount }: { pendingCount: number }) {
             Owe the house
           </p>
           <ul className="space-y-2">
-            {summaryMock.owers.map((entry) => (
+            {summary.owers.map((entry) => (
               <AmountRow key={entry.name} name={entry.name} amount={entry.amount} tone="owe" />
             ))}
           </ul>

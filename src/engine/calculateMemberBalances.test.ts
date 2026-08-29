@@ -206,4 +206,42 @@ describe('calculateMemberBalances', () => {
     const members = [makeMember('a'), makeMember('a')]
     expect(() => calculateMemberBalances(members, [], TEST_CURRENCY)).toThrow(DuplicateMemberError)
   })
+
+  it('throws when a grocery item has no payer recorded (an empty payer id)', () => {
+    const members = [makeMember('a')]
+    const groceries = [makeGroceryItem({ id: 'g1', paidBy: '', sharedBy: ['a'], unitPriceMinorUnits: 100 })]
+    expect(() => calculateMemberBalances(members, groceries, TEST_CURRENCY)).toThrow(UnknownMemberError)
+  })
+
+  it('throws on a negative quantity, not just a zero one', () => {
+    const members = [makeMember('a')]
+    const groceries = [
+      makeGroceryItem({ id: 'g1', paidBy: 'a', sharedBy: ['a'], unitPriceMinorUnits: 100, quantity: -3 }),
+    ]
+    expect(() => calculateMemberBalances(members, groceries, TEST_CURRENCY)).toThrow(InvalidAmountError)
+  })
+
+  it('throws on a NaN minor-unit price', () => {
+    const members = [makeMember('a')]
+    const groceries = [makeGroceryItem({ id: 'g1', paidBy: 'a', sharedBy: ['a'], unitPriceMinorUnits: NaN })]
+    expect(() => calculateMemberBalances(members, groceries, TEST_CURRENCY)).toThrow(InvalidAmountError)
+  })
+
+  it('throws on an infinite minor-unit price', () => {
+    const members = [makeMember('a')]
+    const groceries = [
+      makeGroceryItem({ id: 'g1', paidBy: 'a', sharedBy: ['a'], unitPriceMinorUnits: Infinity }),
+    ]
+    expect(() => calculateMemberBalances(members, groceries, TEST_CURRENCY)).toThrow(InvalidAmountError)
+  })
+
+  it('returns an empty result for an empty household with no groceries yet — a valid edge case, not an error', () => {
+    const balances = calculateMemberBalances([], [], TEST_CURRENCY)
+    expect(balances).toEqual([])
+  })
+
+  it('throws if groceries are logged against a household that has no members at all', () => {
+    const groceries = [makeGroceryItem({ id: 'g1', paidBy: 'a', sharedBy: ['a'], unitPriceMinorUnits: 100 })]
+    expect(() => calculateMemberBalances([], groceries, TEST_CURRENCY)).toThrow(UnknownMemberError)
+  })
 })

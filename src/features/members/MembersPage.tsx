@@ -2,35 +2,62 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Heart, Search, UserPlus, Users } from 'lucide-react'
 import { Badge, Button, Input, SegmentedControl } from '@/components/ui'
 import { EmptyState } from '@/components/EmptyState'
+import { FinancialDataError } from '@/components/FinancialDataError'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { riseChild, transitionBase } from '@/animations/motion'
-import { useMembers } from '@/hooks/useMembers'
+import { useSettlementResult } from '@/hooks/useSettlementResult'
+import type { useMembers } from '@/hooks/useMembers'
+import type { GroceryItem } from '@/types/grocery'
+import type { Member } from '@/types/member'
+import type { SettlementViewModel } from '@/adapters'
 import { MemberCard } from './MemberCard'
 import { AddMemberDialog } from './AddMemberDialog'
 import { MemberProfileDrawer } from './MemberProfileDrawer'
 
-/** The Members experience. All state is visual mock state; no calculations. */
-export function MembersPage({ direction = 1 }: { direction?: number }) {
-  const {
-    members,
-    search,
-    setSearch,
-    sortBy,
-    setSortBy,
-    dialogOpen,
-    dialogTab,
-    profileMember,
-    lastAddedId,
-    visibleMembers,
-    openDialog,
-    closeDialog,
-    setProfileId,
-    handleAdd,
-    handleInvite,
-    handleChangeTone,
-    handleRemove,
-  } = useMembers()
+/**
+ * Overrides a member's `amountPaid`/`status` with the real, engine-derived
+ * values for the exact same fields — `MemberCard`/`MemberProfileDrawer`
+ * keep reading a plain `Member`, unaware any calculation happened at all.
+ * `itemsAdded` is deliberately left untouched: it's an activity count
+ * ("who logged this item"), not a financial value, and `GroceryItem` has
+ * no concept of who added it (only who paid and who shares it) — there's
+ * no real data this could be derived from yet.
+ */
+function withRealFinancials(member: Member, viewModel: SettlementViewModel): Member {
+  const financials = viewModel.memberFinancials.find((entry) => entry.memberId === member.id)
+  if (!financials) return member
+  return { ...member, amountPaid: financials.amountPaid, status: financials.status }
+}
+
+interface MembersPageProps {
+  direction?: number
+  groceries: readonly GroceryItem[]
+}
+
+/** The Members experience: each member's financial summary derived from the real settlement engine. */
+export function MembersPage({
+  direction = 1,
+  groceries,
+  members,
+  search,
+  setSearch,
+  sortBy,
+  setSortBy,
+  dialogOpen,
+  dialogTab,
+  profileMember,
+  lastAddedId,
+  visibleMembers,
+  openDialog,
+  closeDialog,
+  setProfileId,
+  handleAdd,
+  handleInvite,
+  handleChangeTone,
+  handleRemove,
+}: MembersPageProps & ReturnType<typeof useMembers>) {
+  const settlementResult = useSettlementResult(members, groceries)
 
   return (
     <>
@@ -72,6 +99,10 @@ export function MembersPage({ direction = 1 }: { direction?: number }) {
                 </Button>
               }
             />
+          </motion.div>
+        ) : settlementResult.status === 'error' ? (
+          <motion.div variants={riseChild}>
+            <FinancialDataError message={settlementResult.userMessage} />
           </motion.div>
         ) : (
           <>
@@ -127,7 +158,7 @@ export function MembersPage({ direction = 1 }: { direction?: number }) {
                         transition={transitionBase}
                       >
                         <MemberCard
-                          member={member}
+                          member={withRealFinancials(member, settlementResult.viewModel)}
                           onOpen={setProfileId}
                           highlight={member.id === lastAddedId}
                         />
@@ -152,7 +183,11 @@ export function MembersPage({ direction = 1 }: { direction?: number }) {
       )}
 
       <MemberProfileDrawer
-        member={profileMember}
+        member={
+          profileMember && settlementResult.status === 'ok'
+            ? withRealFinancials(profileMember, settlementResult.viewModel)
+            : profileMember
+        }
         onClose={() => setProfileId(null)}
         onChangeTone={handleChangeTone}
         onRemove={handleRemove}
