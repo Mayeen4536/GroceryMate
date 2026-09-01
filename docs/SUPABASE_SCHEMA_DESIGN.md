@@ -1,7 +1,10 @@
 # GroceryMate — Supabase Schema Design
 
-**Status: design and audit only.** No tables, migrations, or dependencies exist
-from this document yet. Nothing here has been executed against a database.
+**Status: design and audit, plus one locally-prepared migration.** Migration 1
+(`profiles` / `households` / `household_members`) exists as a reviewable SQL
+file under `supabase/migrations/` and has been validated against a local
+Supabase stack. It has **not** been applied to the `grocerymate-dev` remote
+project — see §15 for exactly what's been done and what hasn't.
 
 This is written to double as interview prep — if you can walk through why
 each decision was made, not just what it is, you can defend this
@@ -825,3 +828,113 @@ Decisions this document deliberately left open rather than guessing:
    archive principle (§4) extend to households too? Not resolved here.
 6. **Multi-currency per household** — explicitly out of scope; the
    schema doesn't block adding it later (§6).
+
+---
+
+## 15. Migration 1 implementation notes
+
+Covers `supabase/migrations/20260901144228_foundation_profiles_households_household_members.sql` —
+`profiles`, `households`, `household_members` only, prepared and validated
+locally. Not applied to the `grocerymate-dev` remote project.
+
+### Where this differs from §2–§12 above, and why
+
+- **`households` gained a `status` column (`'active' | 'archived'`) plus
+  `archived_at`.** The original design in §2 didn't give households their
+  own lifecycle — only §14's open question #5 raised it. Migration 1
+  answers that question: yes, using the exact same `status` pattern
+  `household_members` already established, rather than inventing
+  different terminology for the same idea one level up. A household can
+  now be wound down without deleting it, consistent with the archive
+  principle §4 already applies to members. *Not* resolved: whether a
+  household should ever be truly hard-deletable — `status = 'archived'`
+  is the only lifecycle exit implemented.
+- **`profiles.email` got its own unique index.** Belt-and-suspenders:
+  `auth.users.email` is already unique, but nothing yet keeps the two in
+  sync automatically (see the missing trigger, next).
+- **No `auth.users` → `profiles` signup trigger.** Reacting to account
+  creation is Auth-implementation machinery, which this phase explicitly
+  excludes. Consequence, stated plainly: **no `profiles` row is created
+  automatically today.** Something — a trigger, or an application-level
+  "ensure my profile row exists" call on first login — has to fill this
+  gap before real signups happen, or `household_members.profile_id` and
+  `households.created_by` have nothing to point to.
+
+### The owner invariant
+
+"A household has exactly one owner" splits into two rules of genuinely
+different enforceability:
+
+- **At most one owner per household — enforced, today, in the database.**
+  `household_members_one_owner_per_household` is a partial unique index
+  on `(household_id) WHERE role = 'owner'`. Postgres will reject a second
+  `role = 'owner'` row for the same household outright.
+- **At least one owner per household — not a schema-level guarantee, and
+  said so directly in the migration's own comments rather than faked.** A
+  CHECK constraint or index can't express "a matching row must exist
+  somewhere else in this table" — that's a cross-row existence rule.
+  Enforcing it fully would need a deferred constraint trigger evaluated
+  at transaction commit, watching every INSERT/UPDATE/DELETE that could
+  leave a household ownerless. That's legitimate complexity for a real
+  invariant — not something to add "for free" just to check a box, per
+  this phase's explicit instruction not to reach for an elaborate trigger
+  to *claim* the invariant is solved. **It is not implemented.**
+
+  What holds the "at least one" half together until/unless that trigger
+  is ever added:
+  1. **Household creation must be atomic.** The very first
+     `household_members` row (`role = 'owner'`) has to be inserted in the
+     same transaction as the `households` row — one Postgres function
+     exposed as an RPC, or one wrapped application transaction. Never a
+     two-step "create the household, then separately add an owner" flow,
+     which could be interrupted halfway and leave a real, persisted,
+     ownerless household.
+  2. **Every future action that touches the current owner's role or
+     status** (reassigning ownership, archiving the owner, an owner
+     demoting themselves) has to guarantee a replacement owner first.
+     None of that logic exists yet — no RLS, no role-change endpoints —
+     so this is a requirement placed on whoever builds it next, not
+     something silently assumed to already be handled.
+
+### RLS: enabled, zero policies, by design
+
+All three tables get `ENABLE ROW LEVEL SECURITY` in this same migration —
+not deferred to Migration 3 alongside the actual policies. With RLS on
+and no policies defined, Postgres denies every row to the `anon` and
+`authenticated` roles for every operation: true deny-by-default. The
+alternative — leaving RLS off until Migration 3, or worse, adding a
+temporary permissive policy "just for now" — would mean this project's
+very first migration creates a window where household data is
+world-readable through the API the instant it exists. That window is
+avoided entirely by enabling RLS in the same statement that creates each
+table. (The `service_role` key still bypasses RLS, as it always does by
+Supabase design — that's the deployment-hygiene concern from §11's threat
+table, unrelated to and unaffected by this table's RLS state.)
+
+### `updated_at` strategy: one small reusable trigger
+
+Decided in favor of a trigger, not deferred manual management.
+`public.set_updated_at()` is a single generic `BEFORE UPDATE` function —
+`new.updated_at = now(); return new;` — attached to all three tables. This
+is standard, single-row, deterministic Postgres boilerplate, a
+fundamentally different complexity class from the owner invariant's
+cross-row problem above; it isn't the "unnecessary machinery" that
+instruction was warning against. Without it, `updated_at` would silently
+equal `created_at` forever unless every single UPDATE statement
+everywhere remembered to set it by hand — a guaranteed eventual bug.
+
+### Validation performed locally
+
+- `npx supabase init` — no prior `supabase/` directory existed; this
+  created `supabase/config.toml` and `supabase/.gitignore` (which already
+  correctly excludes `.branches`/`.temp`/local env files).
+- `npx supabase migration new ...` — used the CLI's own timestamp-based
+  naming rather than hand-picking a filename.
+- The project was **not** linked to `grocerymate-dev` at any point.
+- A local Supabase stack (`supabase start`, Dockerized Postgres + Auth +
+  the rest of the stack) was started and the migration applied to it via
+  `supabase db reset`, then re-inspected directly (table/column/
+  constraint/index existence, RLS state, the partial unique indexes, the
+  trigger) to confirm the SQL is not just syntactically valid but
+  behaves as designed — entirely local, never touching the remote
+  project. See the final report for the exact outcome.
