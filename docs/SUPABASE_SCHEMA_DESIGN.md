@@ -938,3 +938,178 @@ everywhere remembered to set it by hand — a guaranteed eventual bug.
   trigger) to confirm the SQL is not just syntactically valid but
   behaves as designed — entirely local, never touching the remote
   project. See the final report for the exact outcome.
+
+---
+
+## 16. Migration 2 implementation notes
+
+Covers `supabase/migrations/20260901154022_grocery_items_and_consumers.sql` —
+`grocery_items`, `grocery_item_consumers` only, prepared and validated
+locally. Migration 1 is untouched. Not applied to `grocerymate-dev` yet.
+
+### Tables
+
+`grocery_items`: `id`, `household_id`, `name`, `category`, `amount_minor`,
+`quantity`, `paid_by_member_id`, `created_by_member_id`, `notes`,
+`created_at`, `updated_at`. `grocery_item_consumers`: `grocery_item_id`,
+`household_member_id`, `household_id` (denormalized), `created_at`. Full
+column reference already in §2/§12 above; what follows is what changed or
+sharpened during actual implementation.
+
+### `created_by_member_id` — §14's open question #4, now resolved
+
+Added, matching `paid_by_member_id`'s exact treatment: not-null, its own
+composite FK to `household_members(id, household_id)`. Independent of
+`paid_by_member_id` by design — a member can log a grocery someone else
+paid for (the common "I noticed we're out of rice, Bilal actually paid"
+case), so nothing forces the two columns to match, and nothing should.
+Both are validated against the same household independently; there is no
+rule requiring creator and payer to be the same person, nor a rule
+requiring them to differ.
+
+### Cross-household integrity: two composite FKs per row, not one
+
+Every financial reference uses `(member_id, household_id) REFERENCES
+household_members(id, household_id)` — the pattern Migration 1
+established. `grocery_items` uses it twice (once for `paid_by_member_id`,
+once for `created_by_member_id`). Migration 1's supporting constraint
+(`household_members_id_household_id_key`, `UNIQUE (id, household_id)`)
+was confirmed to already exist before writing a single line of this
+migration — it is what makes composite FKs against `household_members`
+possible at all.
+
+One real strengthening beyond the original §2 sketch:
+`grocery_item_consumers` needs two composite FKs, not one, to fully
+close the cross-household gap:
+
+1. `(household_member_id, household_id) → household_members(id, household_id)` —
+   confirms the referenced member is real and genuinely belongs to the
+   claimed household.
+2. `(grocery_item_id, household_id) → grocery_items(id, household_id)` —
+   confirms the referenced grocery item is real, and that this row's
+   claimed household_id matches that item's actual household.
+
+The original §2 sketch only had a plain `grocery_item_id → grocery_items(id)`
+FK. That alone would still have let someone attach a real item from
+Household A to a consumer row claiming Household B's household_id — as
+long as the household_member_id really did belong to Household B, the
+single member-side FK would have been satisfied while the row silently
+lied about which household the item belonged to. Requiring `grocery_items`
+to also expose `(id, household_id)` as a unique target
+(`grocery_items_id_household_id_key`) closes this — a plain single-column
+`grocery_item_id` FK became unnecessary once the composite FK existed,
+since the composite target already guarantees `grocery_item_id` is a real
+row (it is part of a unique pair that includes the primary key). Verified
+directly: a consumer row with a real Household-B member correctly
+attached to a real Household-A item, but claiming Household B as the
+household_id, is rejected — by the item-side composite FK specifically,
+distinct from (and in addition to) the member-side one.
+
+### Delete/archive behavior
+
+- Deleting a grocery item removes its consumer rows —
+  `grocery_item_consumers`'s composite FK to `grocery_items` is ON DELETE
+  CASCADE. Consumer rows have no independent meaning once the item they
+  describe is gone.
+- Archiving a member never touches grocery data at all — archiving is a
+  plain UPDATE (`status`, `archived_at`), which does not fire any FK
+  action in either direction. Verified directly: archiving a member who
+  is both a grocery's creator and a consumer elsewhere leaves every
+  reference fully intact and resolvable, exactly as before.
+- Hard-deleting a referenced member remains blocked — no ON DELETE clause
+  is written on either `grocery_items`' member-composite FKs or
+  `grocery_item_consumers`' member-composite FK, so Postgres's default
+  (NO ACTION) applies: a household_members row cannot be deleted while
+  anything in Migration 2 still points to it, as payer, creator, or
+  consumer. Verified directly — including the specific case of an
+  already-archived member who is still referenced: archiving does not
+  weaken this protection at all; the row remains equally undeletable
+  before and after archival.
+- Inherited limitation from Migration 1, explained rather than papered
+  over: `household_members.household_id → households(id)` is ON DELETE
+  CASCADE (Migration 1, unchanged here). MVP has no product action that
+  deletes a household — but if a `households` row were ever deleted
+  directly (bypassing the application, e.g. by direct SQL), that cascade
+  would delete every member of that household, which would in turn
+  cascade through this migration's `grocery_items`/`grocery_item_consumers`
+  FKs, silently destroying the household's entire financial history. This
+  is not something Migration 2 introduces or can fix without changing
+  Migration 1's already-applied `households` FK (explicitly out of scope
+  this task). It sharpens §14's open question #5 ("should households be
+  archivable like members") from a hypothetical into a concrete
+  consequence: if household deletion ever becomes a real product action,
+  Migration 1's household-level CASCADE needs revisiting first —
+  archiving a household, mirroring member archival, is the likely answer,
+  not a real DELETE.
+
+### Money
+
+No `currency_code` column on `grocery_items` — inherits the household's,
+same reasoning as §6. `amount_minor` is `integer`, the line's
+already-final total (not unit_price × quantity — §5's existing decision,
+unchanged).
+
+One correction against the engine's actual behavior, reported rather than
+silently applied: §12's reference schema showed `CHECK (amount_minor > 0)`.
+The settlement engine's own validation (`calculateMemberBalances.ts`)
+only rejects `unitPrice.minorUnits < 0` — it explicitly allows zero
+(`splitEvenly` has a dedicated, passing test for a zero-cost item
+splitting into all-zero shares; §8's "what held up well" table already
+called a ৳0 item "unusual, but not wrong"). Migration 2 implements CHECK
+(amount_minor >= 0) — matching the engine, not the earlier sketch. A
+stricter-than-the-engine constraint here would reject data the
+application layer considers entirely valid; verified directly that a
+zero-amount item is accepted and a negative one is rejected.
+
+### Indexes
+
+Two on `grocery_items`, one on `grocery_item_consumers` — not one per
+column named in the prompt, because several would have been redundant:
+
+- `(household_id, created_at DESC)` replaces a plain household_id index
+  rather than sitting alongside one: every realistic query is "this
+  household's groceries, newest first," needing the filter and the sort
+  together — a composite index serves both; a household_id-only index
+  would only ever serve the filter half.
+- `paid_by_member_id` alone — a member's total paid is a real, frequent
+  lookup (it is what the engine's spentMinorUnits is built from).
+- No index on `created_by_member_id`: nothing in the current product
+  queries "everything I logged" — §14's open question #2 already
+  established that edit/delete is not even restricted to the logger. The
+  column exists for completeness, not because a lookup pattern needs it.
+- `grocery_item_consumers.household_member_id` alone — the composite
+  primary key (grocery_item_id, household_member_id) already makes "find
+  this item's consumers" efficient (leading column), but not "find
+  everything this member consumes" (trailing column) — which is exactly
+  what reconstructing a member's consumedMinorUnits needs (see below).
+- No index on `grocery_item_consumers.household_id`: nothing queries this
+  table by that column directly; every real access path goes through
+  grocery_item_id or household_member_id, both already covered.
+
+### `updated_at`
+
+Reuses Migration 1's `set_updated_at()` — no second trigger function
+defined. Attached to `grocery_items` only. `grocery_item_consumers` gets
+no `updated_at` at all: a consumer relationship is added or removed,
+never edited in place, so there is nothing for the column to track.
+Verified the trigger fires correctly (two separate transactions, since
+now() is fixed for the life of one transaction — the same methodology
+note from Migration 1's own validation).
+
+### RLS
+
+Enabled on both tables in this same migration, zero policies — identical
+reasoning to Migration 1: no window where grocery data exists but is
+unprotected, and Migration 3 is still where policies belong.
+
+### Engine reconstruction
+
+Using the Rice/Chicken/Aisha-Bilal-Chloe scenario already used elsewhere
+in this project's manual verification: persisted rows alone (grocery
+amount_minor, paid_by_member_id, and grocery_item_consumers rows)
+reconstruct into exactly computeSettlement's expected shape — member
+ids, an amount, a payer id, and a list of consumer ids, with quantity
+fixed at 1 (since amount_minor is already the final total, feeding the
+stored decorative quantity back into the engine would double-count it).
+No display name, mock constant, derived balance, or stored settlement
+suggestion appears anywhere in the reconstruction query.
