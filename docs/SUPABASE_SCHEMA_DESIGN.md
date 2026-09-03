@@ -1113,3 +1113,296 @@ fixed at 1 (since amount_minor is already the final total, feeding the
 stored decorative quantity back into the engine would double-count it).
 No display name, mock constant, derived balance, or stored settlement
 suggestion appears anywhere in the reconstruction query.
+
+## 17. Migration 3 — Authorization / RLS
+
+`20260903123149_authorization_rls.sql`. Adds policies, grants, and helper
+functions to the five tables Migrations 1-2 already created with RLS
+enabled and zero policies (deny-by-default since the moment each table
+existed). No new tables, no changes to Migrations 1 or 2, no Auth
+implementation, no payments, no service-role logic. Applied and fully
+tested locally only — not applied to the linked remote project.
+
+### Core invariant
+
+A user must never read or modify another household's data unless
+authorized through their own household membership. Every policy derives
+authorization from `auth.uid()` — the JWT-verified identity Postgres
+itself trusts — never from a client-supplied `household_id`, `profile_id`,
+or display name.
+
+### Authorization helpers (`private` schema)
+
+`private` is a new, non-exposed schema (not in `supabase/config.toml`'s
+`api.schemas`, so never callable via `supabase.rpc(...)` — only from
+inside a policy, which executes in Postgres itself). Four `SECURITY
+DEFINER` functions live there:
+
+- `is_household_member(household_id, include_archived default false)` —
+  is `auth.uid()` a member of this household (optionally including
+  archived, for historical read access)?
+- `is_household_owner(household_id)` — is `auth.uid()` the *active* owner?
+- `household_member_id_for(household_id)` — `auth.uid()`'s own
+  `household_members.id` row in this household, if active; null
+  otherwise. This is what a grocery-creation policy checks a client's
+  claimed `created_by_member_id` against — derived server-side, never
+  trusted from the request body.
+- `can_edit_grocery_item(grocery_item_id)` — is `auth.uid()` that item's
+  creator, or the household's active owner?
+
+All four: `language sql stable security definer set search_path = ''`,
+fully-qualified table references, owned by `postgres`, `revoke execute ...
+from public, anon; grant execute ... to authenticated`. `SECURITY DEFINER`
+is required, not incidental: `household_members`' own SELECT policy calls
+`is_household_member`, so a `SECURITY INVOKER` version would re-trigger
+that same policy inside itself — infinite recursion. Table owners are
+exempt from a table's own RLS by default (no table here sets `FORCE ROW
+LEVEL SECURITY`), so a function owned by `postgres` breaks the cycle: the
+query inside the function runs unfiltered, and only the function's own
+boolean return value feeds the caller's policy. This cannot be abused
+despite the elevated privilege — the `household_id` argument is
+caller-suppliable and that's harmless (it returns a bare boolean, never
+row data); *whose* membership is checked always comes from `auth.uid()`,
+never from an argument.
+
+Recursion was verified empirically, not just reasoned about: a standalone
+test (`SELECT ... FROM household_members` and `SELECT ... FROM households`
+as the household's own owner, simulating `auth.uid()` via
+`request.jwt.claim.sub`) ran with no "infinite recursion detected in
+policy" error.
+
+### GRANT matrix
+
+A critical fact discovered while testing (see "Security issue discovered"
+below): Supabase provisions every project with `ALTER DEFAULT PRIVILEGES`
+on the `public` schema that grants `anon`/`authenticated`/`service_role`
+full `arwdDxtm` (SELECT/INSERT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER)
+on every table as it's created, independent of anything Migrations 1-2
+wrote. Every table block in this migration now opens with `revoke all on
+public.<table> from authenticated;` before granting anything back, so the
+GRANTs below are authenticated's *complete* and *only* privilege — not
+additive on top of a hidden platform default.
+
+| Table | SELECT | INSERT (columns) | UPDATE (columns) | DELETE |
+|---|---|---|---|---|
+| `profiles` | ✓ | — | `display_name` | — |
+| `households` | ✓ | — (RPC only) | `name, currency_code, status, archived_at` | — |
+| `household_members` | ✓ | `household_id, profile_id, display_name, invited_email, role, status, invited_at, joined_at` | `role, status, display_name, invited_at, joined_at, archived_at` | — |
+| `grocery_items` | ✓ | `household_id, name, category, amount_minor, quantity, paid_by_member_id, created_by_member_id, notes` | `name, category, amount_minor, quantity, paid_by_member_id, notes` | ✓ |
+| `grocery_item_consumers` | ✓ | `grocery_item_id, household_member_id, household_id` | — | ✓ |
+
+`anon` is granted nothing at all on any of the five tables or on
+`create_household` — asserted with an explicit `revoke all ... from anon`
+block, confirmed empirically (every table and the RPC return "permission
+denied" as `anon`). No `GRANT ALL` appears anywhere. GRANT and RLS are
+deliberately layered, not redundant: GRANT is the coarse, table/column-level
+gate ("can this role touch this column at all, ever") that Postgres checks
+before RLS is even consulted; RLS is the fine-grained, per-row gate ("is
+*this specific row*, for *this specific caller*, allowed"). Neither
+subsumes the other — the security issue below is exactly a case where GRANT
+alone had to do a job RLS structurally cannot.
+
+### Policies per table
+
+14 policies total, all scoped `to authenticated` (verified via
+`pg_policies`):
+
+- **profiles**: `profiles_select_own`, `profiles_update_own` — both
+  `id = auth.uid()`.
+- **households**: `households_select_member` (member, archived included),
+  `households_update_owner` (active owner only). No INSERT/DELETE policy.
+- **household_members**: `household_members_select_member` (member,
+  archived included), `household_members_insert_owner` (active owner
+  only — adding to an *existing* household), `household_members_update_owner`
+  (active owner only). No DELETE policy.
+- **grocery_items**: `grocery_items_select_member` (member, archived
+  included), `grocery_items_insert_active_member` (active member, and
+  `created_by_member_id` must equal the caller's own derived member id),
+  `grocery_items_update_creator_or_owner` / `grocery_items_delete_creator_or_owner`
+  (creator or active owner, via `can_edit_grocery_item`).
+- **grocery_item_consumers**: `grocery_item_consumers_select_member`
+  (member, archived included), `grocery_item_consumers_insert_authorized_editor`
+  / `grocery_item_consumers_delete_authorized_editor` (same creator-or-owner
+  rule as the grocery itself). No UPDATE policy or grant — changing "who
+  shares this item" is a delete-plus-insert, matching how the frontend's
+  `MemberChipPicker` already replaces its whole selection rather than
+  editing in place.
+
+### Household creation strategy
+
+No direct INSERT policy or grant exists on `households` at all. A new
+household has no members yet, so no ordinary RLS-gated INSERT policy can
+authorize creating its first (owner) row without also being loose enough
+to let anyone insert *any* household — the insecure shortcut this task
+was explicitly designed to avoid. Instead, `public.create_household(p_name,
+p_currency_code default 'BDT', p_display_name default null)` — a
+`SECURITY DEFINER` function, `search_path = ''`, granted to `authenticated`
+only — performs both inserts (household, then its owner membership row)
+atomically in one implicit transaction, deriving the owner exclusively
+from `auth.uid()`. The function's signature has no owner/profile
+parameter at all, so there is no argument a caller could use to name a
+different owner — verified by inspecting `pg_get_function_arguments`
+directly, not just by reading the source. Tested end-to-end as an
+authenticated user: exactly one household and exactly one
+`owner`/`active` membership row resulted, both matching the RPC's
+returned `household_id`/`owner_member_id`.
+
+### Profile security
+
+A user reads and updates only their own `profiles` row
+(`id = auth.uid()`). Only `display_name` is grantable on UPDATE — `id` and
+`email` are excluded from the column grant entirely (not merely blocked by
+RLS), so a client cannot self-service either even on their own row.
+Profile creation (INSERT) remains ungranted: the signup-time
+profile-creation trigger was deliberately deferred in Migration 1 (Auth
+isn't implemented yet), documented as an open item rather than worked
+around here.
+
+### Membership-management security
+
+Only the active owner may add, invite, archive, or reactivate members
+(`household_members_insert_owner` / `household_members_update_owner`).
+No self-service carve-out exists: a member cannot promote themselves,
+archive the owner, or archive themselves under these policies (self-removal
+isn't in the approved permissions list — a named limitation, not an
+oversight). `profile_id`, `household_id`, and `id` are excluded from the
+UPDATE column grant, so even the owner cannot reassign an existing
+member row to a different profile or move it to a different household.
+Hard DELETE is denied entirely for MVP — archive is the only removal path
+exposed to clients.
+
+### Grocery creator protection
+
+`grocery_items_insert_active_member`'s `WITH CHECK` requires
+`created_by_member_id = private.household_member_id_for(household_id)` —
+the caller's own membership id, derived server-side from `auth.uid()`,
+never the value the client sent. A client claiming a different member's id
+as creator fails this check outright. `household_id` and
+`created_by_member_id` are excluded from the UPDATE column grant, so
+neither the row's household nor its creator can be rewritten after the
+fact — closing the gap described below, where RLS's `USING`/`WITH CHECK`
+had no way to compare a column's OLD value against its NEW value in one
+predicate. `paid_by_member_id` is deliberately unconstrained by policy;
+Migration 2's composite FK already guarantees it names a real member of
+the same household, and paying for someone else's logged item is normal.
+
+### Consumer protection
+
+Insert/delete on `grocery_item_consumers` both require
+`can_edit_grocery_item(grocery_item_id)` — the same creator-or-owner rule
+as editing the grocery itself, so adding or removing a consumer is treated
+as part of editing the grocery, not a separately gated action. Even if a
+caller supplied a mismatched `household_id`, Migration 2's composite FK
+rejects it independent of RLS entirely.
+
+### Archived-member behavior
+
+Archived members retain read access to their former household, its
+roster, and its groceries (`is_household_member(..., true)` everywhere a
+SELECT policy needs it) — historical visibility survives archival. Every
+write path (`is_household_member(..., false)` for grocery creation,
+`can_edit_grocery_item` for edits) requires *active* status, so an
+archived member can read but never write again, including on grocery rows
+they themselves created before being archived.
+
+### Adversarial test results
+
+A single-transaction test script (rolled back at the end, so nothing
+persisted) simulated Users A/B/D + owner A in Household A and User C as
+owner of Household B, then ran 34 checks: cross-household read denial in
+both directions, roster read denial for outsiders, grocery creation
+(success, creator-identity impersonation rejected, non-member rejected),
+edit/delete authorization (creator succeeds, non-creator/non-owner is
+silently a no-op, owner succeeds, creator deletes), archived-member
+behavior (historical read survives; create/update/delete on an
+already-archived member's own old row are silent no-ops), membership
+management (non-owner member-add rejected, self-promotion rejected,
+archiving the owner rejected, owner's add+reactivate succeed, owner
+cannot reassign `profile_id` or `household_id` on an existing member
+row), cross-household payer/consumer rejected by Migration 2's FKs,
+consumer-add by a non-editor rejected, consumer-add by the actual creator
+succeeds, profile isolation (cannot read another profile; an UPDATE
+attempt against another user's row is a silent no-op), and finally the
+GRANT-layer column-immutability checks: an authorized editor cannot
+reassign `grocery_items.household_id` or `created_by_member_id`, a user
+cannot change their own `profiles.email`, an owner cannot rewrite
+`households.created_by`, and — the most severe of the set — `authenticated`
+cannot `TRUNCATE` `household_members`. All 34 checks matched their
+expected outcome. Two distinct denial shapes were exercised and confirmed
+correct: a denied INSERT (or a GRANT-privilege violation on UPDATE/TRUNCATE)
+raises a real Postgres error, caught via `SAVEPOINT`/`ROLLBACK TO
+SAVEPOINT`; a denied UPDATE/DELETE under RLS's `USING` clause raises no
+error at all — the row is simply invisible to the statement, so it silently
+affects zero rows, verified via a follow-up `SELECT` of the row's actual
+value rather than a caught exception.
+
+### How `auth.uid()` was tested
+
+`auth.uid()`'s real local definition (confirmed via
+`pg_get_functiondef`) resolves from `request.jwt.claim.sub` (falling back
+to a `request.jwt.claims` JSON blob). Every simulated user in every test
+ran `select set_config('request.jwt.claim.sub', '<uuid>', true); set role
+authenticated;` immediately before its statements, and `reset role;`
+immediately after — never `SET ROLE authenticated` alone, since that only
+selects which policies'/grants' `to` clause applies, not *which*
+authenticated user is making the request. `anon` was tested separately
+(no JWT claim, `set role anon;`), against a running database with real
+tables, confirming "permission denied" on every table and the RPC. The
+`create_household` RPC was tested with a fifth simulated user
+(`request.jwt.claim.sub` set to a new uuid) in its own isolated
+transaction.
+
+### `db lint` result
+
+`supabase db lint --local --schema public` → `No schema errors found`,
+re-run clean after the GRANT-layer fix below.
+
+### Security issue discovered while implementing
+
+The original migration granted `UPDATE` on specific columns only (e.g.,
+`grant update (name, category, ...) on grocery_items to authenticated`),
+intending that to be the mechanism preventing `household_id` and
+`created_by_member_id` from ever being rewritten — since RLS's
+`USING`/`WITH CHECK` pair cannot compare a column's OLD value against its
+NEW value in one predicate. This design was silently defeated:
+Supabase's platform-level `ALTER DEFAULT PRIVILEGES` on the `public`
+schema had already granted `authenticated` full table-wide `arwdDxtm`
+(including `UPDATE` on every column, and — far more seriously —
+`TRUNCATE`, which Postgres never subjects to RLS at all) on all five
+tables, independent of anything either migration file wrote. A
+column-level GRANT is purely additive; it cannot narrow a privilege the
+role already holds table-wide. The practical effect, before the fix: an
+authorized grocery editor could reassign `household_id` or
+`created_by_member_id` after the fact, an owner could hijack an existing
+`household_members` row by reassigning its `profile_id`, a user could
+change their own `profiles.email` directly, and — the most severe —
+*any* authenticated user could `TRUNCATE` any of the five tables outright,
+wiping every household's data, with RLS providing zero protection against
+it. Confirmed the root cause directly via `pg_default_acl` and
+`pg_class.relacl` (both showed the un-narrowed `authenticated=arwdDxtm`
+entry, sourced from `postgres`'s and `supabase_admin`'s default ACLs, not
+from any migration's own GRANT statement) before writing the fix. The fix:
+every table block now opens with an explicit `revoke all on public.<table>
+from authenticated;` before its GRANTs, so the column-level and table-level
+grants that follow are authenticated's complete privilege set, not an
+addition on top of a hidden default. Re-verified afterward via
+`pg_class.relacl` (authenticated now shows only the intended privileges —
+no `TRUNCATE`, `REFERENCES`, or `TRIGGER` on any table), re-ran the full
+34-check adversarial matrix (all passing), and added four new checks
+specifically targeting this class of bug (the two `grocery_items` column
+reassignments, the `households.created_by` reassignment, and the
+`household_members` `profile_id`/`household_id` reassignments) plus a
+fifth proving `TRUNCATE` is now rejected.
+
+### Remaining security blocker
+
+None for the scope of this migration. Two items are documented as
+deliberate, named limitations rather than gaps: self-removal from a
+household (a member archiving themselves) is not implemented, since it
+isn't in the approved permissions list; and invite-acceptance (linking an
+invited `household_members` row's `profile_id` to a real profile at
+signup) is deferred to a future dedicated function, the same shape as
+`create_household()`, since it needs to verify the accepting user's
+identity against the invite in a way a plain owner UPDATE grant cannot
+safely express. Both are product-scope decisions, not authorization holes
+in what this migration does implement.
