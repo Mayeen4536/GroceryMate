@@ -1406,3 +1406,254 @@ signup) is deferred to a future dedicated function, the same shape as
 identity against the invite in a way a plain owner UPDATE grant cannot
 safely express. Both are product-scope decisions, not authorization holes
 in what this migration does implement.
+
+## 18. Migration 4 — Auth Profile Lifecycle
+
+`20260903143905_auth_profile_lifecycle.sql`. Resolves the open item named
+in Migration 1's own comments and in this document's Migration 1 notes
+(§15): "no profiles row is created automatically today." Adds exactly one
+trigger and its function — no new tables, no changes to Migrations 1-3, no
+RLS/GRANT changes anywhere, no frontend code. Applied and tested locally
+only — not applied to the linked remote project.
+
+### Signup lifecycle
+
+`auth.users` gets an `AFTER INSERT ... FOR EACH ROW` trigger,
+`on_auth_user_created`, firing `public.handle_new_user()`. It runs inside
+GoTrue's own signup transaction: if it raises, the whole signup — the
+`auth.users` insert included — rolls back, so there is no window where an
+account exists with no profile. This is why the mechanism is a database
+trigger and not frontend code calling a "create my profile" endpoint after
+signup: a trigger has no network round-trip between "account created" and
+"profile exists" for a client to crash or skip during, and it reads `NEW`
+— the row Postgres itself just inserted — rather than trusting anything a
+client claims about its own identity.
+
+### Trigger / function
+
+`public.handle_new_user()` — `language plpgsql`, `security definer`,
+`set search_path = ''`, owned by `postgres`, fully-qualifies
+`public.profiles`. `SECURITY DEFINER` is required, not incidental: the
+trigger fires as `supabase_auth_admin` (GoTrue's own role), which has no
+reason to hold `INSERT` on `public.profiles`; running as the function's
+owner instead is what lets the insert succeed without granting that role
+anything new. Body:
+
+```sql
+insert into public.profiles (id, email, display_name)
+values (
+  new.id,
+  new.email,
+  coalesce(
+    nullif(trim(new.raw_user_meta_data ->> 'display_name'), ''),
+    nullif(split_part(new.email, '@', 1), ''),
+    'New Member'
+  )
+)
+on conflict (id) do nothing;
+```
+
+Never trusts a client-supplied profile id: `NEW.id` is `auth.users.id` for
+the row that was just inserted, generated server-side by GoTrue — nothing
+in the public signup API lets a client choose it, so there is no argument
+anywhere in this design a caller could use to name a different id. Never
+creates duplicate profiles: `ON CONFLICT (id) DO NOTHING` makes the insert
+idempotent (defense in depth — normal signup only ever fires this once per
+`auth.users` row, since `id` is that table's primary key). Fails safely:
+no exception handling swallows errors — a `NOT NULL` violation on `email`
+(the only plausible failure today, discussed below) propagates and rolls
+back the entire signup rather than leaving an account with no profile.
+
+Cannot be abused as a generic "create a profile for any uuid" RPC: it is a
+trigger function (`returns trigger`), which Postgres refuses to invoke any
+other way — confirmed empirically, calling it directly (even as its own
+owner, `postgres`) raises `trigger functions can only be called as
+triggers`. It also takes no arguments at all. `EXECUTE` is explicitly
+revoked from `public`, `anon`, and `authenticated` as documented,
+auditable intent on top of that language-level restriction; `service_role`
+retains the platform's default `EXECUTE` grant on every `public`-schema
+function, unchanged and out of scope, the same as `create_household()` in
+Migration 3.
+
+### Email strategy
+
+`profiles.email` is a **signup-time snapshot**, not kept synchronized with
+`auth.users.email` afterward. No second trigger reacts to `auth.users`
+email changes. Reasoning: `auth.users` remains the sole authority for the
+current, login-relevant email; `profiles.email` exists only for the
+application's own display/lookup purposes, so a stale snapshot after an
+email change is a minor, visible-and-fixable cosmetic gap, not a security
+or correctness one — and this is the smallest reliable model, versus a
+second trigger and its own failure modes for a case that doesn't affect
+authorization at all. Documented here as a **named limitation**: if a user
+changes their email through Auth, `profiles.email` will not follow until
+something updates it (a future migration, or an application action using
+the existing `profiles_update_own`-equivalent... except `email` is
+deliberately not in that policy's grantable columns either — email
+resynchronization, if ever needed, belongs to a dedicated, reviewed
+mechanism, not a client-writable column).
+
+Case handling: `auth.users`'s own uniqueness is a case-sensitive partial
+unique index (`users_email_partial_key`, `where is_sso_user = false`) —
+not a `lower(email)` unique index (a separate, non-unique
+`users_instance_id_email_idx` on `lower(email)` exists only for
+case-insensitive login lookup). This trigger copies `NEW.email` verbatim,
+in whatever case GoTrue already stored it — consistent with the upstream
+value, not a reinterpretation of it. `profiles.email`'s own unique index
+(from Migration 1) is unaffected by this choice and remains defense in
+depth, not the layer that actually prevents duplicate signups (GoTrue's
+own signup check does that, confirmed empirically: a same-email signup
+attempt is rejected by GoTrue itself with `422 user_already_exists` before
+ever reaching this trigger).
+
+Null email: this project's local config has `enable_anonymous_sign_ins =
+false` and `auth.phone`'s `enable_signup = false`, so every reachable
+signup path today produces a non-null `auth.users.email`. If either were
+ever enabled without revisiting this migration, a resulting null-email
+signup would violate `profiles.email`'s `NOT NULL` constraint and the
+whole signup would fail closed — an explicit, deliberate choice (see
+"Fails safely" above), not an oversight. Redesigning for other Auth
+providers is out of scope for this MVP migration.
+
+### Display name strategy
+
+Reads only the `display_name` key out of `auth.users.raw_user_meta_data`
+— never the metadata object wholesale, never any other key in it — trims
+it, and treats empty/whitespace-only as absent. Falls back to the email's
+local part, then to the fixed literal `'New Member'`, so signup can never
+fail for lack of a display name. A user can change this immediately
+afterward via Migration 3's existing `profiles_update_own` policy and its
+`display_name`-only column grant — unchanged by this migration.
+
+### User deletion behavior
+
+Migration 1's `profiles.id references auth.users(id) on delete cascade`
+combines with `household_members.profile_id references
+public.profiles(id) on delete set null` (also Migration 1) to give: delete
+an `auth.users` row → the matching `profiles` row is cascaded away → every
+`household_members` row that pointed at it gets `profile_id` set to null,
+but the row itself, its `display_name`, `role`, `status`, and — critically
+— its `id` all survive unchanged. Every grocery reference
+(`grocery_items.paid_by_member_id`/`created_by_member_id`,
+`grocery_item_consumers.household_member_id`) points at
+`household_members.id`, never at `profiles.id` directly (Migration 1's
+foundational design choice, reaffirmed by Migration 2's composite FKs), so
+none of them are touched at all by a profile's deletion. Verified
+empirically, not just reasoned about: created a real Auth user, added her
+as a household member, had her log a grocery and consume it herself,
+deleted her Auth account via the real Admin API, and confirmed
+afterward — `auth.users` row gone, `profiles` row gone, the
+`household_members` row still present with `profile_id` null and
+`display_name` still `'Carol the Member'`, and the `grocery_items` /
+`grocery_item_consumers` rows completely unchanged, still referencing the
+same `household_members.id`. No historical financial row broke. **No
+change was made to this behavior** — testing proved it already correct,
+exactly the instruction for this step.
+
+**A real, proven blocker was found and is deliberately not fixed here**:
+`households.created_by uuid not null references public.profiles (id) on
+delete restrict` (Migration 1) means a user who has ever created *any*
+household — which, through `create_household()`, is every user who has
+ever used the create-household flow — can never have their Auth account
+deleted while that household still exists, because the cascade
+`auth.users → profiles` hits that `RESTRICT` and the entire deletion fails
+(confirmed empirically: a real delete attempt against such a user returned
+`23503 households_created_by_fkey ... Key is still referenced`, and left
+both the auth user and profile completely intact — a clean failure, not a
+partial one). Since there is also no supported way to delete a household
+at all today (no DELETE grant or policy on `households`), this is
+effectively permanent for as long as the product has no household-deletion
+story. This is a `households`/household-lifecycle schema question, not an
+Auth-lifecycle one — fixing it would mean deciding what should happen to a
+household's provenance record when its creator's account goes away
+(nullable `created_by`? a transfer step? hard deletion rules?), which is
+out of scope for "Auth Profile Lifecycle" and out of bounds for this
+migration's "do not modify existing migrations" constraint. Documented
+here as the blocker it is, for a future dedicated migration to resolve —
+not worked around or silently absorbed into this one.
+
+### Interaction with household_member identity
+
+Nothing above changes the fact established in Migrations 1-2:
+`household_members` is GroceryMate's stable financial identity, and
+`profiles` is a strictly optional, deletable account layer on top of it.
+This migration's only job was making sure the account layer gets created
+automatically and safely — it does not, and structurally cannot, weaken
+the account-independence Migration 1 already built in.
+
+### Backend golden flow (tested end-to-end, no React code)
+
+Using the real local Supabase Auth API (`/auth/v1/signup`,
+`/auth/v1/admin/users/{id}`) and real access tokens against PostgREST —
+not direct SQL role simulation, per this step's own instruction to exercise
+the Auth API where reliable:
+
+1. Signed up a real user ("Alice") via `/auth/v1/signup` with
+   `data.display_name` metadata → confirmed exactly one `profiles` row
+   appeared automatically, `id` matching `auth.users.id`, `email` matching,
+   `display_name` matching the supplied metadata, `updated_at` populated.
+2. Authenticated as Alice (the real access token from signup) and called
+   `create_household('Alice Golden Household')` via
+   `/rest/v1/rpc/create_household` → exactly one household and one
+   `owner`/`active` membership row resulted, `profile_id` equal to Alice's
+   own id.
+3. Alice read her own household and its roster through
+   `/rest/v1/households` and `/rest/v1/household_members` — both returned
+   correctly under Migration 3's unmodified RLS policies.
+
+Signup → profile exists → authenticated session → `create_household` →
+caller becomes household owner → caller can read their own household,
+fully confirmed as a backend-only flow.
+
+### Test results
+
+- **Auth signup**: two additional real signups tested — one with no
+  `display_name` metadata at all (fell back correctly to the email's local
+  part, `'zztest-signup-bob'`), and a same-email repeat signup attempt
+  (rejected by GoTrue itself, `422 user_already_exists`, before reaching
+  this migration's trigger at all; no duplicate profile, no residue).
+- **Own-profile RLS**: authenticated as Alice via her real token — could
+  `SELECT` her own profile; a query for another user's `id` returned an
+  empty array, not an error; `PATCH`ing her own `display_name` succeeded
+  and `updated_at` advanced (Migration 1's existing trigger, untouched,
+  still firing correctly); `PATCH`ing her own `email` was rejected with
+  `42501 permission denied for table profiles` (a GRANT-layer error,
+  Migration 3's column grant, unchanged); `PATCH`ing another user's
+  `display_name` silently affected zero rows.
+- **Cross-user isolation**: created a second real user ("Bob"), had him
+  call `create_household` for his own household, then confirmed — as Bob
+  and as Alice, via their own real tokens — each could see only their own
+  profile, only their own household, and only their own roster. Reused
+  Migration 3's existing policies unchanged; no new policy was written or
+  needed.
+- **Historical reference preservation**: see "User deletion behavior"
+  above — verified with a real created-then-deleted Auth account.
+- **Migration 3 regression**: RLS remained enabled on all five tables,
+  policy count remained exactly 14, `anon`'s table-grant count remained
+  zero, and `authenticated`'s raw ACL was byte-for-byte identical to the
+  post-Migration-3 state (`r` only on `profiles`/`households`/
+  `household_members`, `rd` on `grocery_items`/`grocery_item_consumers` —
+  no `TRUNCATE`, no table-wide `UPDATE`) — all re-checked after this
+  migration, all unchanged.
+- **`db lint --local`**: `No schema errors found`.
+- **Residue**: all test auth users, profiles, households, memberships,
+  and groceries created during this phase's testing were deleted
+  afterward; a final count across all six tables (`auth.users` plus the
+  five application tables) returned to zero.
+
+### Known limitations
+
+- **`profiles.email` is a signup snapshot, not synchronized** — see
+  "Email strategy" above.
+- **Null-email signups fail closed** — no anonymous or phone auth support
+  in this trigger; both are disabled in this project's config today, and
+  extending this migration for them is explicitly out of MVP scope.
+- **A household's creator can never have their Auth account deleted while
+  that household exists** — the proven blocker described in "User deletion
+  behavior" above. Flagged for a future, dedicated household-lifecycle
+  migration; not fixed here.
+- **Invite-acceptance linking** (an invited `household_members` row's
+  `profile_id` being attached to a real profile at signup) remains the
+  named, deferred item from Migration 3 — this migration does not touch
+  it; `handle_new_user()` only ever creates the new profile row itself,
+  never modifies `household_members`.
