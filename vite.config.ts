@@ -56,7 +56,11 @@ export default defineConfig({
     },
   },
   test: {
-    environment: 'node',
-    include: ['src/**/*.test.ts'],
+    // jsdom (not the previous 'node') so component/hook tests that need a
+    // DOM — @testing-library/react's renderHook/render — can run; plain
+    // logic tests are unaffected by the extra DOM globals.
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
   },
 })

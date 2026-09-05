@@ -4,7 +4,8 @@ import { cn } from '@/utils/cn'
 import { springSnappy } from '@/animations/motion'
 import { NAV_ITEMS } from '@/config/navigation'
 import type { NavItem, PageId } from '@/types/navigation'
-import { mockHousehold, mockUser } from '@/store/household'
+import { mockHousehold } from '@/store/household'
+import { useAuth } from '@/auth/useAuth'
 import { Brand } from './Brand'
 import { HouseholdSwitcher } from './HouseholdSwitcher'
 import { UserProfile } from './UserProfile'
@@ -68,6 +69,11 @@ export function Sidebar({
   onToggleCollapsed,
   onOpenSettings,
 }: SidebarProps) {
+  // Rendered only inside <ProtectedRoute>, which never renders its children
+  // until `profile` is loaded — see src/auth/RouteGuards.tsx.
+  const { profile } = useAuth()
+  const user = { name: profile?.displayName ?? '', email: profile?.email ?? '' }
+
   return (
     <aside
       className={cn(
@@ -114,7 +120,7 @@ export function Sidebar({
         ))}
       </nav>
       <div className="border-t border-white/[0.07] p-3">
-        <UserProfile user={mockUser} tone="dark" avatarOnly={collapsed} onClick={onOpenSettings} />
+        <UserProfile user={user} tone="dark" avatarOnly={collapsed} onClick={onOpenSettings} />
       </div>
     </aside>
   )

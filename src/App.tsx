@@ -4,10 +4,14 @@ import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-
 import { AppShell } from '@/components/layout/AppShell'
 import { PWAUpdatePrompt } from '@/components/PWAUpdatePrompt'
 import { Landing } from '@/features/landing/Landing'
+import { SignInPage } from '@/features/auth/SignInPage'
+import { SignUpPage } from '@/features/auth/SignUpPage'
 import { useAppNavigation } from '@/hooks/useAppNavigation'
+import { useAuth } from '@/auth/useAuth'
 import { useGroceries } from '@/hooks/useGroceries'
 import { useMembers } from '@/hooks/useMembers'
 import { useShowDesignSystem } from '@/hooks/useShowDesignSystem'
+import { GuestRoute, ProtectedRoute } from '@/auth/RouteGuards'
 import { easeSoft } from '@/animations/motion'
 
 // Code-split every destination past the landing page: a first visit only
@@ -109,7 +113,11 @@ export default function App() {
   const showDesignSystem = useShowDesignSystem()
   const location = useLocation()
   const navigate = useNavigate()
+  const { status } = useAuth()
   const isLanding = location.pathname === '/'
+  const isSignIn = location.pathname === '/sign-in'
+  const isSignUp = location.pathname === '/sign-up'
+  const isAuthRoute = isSignIn || isSignUp
   // Owned here, not inside GroceriesPage: the Assistant page adds to this same
   // list, so both pages need to share one instance rather than each holding
   // their own copy.
@@ -135,7 +143,17 @@ export default function App() {
               exit={{ opacity: 0, y: -10, scale: 0.99, filter: 'blur(4px)' }}
               transition={{ duration: 0.16, ease: easeSoft }}
             >
-              <Landing onEnter={() => navigate('/groceries')} />
+              {/* Signed-in visitors skip straight past Landing into the app;
+                  everyone else goes to sign-up, matching Landing's acquisition intent. */}
+              <Landing onEnter={() => navigate(status === 'signed-in' ? '/groceries' : '/sign-up')} />
+            </motion.div>
+          ) : isAuthRoute ? (
+            <motion.div
+              key="auth"
+              exit={{ opacity: 0, y: -10, scale: 0.99, filter: 'blur(4px)' }}
+              transition={{ duration: 0.16, ease: easeSoft }}
+            >
+              <GuestRoute>{isSignIn ? <SignInPage /> : <SignUpPage />}</GuestRoute>
             </motion.div>
           ) : (
             <motion.div
@@ -150,7 +168,9 @@ export default function App() {
               }}
               transition={{ duration: 0.28, ease: easeSoft }}
             >
-              <AppRoutes groceries={groceries} members={members} />
+              <ProtectedRoute>
+                <AppRoutes groceries={groceries} members={members} />
+              </ProtectedRoute>
             </motion.div>
           )}
         </AnimatePresence>

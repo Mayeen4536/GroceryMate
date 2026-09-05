@@ -9,6 +9,7 @@ import {
   MessageSquare,
   Palette,
   ShieldCheck,
+  UserCircle,
   type LucideIcon,
 } from 'lucide-react'
 import { Button, Card, Dropdown, SwatchPicker, Switch } from '@/components/ui'
@@ -20,6 +21,7 @@ import { LANGUAGE_OPTIONS } from '@/constants/languageOptions'
 import { NOTIFICATION_SETTINGS } from '@/constants/notificationSettings'
 import { ACCENT_OPTIONS } from '@/constants/accentOptions'
 import { useSettings } from '@/hooks/useSettings'
+import { AccountSection } from './AccountSection'
 import { DarkModeToggle } from './DarkModeToggle'
 import { DataSection } from './DataSection'
 import { InfoDrawer } from './InfoDrawer'
@@ -99,6 +101,18 @@ export function SettingsPage({ direction = 1, onBack }: SettingsPageProps) {
         </motion.div>
 
         <div className="space-y-5">
+          <motion.div variants={riseChild}>
+            <Card
+              title="Account"
+              headingLevel={2}
+              subtitle="Your GroceryMate identity."
+              icon={UserCircle}
+              accent="mint"
+            >
+              <AccountSection />
+            </Card>
+          </motion.div>
+
           <motion.div variants={riseChild}>
             <Card
               title="Appearance"

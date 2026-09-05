@@ -3,7 +3,9 @@
 Split household groceries fairly: log what's bought, who paid, and who shares
 it, and GroceryMate works out who owes whom — with the minimum number of
 payments to settle up. React 19 + Vite + TypeScript (strict) + Tailwind v4 +
-Framer Motion, installable as a PWA, no backend.
+Framer Motion, installable as a PWA. Auth/session/profile are real (Supabase);
+household/member/grocery data is still local/mock — see
+[docs/AUTH_INTEGRATION.md](docs/AUTH_INTEGRATION.md).
 
 ## Quickstart
 
@@ -78,8 +80,9 @@ npm run test
 ```
 
 230+ tests cover the engineering layer (`domain`/`engine`/`persistence`/`ai`/
-`ocr`/`receiptPipeline`/`fairness`) via Vitest. The UI layer (`features`/
-`hooks`/`components`) currently has no automated tests — adding them would
-need `jsdom` (or `happy-dom`) plus `@testing-library/react`, neither of
-which is installed yet, and a separate `*.test.tsx` glob alongside the
-existing `*.test.ts` one in `vite.config.ts`.
+`ocr`/`receiptPipeline`/`fairness`) via Vitest. Most of the UI layer
+(`features`/`hooks`/`components`) still has no automated tests; `src/auth/`
+is the first exception, covered via `jsdom` + `@testing-library/react`
+(`vite.config.ts`'s `test.environment` and `*.test.tsx` glob) with the
+Supabase client mocked at the module boundary — see
+[docs/AUTH_INTEGRATION.md](docs/AUTH_INTEGRATION.md).

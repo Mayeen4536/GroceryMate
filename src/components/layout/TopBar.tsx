@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Avatar } from '@/components/ui'
 import { cn } from '@/utils/cn'
-import { mockHousehold, mockUser } from '@/store/household'
+import { mockHousehold } from '@/store/household'
+import { useAuth } from '@/auth/useAuth'
 import { Brand } from './Brand'
 import { HouseholdSwitcher } from './HouseholdSwitcher'
 
@@ -12,6 +13,10 @@ interface TopBarProps {
 
 /** Mobile top bar: brand on the left, household switcher and profile on the right. */
 export function TopBar({ onOpenSettings }: TopBarProps) {
+  // Rendered only inside <ProtectedRoute>, which never renders its children
+  // until `profile` is loaded — see src/auth/RouteGuards.tsx.
+  const { profile } = useAuth()
+  const displayName = profile?.displayName ?? ''
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
@@ -36,10 +41,10 @@ export function TopBar({ onOpenSettings }: TopBarProps) {
             type="button"
             onClick={onOpenSettings}
             title="Settings"
-            aria-label={`Settings — signed in as ${mockUser.name}`}
+            aria-label={`Settings — signed in as ${displayName}`}
             className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
           >
-            <Avatar name={mockUser.name} size="sm" />
+            <Avatar name={displayName} size="sm" />
           </button>
         </div>
       </div>

@@ -13,8 +13,13 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: 'html',
+  // Signs in one fixed local-only fixture user once, up front, so every
+  // existing spec keeps working now that the app sits behind auth — see
+  // global-setup.ts. Specs that need to be logged out opt out per-file.
+  globalSetup: './tests/e2e/global-setup.ts',
   use: {
     baseURL,
+    storageState: 'tests/e2e/.auth/user.json',
     screenshot: 'only-on-failure',
     trace: 'on-first-retry',
   },
