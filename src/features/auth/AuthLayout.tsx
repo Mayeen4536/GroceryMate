@@ -9,7 +9,13 @@ const stagger: Variants = {
   visible: { transition: { staggerChildren: 0.07, delayChildren: 0.04 } },
 }
 
-/** Shared chrome for /sign-in and /sign-up: centered card on the same warm canvas as Landing. */
+/**
+ * Shared chrome for /sign-in, /sign-up, and household onboarding/fallback
+ * screens: a centered card on the same warm canvas as Landing. Not
+ * auth-specific despite the name/folder — reused as-is (see
+ * src/household/HouseholdGate.tsx) rather than duplicated, since it has no
+ * auth-only logic.
+ */
 export function AuthLayout({
   title,
   subtitle,
@@ -20,7 +26,7 @@ export function AuthLayout({
   subtitle: string
   children: ReactNode
   /** e.g. "Don't have an account? Sign up" */
-  footer: ReactNode
+  footer?: ReactNode
 }) {
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
@@ -51,9 +57,11 @@ export function AuthLayout({
           <div className="mt-6">{children}</div>
         </motion.div>
 
-        <motion.p variants={riseChild} className="mt-5 text-center text-sm text-muted">
-          {footer}
-        </motion.p>
+        {footer && (
+          <motion.p variants={riseChild} className="mt-5 text-center text-sm text-muted">
+            {footer}
+          </motion.p>
+        )}
       </motion.div>
     </div>
   )

@@ -12,6 +12,7 @@ import { useGroceries } from '@/hooks/useGroceries'
 import { useMembers } from '@/hooks/useMembers'
 import { useShowDesignSystem } from '@/hooks/useShowDesignSystem'
 import { GuestRoute, ProtectedRoute } from '@/auth/RouteGuards'
+import { HouseholdGate } from '@/household/HouseholdGate'
 import { easeSoft } from '@/animations/motion'
 
 // Code-split every destination past the landing page: a first visit only
@@ -169,7 +170,9 @@ export default function App() {
               transition={{ duration: 0.28, ease: easeSoft }}
             >
               <ProtectedRoute>
-                <AppRoutes groceries={groceries} members={members} />
+                <HouseholdGate>
+                  <AppRoutes groceries={groceries} members={members} />
+                </HouseholdGate>
               </ProtectedRoute>
             </motion.div>
           )}

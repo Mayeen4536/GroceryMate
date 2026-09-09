@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Avatar } from '@/components/ui'
 import { cn } from '@/utils/cn'
-import { mockHousehold } from '@/store/household'
 import { useAuth } from '@/auth/useAuth'
+import { useHousehold } from '@/household/useHousehold'
 import { Brand } from './Brand'
 import { HouseholdSwitcher } from './HouseholdSwitcher'
 
@@ -13,10 +13,13 @@ interface TopBarProps {
 
 /** Mobile top bar: brand on the left, household switcher and profile on the right. */
 export function TopBar({ onOpenSettings }: TopBarProps) {
-  // Rendered only inside <ProtectedRoute>, which never renders its children
-  // until `profile` is loaded — see src/auth/RouteGuards.tsx.
+  // Rendered only inside <ProtectedRoute><HouseholdGate>, which never
+  // render their children until `profile`/`household` are loaded — see
+  // src/auth/RouteGuards.tsx and src/household/HouseholdGate.tsx.
   const { profile } = useAuth()
+  const { household } = useHousehold()
   const displayName = profile?.displayName ?? ''
+  const householdSummary = { name: household?.name ?? '', memberCount: household?.memberCount ?? 0 }
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
@@ -36,7 +39,7 @@ export function TopBar({ onOpenSettings }: TopBarProps) {
       <div className="flex h-14 items-center justify-between gap-3 px-4">
         <Brand />
         <div className="flex items-center gap-2">
-          <HouseholdSwitcher household={mockHousehold} compact />
+          <HouseholdSwitcher household={householdSummary} compact />
           <button
             type="button"
             onClick={onOpenSettings}

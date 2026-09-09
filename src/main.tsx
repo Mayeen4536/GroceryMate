@@ -4,13 +4,16 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App'
 import { AuthProvider } from './auth/AuthProvider'
+import { HouseholdProvider } from './household/HouseholdProvider'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
+      <HouseholdProvider>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </HouseholdProvider>
     </AuthProvider>
   </StrictMode>,
 )

@@ -4,8 +4,8 @@ import { cn } from '@/utils/cn'
 import { springSnappy } from '@/animations/motion'
 import { NAV_ITEMS } from '@/config/navigation'
 import type { NavItem, PageId } from '@/types/navigation'
-import { mockHousehold } from '@/store/household'
 import { useAuth } from '@/auth/useAuth'
+import { useHousehold } from '@/household/useHousehold'
 import { Brand } from './Brand'
 import { HouseholdSwitcher } from './HouseholdSwitcher'
 import { UserProfile } from './UserProfile'
@@ -69,10 +69,13 @@ export function Sidebar({
   onToggleCollapsed,
   onOpenSettings,
 }: SidebarProps) {
-  // Rendered only inside <ProtectedRoute>, which never renders its children
-  // until `profile` is loaded — see src/auth/RouteGuards.tsx.
+  // Rendered only inside <ProtectedRoute><HouseholdGate>, which never
+  // render their children until `profile`/`household` are loaded — see
+  // src/auth/RouteGuards.tsx and src/household/HouseholdGate.tsx.
   const { profile } = useAuth()
+  const { household } = useHousehold()
   const user = { name: profile?.displayName ?? '', email: profile?.email ?? '' }
+  const householdSummary = { name: household?.name ?? '', memberCount: household?.memberCount ?? 0 }
 
   return (
     <aside
@@ -106,7 +109,7 @@ export function Sidebar({
         </motion.button>
       </div>
       <div className={cn('pb-5', collapsed ? 'px-3' : 'px-3')}>
-        <HouseholdSwitcher household={mockHousehold} tone="dark" iconOnly={collapsed} />
+        <HouseholdSwitcher household={householdSummary} tone="dark" iconOnly={collapsed} />
       </div>
       <nav aria-label="Main" className="flex-1 space-y-0.5 overflow-y-auto px-3">
         {NAV_ITEMS.map((item) => (

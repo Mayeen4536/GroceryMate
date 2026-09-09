@@ -3,9 +3,10 @@
 Split household groceries fairly: log what's bought, who paid, and who shares
 it, and GroceryMate works out who owes whom — with the minimum number of
 payments to settle up. React 19 + Vite + TypeScript (strict) + Tailwind v4 +
-Framer Motion, installable as a PWA. Auth/session/profile are real (Supabase);
-household/member/grocery data is still local/mock — see
-[docs/AUTH_INTEGRATION.md](docs/AUTH_INTEGRATION.md).
+Framer Motion, installable as a PWA. Auth/session/profile and the current
+household's identity are real (Supabase); member/grocery/settlement data is
+still local/mock — see [docs/AUTH_INTEGRATION.md](docs/AUTH_INTEGRATION.md)
+and [docs/HOUSEHOLD_INTEGRATION.md](docs/HOUSEHOLD_INTEGRATION.md).
 
 ## Quickstart
 

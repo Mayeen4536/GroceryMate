@@ -2,10 +2,15 @@ import { motion } from 'framer-motion'
 import { House } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { springSnappy } from '@/animations/motion'
-import type { MockHousehold } from '@/types/household'
+
+/** Only what this display-only component actually needs — deliberately not the full Household/MockHousehold shape. */
+export interface HouseholdSummary {
+  name: string
+  memberCount: number
+}
 
 interface HouseholdSwitcherProps {
-  household: MockHousehold
+  household: HouseholdSummary
   /** Tighter layout for the mobile top bar. */
   compact?: boolean
   /** 'dark' styles the switcher for pine surfaces. */

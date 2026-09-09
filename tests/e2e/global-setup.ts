@@ -17,6 +17,7 @@ import { chromium, expect, type FullConfig } from '@playwright/test'
 const FIXTURE_EMAIL = 'e2e-fixture@example.com'
 const FIXTURE_PASSWORD = 'E2eFixturePassword9!'
 const FIXTURE_NAME = 'E2E Fixture'
+const FIXTURE_HOUSEHOLD_NAME = 'E2E Fixture Household'
 const STORAGE_STATE_PATH = 'tests/e2e/.auth/user.json'
 
 export default async function globalSetup(config: FullConfig) {
@@ -60,7 +61,39 @@ export default async function globalSetup(config: FullConfig) {
   // expect(...).toHaveURL polls the URL directly rather than waiting for a
   // navigation/load event — needed here because signing in is a
   // client-side route change (react-router pushState), not a full page load.
+  // Note: the URL becomes /groceries even if <HouseholdGate> is currently
+  // showing onboarding in its place (the gate renders in place of
+  // AppRoutes, it doesn't change the route) — the Groceries heading check
+  // right after this is what actually confirms the app shell rendered.
   await expect(page).toHaveURL(/\/groceries$/, { timeout: 15000 })
+
+  // First run: the fixture user has no household yet, so <HouseholdGate>
+  // shows onboarding here instead of the app shell — complete it once so
+  // every other spec's default (authenticated) storageState is also
+  // household-ready. Later runs: the fixture already has one, and the real
+  // Groceries heading is already showing instead. Race both outcomes with a
+  // generous shared timeout (matching the household query's own network
+  // round trip, which can be slow on a freshly-started/cold local stack)
+  // rather than a short fixed-timeout probe on just one of them.
+  const needsHouseholdSetup = await Promise.race([
+    page
+      .getByRole('heading', { name: 'Create your household' })
+      .waitFor({ state: 'visible', timeout: 15000 })
+      .then(() => true)
+      .catch(() => false),
+    page
+      .getByRole('heading', { name: 'Groceries', exact: true })
+      .waitFor({ state: 'visible', timeout: 15000 })
+      .then(() => false)
+      .catch(() => false),
+  ])
+
+  if (needsHouseholdSetup) {
+    await page.getByLabel('Household name').fill(FIXTURE_HOUSEHOLD_NAME)
+    await page.getByRole('button', { name: 'Create household' }).click()
+  }
+
+  await expect(page.getByRole('heading', { name: 'Groceries', exact: true })).toBeVisible({ timeout: 15000 })
   await page.context().storageState({ path: STORAGE_STATE_PATH })
   await browser.close()
 }

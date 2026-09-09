@@ -66,10 +66,18 @@ test('full journey: sign up, land in the app, survive a refresh, sign out, and s
   await page.getByLabel('Password', { exact: true }).fill('JourneyPassword9!')
   await page.getByRole('button', { name: 'Create account' }).click()
 
+  // A brand-new account has no household yet, so <HouseholdGate> shows
+  // onboarding here instead of the app shell (see household-onboarding.spec.ts
+  // for dedicated coverage of that flow) — complete it once so this test can
+  // continue exercising the auth session itself.
+  await expect(page.getByRole('heading', { name: 'Create your household' })).toBeVisible({ timeout: 15000 })
+  await page.getByLabel('Household name').fill('Journey Test Household')
+  await page.getByRole('button', { name: 'Create household' }).click()
+
   // Real profile loaded through RLS — not fabricated — proven by
   // Settings showing the exact values just signed up with.
   await expect(page).toHaveURL(/\/groceries$/)
-  await expect(page.getByRole('heading', { name: 'Groceries', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Groceries', exact: true })).toBeVisible({ timeout: 15000 })
 
   await page.goto('/settings')
   await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible()
