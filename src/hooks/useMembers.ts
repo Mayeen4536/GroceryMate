@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { initialMembers } from '@/store/members'
+import { useHouseholdMembers } from '@/members/useHouseholdMembers'
 import type { Member } from '@/types/member'
 
 export type SortBy = 'name' | 'newest' | 'paid'
@@ -18,9 +18,17 @@ const sorters: Record<SortBy, (a: Member, b: Member) => number> = {
   paid: (a, b) => (Number.parseFloat(b.amountPaid) || 0) - (Number.parseFloat(a.amountPaid) || 0),
 }
 
-/** Owns the Members feature's state: the roster, search/sort, dialog, and profile drawer. */
+/**
+ * Owns the Members feature's page-local UI state: search, sort, the
+ * add/invite dialog, and the profile drawer. The roster itself and its
+ * CRUD are real and Supabase-backed — see src/members/useHouseholdMembers.ts,
+ * which this wraps rather than duplicates, keeping every existing caller
+ * (App.tsx, MembersPage, GroceryForm via useMemberOptions) on the exact
+ * same shape this hook already returned before the migration.
+ */
 export function useMembers() {
-  const [members, setMembers] = useState<Member[]>(initialMembers)
+  const { members, loading, error, refresh, addMember, inviteMember, archiveMember, reactivateMember } =
+    useHouseholdMembers()
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState<SortBy>('name')
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -28,15 +36,23 @@ export function useMembers() {
   const [profileId, setProfileId] = useState<string | null>(null)
   const [lastAddedId, setLastAddedId] = useState<string | null>(null)
 
-  const profileMember = members.find((member) => member.id === profileId) ?? null
+  // Tone (avatar color theme) has no column on household_members — it's a
+  // purely local, session-scoped override on top of the id-derived default
+  // (src/members/types.ts's mapHouseholdMemberRow), not persisted. Applied
+  // once here so every derived list/lookup below already reflects it.
+  const [toneOverrides, setToneOverrides] = useState<Record<string, number>>({})
+  const displayMembers =
+    Object.keys(toneOverrides).length === 0
+      ? members
+      : members.map((member) => (member.id in toneOverrides ? { ...member, tone: toneOverrides[member.id] } : member))
+
+  const profileMember = displayMembers.find((member) => member.id === profileId) ?? null
 
   const query = search.trim().toLowerCase()
-  const visibleMembers = members
+  const visibleMembers = displayMembers
     .filter(
       (member) =>
-        !query ||
-        member.name.toLowerCase().includes(query) ||
-        member.email.toLowerCase().includes(query),
+        !query || member.name.toLowerCase().includes(query) || (member.email?.toLowerCase().includes(query) ?? false),
     )
     .sort(sorters[sortBy])
 
@@ -45,67 +61,58 @@ export function useMembers() {
     setDialogOpen(true)
   }
 
-  const nextOrder = () => members.reduce((max, member) => Math.max(max, member.order), 0) + 1
-
-  const handleAdd = (draft: NewMemberDraft) => {
-    const id = `m-${Date.now()}`
-    setMembers((current) => [
-      ...current,
-      {
-        id,
-        name: draft.name,
-        email: draft.email || `${draft.name.split(' ')[0].toLowerCase()}@flat4b.home`,
-        tone: draft.tone,
-        role: 'member',
-        status: 'settled',
-        amountPaid: '0',
-        itemsAdded: 0,
-        joinedLabel: 'Joined just now',
-        order: nextOrder(),
-      },
-    ])
-    setLastAddedId(id)
-    setDialogOpen(false)
+  const handleAdd = async (draft: NewMemberDraft) => {
+    // draft.email/draft.tone are collected by the dialog but never
+    // persisted: real non-account participants have no email column on
+    // household_members (see docs/MEMBER_INTEGRATION.md), and tone is a
+    // purely local display preference (see handleChangeTone below).
+    const result = await addMember(draft.name)
+    if (!result.error && result.id) {
+      setLastAddedId(result.id)
+      setDialogOpen(false)
+    }
+    return result
   }
 
-  const handleInvite = (email: string) => {
-    const id = `m-${Date.now()}`
+  const handleInvite = async (email: string) => {
+    // The invite form only collects an email; a display name is derived
+    // from it locally, matching this hook's pre-migration behavior exactly
+    // (no UI change) — invited_email is what actually identifies the
+    // invite, the derived name is just a placeholder until acceptance
+    // (out of scope — see Migration 4/docs/MEMBER_INTEGRATION.md).
     const namePart = email.split('@')[0].replace(/[._-]+/g, ' ').trim() || 'New member'
     const name = namePart
       .split(' ')
       .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
       .join(' ')
-    setMembers((current) => [
-      ...current,
-      {
-        id,
-        name,
-        email,
-        tone: (current.length + 2) % 6,
-        role: 'member',
-        status: 'invited',
-        amountPaid: '0',
-        itemsAdded: 0,
-        joinedLabel: 'Invited just now',
-        order: nextOrder(),
-      },
-    ])
-    setLastAddedId(id)
+    const result = await inviteMember(name, email)
+    if (!result.error && result.id) {
+      setLastAddedId(result.id)
+    }
+    return result
   }
 
+  // Kept as a real, working action (rather than removed) since nothing in
+  // this slice's scope asked for the color-theme UI feature to go away.
   const handleChangeTone = (id: string, tone: number) => {
-    setMembers((current) =>
-      current.map((member) => (member.id === id ? { ...member, tone } : member)),
-    )
+    setToneOverrides((current) => ({ ...current, [id]: tone }))
   }
 
-  const handleRemove = (id: string) => {
-    setProfileId(null)
-    setMembers((current) => current.filter((member) => member.id !== id))
+  const handleRemove = async (id: string) => {
+    const result = await archiveMember(id)
+    if (!result.error) setProfileId(null)
+    return result
+  }
+
+  const handleReactivate = async (id: string) => {
+    return reactivateMember(id)
   }
 
   return {
-    members,
+    members: displayMembers,
+    loading,
+    error,
+    refresh,
     search,
     setSearch,
     sortBy,
@@ -122,5 +129,6 @@ export function useMembers() {
     handleInvite,
     handleChangeTone,
     handleRemove,
+    handleReactivate,
   }
 }

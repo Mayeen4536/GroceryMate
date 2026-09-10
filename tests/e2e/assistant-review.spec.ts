@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { enterApp, generateAssistantGroceries } from './helpers'
+import { enterApp, FIXTURE_OWNER_FIRST_NAME, FIXTURE_OWNER_NAME, generateAssistantGroceries } from './helpers'
 
 // Regression coverage for QA-011: GroceryMate must never silently invent
 // who paid or who shared an AI-generated item. Adding used to fill both in
@@ -7,6 +7,12 @@ import { enterApp, generateAssistantGroceries } from './helpers'
 // with no confirmation; now every item must have both resolved — by
 // already having them, or by the user filling them in — before "Add to
 // groceries" can succeed at all.
+//
+// Every generated item ships with no payer/sharers at all (see
+// src/store/assistantGenerated.ts) — a mock "AI" has no way to know a real
+// household's actual member names, so nothing is ever pre-filled; this
+// suite exercises the review/resolution flow itself, not a "some already
+// known" shortcut a real integration couldn't actually provide.
 
 test.describe('Assistant generated-groceries review', () => {
   test.beforeEach(async ({ page, isMobile }) => {
@@ -15,17 +21,13 @@ test.describe('Assistant generated-groceries review', () => {
     await generateAssistantGroceries(page, 'Plan a week of groceries for 4 people')
   })
 
-  test('an item that already has no payer or sharers is visibly flagged as needing input', async ({ page }) => {
+  test('every generated item is visibly flagged as needing input', async ({ page }) => {
     const milkRow = page.locator('main li').filter({ hasText: 'Milk (2L)' })
     await expect(milkRow.getByText('Needs payer')).toBeVisible()
     await expect(milkRow.getByText('Needs sharers')).toBeVisible()
-  })
-
-  test('an item with both payer and sharers already known shows no warning at all', async ({ page }) => {
     const butterRow = page.locator('main li').filter({ hasText: 'Butter' })
-    await expect(butterRow.getByText('Needs payer')).not.toBeVisible()
-    await expect(butterRow.getByText('Needs sharers')).not.toBeVisible()
-    await expect(butterRow.getByRole('combobox', { name: 'Paid by' })).toHaveText('Bilal Ahmed')
+    await expect(butterRow.getByText('Needs payer')).toBeVisible()
+    await expect(butterRow.getByText('Needs sharers')).toBeVisible()
   })
 
   test('clicking Add to groceries while items are unresolved does not add anything', async ({ page }) => {
@@ -41,53 +43,35 @@ test.describe('Assistant generated-groceries review', () => {
     await expect(milkRow.getByText('Pick at least one person sharing this item.')).toBeVisible()
   })
 
-  test('resolving every item allows Add to groceries to succeed, using exactly what the user chose', async ({ page }) => {
-    // Milk: missing both payer and sharers.
-    const milkRow = page.locator('main li').filter({ hasText: 'Milk (2L)' })
-    await milkRow.getByRole('combobox', { name: 'Paid by' }).click()
-    await milkRow.getByRole('option', { name: 'Aisha Khan' }).click()
-    await milkRow.getByRole('button', { name: 'Everyone' }).click()
+  test('resolving every item allows Add to groceries to succeed, using exactly what the user chose', async ({
+    page,
+  }) => {
+    // Every item is missing both fields — resolve each the same way, always
+    // picking the fixture owner specifically as the lone sharer (not the
+    // "Everyone" shortcut, which selects the household's *entire* current
+    // roster — a size this test can't assume, since the fixture household
+    // persists and accumulates members across every spec's run).
+    for (const itemText of ['Milk (2L)', 'Eggs (dozen)', 'Brown bread', 'Butter', 'Orange juice']) {
+      const row = page.locator('main li').filter({ hasText: itemText })
+      await row.getByRole('combobox', { name: 'Paid by' }).click()
+      await row.getByRole('option', { name: FIXTURE_OWNER_NAME }).click()
+      await row.getByRole('button', { name: FIXTURE_OWNER_NAME }).click()
+    }
 
-    // Eggs: payer already known, only sharers missing.
-    const eggsRow = page.locator('main li').filter({ hasText: 'Eggs (dozen)' })
-    await expect(eggsRow.getByRole('combobox', { name: 'Paid by' })).toHaveText('Aisha Khan')
-    await eggsRow.getByRole('button', { name: 'Everyone' }).click()
-
-    // Brown bread: sharers already known, only payer missing.
-    const breadRow = page.locator('main li').filter({ hasText: 'Brown bread' })
-    await breadRow.getByRole('combobox', { name: 'Paid by' }).click()
-    await breadRow.getByRole('option', { name: 'Daniyal Raza' }).click()
-
-    // Orange juice: missing both.
-    const ojRow = page.locator('main li').filter({ hasText: 'Orange juice' })
-    await ojRow.getByRole('combobox', { name: 'Paid by' }).click()
-    await ojRow.getByRole('option', { name: 'Chloe Lee' }).click()
-    await ojRow.getByRole('button', { name: 'Everyone' }).click()
-
-    // Butter was already fully resolved — nothing to do.
     await expect(page.getByText('Needs payer')).toHaveCount(0)
     await expect(page.getByText('Needs sharers')).toHaveCount(0)
 
     await page.getByRole('button', { name: 'Add to groceries' }).click()
     await expect(page).toHaveURL(/\/groceries$/)
 
-    // .first(): the newly-added items are prepended to the list, and the seed
-    // data (src/store/groceries.ts) happens to already contain its own
-    // "Milk (2L)" paid by Aisha and shared by all 4 — so without `.first()`
-    // this would ambiguously match both the old and the newly-added card.
-    const milkCard = page.locator('main li').filter({ hasText: 'Milk (2L)' }).first()
-    await expect(milkCard.getByText('Paid by Aisha · 4 sharing')).toBeVisible()
-    const breadCard = page.locator('main li').filter({ hasText: 'Brown bread' })
-    // Brown bread's pre-existing sharers (2 people) were preserved, not overwritten to "Everyone".
-    await expect(breadCard.getByText('Paid by Daniyal · 2 sharing')).toBeVisible()
-    const butterCard = page.locator('main li').filter({ hasText: 'Butter' })
-    await expect(butterCard.getByText('Paid by Bilal · 4 sharing')).toBeVisible()
+    const milkCard = page.locator('main li').filter({ hasText: 'Milk (2L)' })
+    await expect(milkCard.getByText(`Paid by ${FIXTURE_OWNER_FIRST_NAME} · 1 sharing`)).toBeVisible()
   })
 
   test('"Try another prompt" discards the in-progress review with no crash', async ({ page }) => {
     const milkRow = page.locator('main li').filter({ hasText: 'Milk (2L)' })
     await milkRow.getByRole('combobox', { name: 'Paid by' }).click()
-    await milkRow.getByRole('option', { name: 'Aisha Khan' }).click()
+    await milkRow.getByRole('option', { name: FIXTURE_OWNER_NAME }).click()
 
     await page.getByRole('button', { name: 'Try another prompt' }).click()
 

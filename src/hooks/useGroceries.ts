@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
-import { initialGroceries } from '@/store/groceries'
 import type { GroceryItem } from '@/types/grocery'
 
 /** The shape a grocery form submits: every field except the generated id. */
@@ -17,7 +16,14 @@ const UNDO_WINDOW_MS = 5000
 
 /** Owns the Groceries feature's state: the list, the add/edit panel, and their handlers. */
 export function useGroceries() {
-  const [items, setItems] = useState<GroceryItem[]>(initialGroceries)
+  // Starts empty rather than from src/store/groceries.ts's mock seed: those
+  // items' paidBy/sharedBy name a fixed mock roster (e.g. "Aisha Khan") that
+  // has no correspondence to a real household's actual members (which, for
+  // any real household, starts as just its owner) — every one of them would
+  // fail to resolve the instant a real roster (Slice 3) replaced the mock
+  // one. Groceries are still local/session-only; only this initial value
+  // changed, not their shape, behavior, or persistence.
+  const [items, setItems] = useState<GroceryItem[]>([])
   const [panelOpen, setPanelOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [lastAddedId, setLastAddedId] = useState<string | null>(null)

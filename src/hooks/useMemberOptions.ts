@@ -31,14 +31,16 @@ export interface MemberOptions {
  * `MemberOptions` involves no hooks of its own, only `useMemberOptions`'s
  * `useMemo` wrapper does.
  *
- * Deliberately excludes invited-but-not-yet-joined members: someone who
+ * Deliberately excludes invited-but-not-yet-joined members (someone who
  * hasn't joined the household yet can't have actually paid for or shared
- * in a grocery run, so offering them here would let the settlement engine
- * later compute a real consumed amount for a person who, by the Members
- * page's own "Invite pending" badge, isn't in yet.
+ * in a grocery run) and archived members (removed from the household,
+ * per docs/MEMBER_INTEGRATION.md — excluded from *new*-selection only;
+ * still present in the full `members` array passed to the settlement
+ * engine, so a grocery that already references an archived member stays
+ * resolvable).
  */
 export function buildMemberOptions(members: readonly Member[]): MemberOptions {
-  const selectable = members.filter((member) => member.status !== 'invited')
+  const selectable = members.filter((member) => member.status !== 'invited' && member.status !== 'archived')
   const nameIndex = buildMemberNameIndex(selectable)
   const nameById = new Map(selectable.map((member) => [member.id, member.name]))
 

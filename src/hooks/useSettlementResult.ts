@@ -1,8 +1,10 @@
 import { useMemo } from 'react'
 import { CURRENCIES } from '@/domain/Currency'
+import type { HouseholdId } from '@/domain/ids'
 import { computeSettlement } from '@/engine'
 import { describeSettlementError, toEngineInput, toSettlementViewModel } from '@/adapters'
 import type { SettlementViewModel } from '@/adapters'
+import { useHousehold } from '@/household/useHousehold'
 import type { GroceryItem } from '@/types/grocery'
 import type { Member } from '@/types/member'
 
@@ -36,14 +38,19 @@ export type SettlementResultState =
  * summary ever reaches the screen.
  */
 export function useSettlementResult(members: readonly Member[], groceries: readonly GroceryItem[]): SettlementResultState {
+  // Rendered only inside <HouseholdGate>, which never renders its children
+  // until `household` is loaded — see src/household/HouseholdGate.tsx.
+  const { household } = useHousehold()
+  const householdId = (household?.id ?? '') as HouseholdId
+
   return useMemo(() => {
     try {
-      const engineInput = toEngineInput(members, groceries, HOUSEHOLD_CURRENCY)
+      const engineInput = toEngineInput(members, groceries, HOUSEHOLD_CURRENCY, householdId)
       const result = computeSettlement(engineInput.members, engineInput.groceries, HOUSEHOLD_CURRENCY)
       return { status: 'ok', viewModel: toSettlementViewModel(result, members) }
     } catch (error) {
       console.error('[useSettlementResult] settlement calculation failed:', error)
       return { status: 'error', userMessage: describeSettlementError(error) }
     }
-  }, [members, groceries])
+  }, [members, groceries, householdId])
 }

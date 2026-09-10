@@ -3,11 +3,15 @@ import type { GroceryItem } from '@/types/grocery'
 /**
  * Mock output for the generation demo. Display-only; no math happens here.
  *
- * Deliberately mixed: a real receipt/description parse sometimes states who
- * paid or who it's for and sometimes doesn't, so this includes items with
- * fully-known payer/sharers alongside ones missing one or both — the review
- * step (GeneratedGroceries) must ask about exactly the missing pieces
- * rather than assuming every item is equally uncertain.
+ * Every item ships with no payer or sharers at all — this used to mix in a
+ * few items with both already filled in (paidBy/sharedBy naming the old
+ * fixed mock roster), but that roster has no correspondence to any real
+ * household's actual members (which, for a brand-new household, is just
+ * its owner). Naming a real member here would either be wrong for almost
+ * every household or coincidentally right for none, so nothing is ever
+ * pre-filled: the review step (GeneratedGroceries) asks about every item,
+ * consistent with the same "never invent who paid or shared" principle
+ * this whole review step exists to enforce.
  */
 export const MOCK_GENERATED_ITEMS: GroceryItem[] = [
   {
@@ -26,7 +30,7 @@ export const MOCK_GENERATED_ITEMS: GroceryItem[] = [
     price: '360',
     quantity: 1,
     category: 'dairy',
-    paidBy: 'Aisha Khan',
+    paidBy: '',
     sharedBy: [],
     notes: '',
   },
@@ -37,7 +41,7 @@ export const MOCK_GENERATED_ITEMS: GroceryItem[] = [
     quantity: 2,
     category: 'bakery',
     paidBy: '',
-    sharedBy: ['Aisha Khan', 'Bilal Ahmed'],
+    sharedBy: [],
     notes: '',
   },
   {
@@ -46,8 +50,8 @@ export const MOCK_GENERATED_ITEMS: GroceryItem[] = [
     price: '320',
     quantity: 1,
     category: 'dairy',
-    paidBy: 'Bilal Ahmed',
-    sharedBy: ['Aisha Khan', 'Bilal Ahmed', 'Chloe Lee', 'Daniyal Raza'],
+    paidBy: '',
+    sharedBy: [],
     notes: '',
   },
   {

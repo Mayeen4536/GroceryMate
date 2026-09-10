@@ -1,5 +1,5 @@
-import { test, expect, type Locator } from '@playwright/test'
-import { enterApp } from './helpers'
+import { test, expect, type Locator, type Page } from '@playwright/test'
+import { addGrocery, enterApp, FIXTURE_OWNER_FIRST_NAME, FIXTURE_OWNER_NAME } from './helpers'
 
 // Regression coverage for QA-005 (grocery deletion used to be instant and
 // permanent, with no recovery). The product decision was a reversible
@@ -12,8 +12,25 @@ async function nameOf(deleteButton: Locator) {
   return label!.replace(/^Delete /, '')
 }
 
+/** Groceries are session-local (see src/hooks/useGroceries.ts) — every test here needs at least two of its own, added through the real form. */
+async function seedTwoGroceries(page: Page) {
+  await addGrocery(page, {
+    name: 'Milk (2L)',
+    price: '240',
+    paidByName: FIXTURE_OWNER_NAME,
+    sharedByNames: [FIXTURE_OWNER_FIRST_NAME],
+  })
+  await addGrocery(page, {
+    name: 'Basmati rice (5kg)',
+    price: '1450',
+    paidByName: FIXTURE_OWNER_NAME,
+    sharedByNames: [FIXTURE_OWNER_FIRST_NAME],
+  })
+}
+
 test('deleting a grocery removes it immediately, and Undo restores it', async ({ page }) => {
   await enterApp(page)
+  await seedTwoGroceries(page)
   const deleteButton = page.locator('main li').first().getByRole('button', { name: /^Delete /i })
   const itemName = await nameOf(deleteButton)
 
@@ -34,6 +51,7 @@ test.describe('Delete and undo details', () => {
 
   test('Undo restores the grocery to its original position among the others', async ({ page }) => {
     await enterApp(page)
+    await seedTwoGroceries(page)
     const deleteButtons = () => page.locator('main li').getByRole('button', { name: /^Delete /i })
     const namesBefore = await deleteButtons().evaluateAll((buttons) =>
       buttons.map((b) => b.getAttribute('aria-label')?.replace(/^Delete /, '')),
@@ -57,6 +75,7 @@ test.describe('Delete and undo details', () => {
 
   test('a deletion that is not undone stays deleted once the undo window passes', async ({ page }) => {
     await enterApp(page)
+    await seedTwoGroceries(page)
     // Install the clock only now (after the landing/entry animations have
     // already played with real time) and virtually fast-forward instead of
     // waiting out the real undo window, so this test isn't slow or flaky.
@@ -75,6 +94,7 @@ test.describe('Delete and undo details', () => {
 
   test('clicking Undo rapidly does not restore the grocery more than once', async ({ page }) => {
     await enterApp(page)
+    await seedTwoGroceries(page)
     const countBefore = await page.locator('main li').count()
     const deleteButton = page.locator('main li').first().getByRole('button', { name: /^Delete /i })
     const itemName = await nameOf(deleteButton)

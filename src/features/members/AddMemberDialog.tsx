@@ -18,8 +18,8 @@ interface AddMemberDialogProps {
   open: boolean
   initialTab: AddMemberTab
   onClose: () => void
-  onAdd: (draft: NewMemberDraft) => void
-  onInvite: (email: string) => void
+  onAdd: (draft: NewMemberDraft) => Promise<{ error?: string }>
+  onInvite: (email: string) => Promise<{ error?: string }>
 }
 
 const INVITE_LINK = 'grocerymate.app/join/flat-4b'
@@ -38,6 +38,10 @@ export function AddMemberDialog({ open, initialTab, onClose, onAdd, onInvite }: 
   const [inviteSent, setInviteSent] = useState(false)
   const [nameAttempted, setNameAttempted] = useState(false)
   const [inviteAttempted, setInviteAttempted] = useState(false)
+  const [addSubmitting, setAddSubmitting] = useState(false)
+  const [inviteSubmitting, setInviteSubmitting] = useState(false)
+  const [addError, setAddError] = useState<string>()
+  const [inviteError, setInviteError] = useState<string>()
 
   // Both toasts auto-dismiss on a timer; tracked here so closing the dialog
   // mid-timer (or unmounting) cancels it instead of setting state on a gone component.
@@ -63,21 +67,39 @@ export function AddMemberDialog({ open, initialTab, onClose, onAdd, onInvite }: 
     copiedTimer.current = setTimeout(() => setCopied(false), 1600)
   }
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
+    if (addSubmitting) return // belt-and-suspenders against a double Enter+click race; disabled below is the primary guard
     if (!name.trim()) {
       setNameAttempted(true)
       return
     }
-    onAdd({ name: name.trim(), email: email.trim(), tone })
+    setAddSubmitting(true)
+    setAddError(undefined)
+    const result = await onAdd({ name: name.trim(), email: email.trim(), tone })
+    setAddSubmitting(false)
+    if (result.error) {
+      setAddError(result.error)
+      return
+    }
+    // onClose() is called by the parent once the new member is confirmed
+    // persisted (see MembersPage's closeDialog) — no local close here.
   }
 
-  const handleInvite = () => {
+  const handleInvite = async () => {
+    if (inviteSubmitting) return
     const trimmed = inviteEmail.trim()
     if (!trimmed || !EMAIL_PATTERN.test(trimmed)) {
       setInviteAttempted(true)
       return
     }
-    onInvite(trimmed)
+    setInviteSubmitting(true)
+    setInviteError(undefined)
+    const result = await onInvite(trimmed)
+    setInviteSubmitting(false)
+    if (result.error) {
+      setInviteError(result.error)
+      return
+    }
     setInviteSent(true)
     setInviteAttempted(false)
     setInviteEmail('')
@@ -109,6 +131,12 @@ export function AddMemberDialog({ open, initialTab, onClose, onAdd, onInvite }: 
             transition={{ duration: 0.15 }}
             className="flex flex-col gap-5"
           >
+            {addError && (
+              <p role="alert" className="rounded-lg bg-danger-50 px-3.5 py-2.5 text-sm text-danger-700">
+                {addError}
+              </p>
+            )}
+
             <div className="flex flex-col items-center gap-3">
               <AnimatePresence mode="popLayout" initial={false}>
                 <motion.span
@@ -121,7 +149,7 @@ export function AddMemberDialog({ open, initialTab, onClose, onAdd, onInvite }: 
                   <Avatar name={name || '?'} tone={tone} size="lg" />
                 </motion.span>
               </AnimatePresence>
-              <Button variant="ghost" size="sm" iconLeft={Dices} onClick={shuffleTone}>
+              <Button variant="ghost" size="sm" iconLeft={Dices} onClick={shuffleTone} disabled={addSubmitting}>
                 Shuffle look
               </Button>
             </div>
@@ -134,6 +162,7 @@ export function AddMemberDialog({ open, initialTab, onClose, onAdd, onInvite }: 
               value={name}
               onChange={(event) => setName(event.target.value)}
               error={nameAttempted && !name.trim() ? 'Enter a name for this member.' : undefined}
+              disabled={addSubmitting}
             />
             <Input
               label="Email"
@@ -142,6 +171,7 @@ export function AddMemberDialog({ open, initialTab, onClose, onAdd, onInvite }: 
               helperText="Just a placeholder for now; invites go live later."
               value={email}
               onChange={(event) => setEmail(event.target.value)}
+              disabled={addSubmitting}
             />
             <SwatchPicker
               label="Color theme"
@@ -155,11 +185,11 @@ export function AddMemberDialog({ open, initialTab, onClose, onAdd, onInvite }: 
             />
 
             <div className="mt-1 flex justify-end gap-2 border-t border-line pt-4">
-              <Button variant="ghost" onClick={onClose}>
+              <Button variant="ghost" onClick={onClose} disabled={addSubmitting}>
                 Cancel
               </Button>
-              <Button iconLeft={UserPlus} onClick={handleAdd}>
-                Add member
+              <Button iconLeft={UserPlus} onClick={handleAdd} disabled={addSubmitting}>
+                {addSubmitting ? 'Adding…' : 'Add member'}
               </Button>
             </div>
           </motion.div>
@@ -172,6 +202,12 @@ export function AddMemberDialog({ open, initialTab, onClose, onAdd, onInvite }: 
             transition={{ duration: 0.15 }}
             className="flex flex-col gap-5"
           >
+            {inviteError && (
+              <p role="alert" className="rounded-lg bg-danger-50 px-3.5 py-2.5 text-sm text-danger-700">
+                {inviteError}
+              </p>
+            )}
+
             <div className="flex flex-col gap-1.5">
               <span className="text-sm font-medium text-ink">Household link</span>
               <div className="flex gap-2">
@@ -214,9 +250,10 @@ export function AddMemberDialog({ open, initialTab, onClose, onAdd, onInvite }: 
                       : undefined
                 }
                 className="flex-1"
+                disabled={inviteSubmitting}
               />
-              <Button iconLeft={Send} onClick={handleInvite} className="shrink-0">
-                Send invite
+              <Button iconLeft={Send} onClick={handleInvite} className="shrink-0" disabled={inviteSubmitting}>
+                {inviteSubmitting ? 'Sending…' : 'Send invite'}
               </Button>
             </div>
 

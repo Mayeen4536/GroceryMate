@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { enterApp } from './helpers'
+import { addGrocery, addMember, enterApp } from './helpers'
 
 /**
  * Proves the Settlements and Members pages genuinely run on the real
@@ -15,12 +15,15 @@ import { enterApp } from './helpers'
  *   Chloe consumed ৳300, paid ৳0   → net -৳300 (owes)
  *   Settlement: Chloe pays Aisha ৳300
  *
- * The seed groceries are deleted first so this household's balance is
- * driven only by the two items this test controls — this checks
+ * Aisha/Bilal/Chloe are added as real members first (a run of this suite
+ * gets its own uniquely-named trio, so it never collides with a previous
+ * run's leftover rows in the persistent fixture household — see
+ * docs/MEMBER_INTEGRATION.md on duplicate names being valid but still
+ * something a *test* should avoid to keep its own assertions unambiguous).
+ * Groceries start empty for every fresh page load, so this household's
+ * balance is driven only by the two items this test adds — this checks
  * user-visible results end to end, not any engine/adapter internals.
  */
-
-const SEED_GROCERY_NAMES = ['Milk (2L)', 'Basmati rice (5kg)', 'Apples (1kg)', 'Dish soap']
 
 test.describe('Settlement reflects the real engine end to end', () => {
   test.beforeEach(({ isMobile }) => {
@@ -28,50 +31,44 @@ test.describe('Settlement reflects the real engine end to end', () => {
   })
 
   test('a manually-verifiable 3-person scenario produces the exact expected settlement', async ({ page }) => {
+    // Single-token names (no spaces): both the "Paid by" dropdown (full
+    // name) and the sharing chips/JourneyCard (first name only — see
+    // src/utils/name.ts's firstName) end up reading the exact same
+    // string, so a run's own unique suffix keeps every locator below
+    // unambiguous even as the persistent fixture household accumulates
+    // rows from earlier runs.
+    const runId = Date.now()
+    const aisha = `Aisha${runId}`
+    const bilal = `Bilal${runId}`
+    const chloe = `Chloe${runId}`
+
     await enterApp(page)
+    await addMember(page, aisha)
+    await addMember(page, bilal)
+    await addMember(page, chloe)
 
-    for (const itemName of SEED_GROCERY_NAMES) {
-      await page.getByRole('button', { name: `Delete ${itemName}` }).click()
-    }
-    await expect(page.getByText('Your first grocery starts here.')).toBeVisible()
-
-    // Rice: ৳900, paid by Aisha, shared by Aisha/Bilal/Chloe (deselect Daniyal,
-    // who's part of the "everyone" default the sharing picker starts with).
-    await page.getByRole('button', { name: 'Add your first grocery' }).click()
-    let dialog = page.getByRole('dialog')
-    await dialog.getByLabel('Grocery name').fill('Rice')
-    await dialog.getByLabel('Price').fill('900')
-    await dialog.getByRole('combobox', { name: 'Paid by' }).click()
-    await dialog.getByRole('option', { name: 'Aisha Khan' }).click()
-    await dialog.getByRole('button', { name: 'Daniyal' }).click()
-    await dialog.getByRole('button', { name: 'Add grocery' }).click()
-    await expect(dialog).not.toBeVisible()
+    // Rice: ৳900, paid by Aisha, shared by Aisha/Bilal/Chloe (deselect the
+    // fixture owner, who's part of the "everyone" default the sharing
+    // picker starts with but isn't part of this scenario).
+    await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Groceries', exact: true }).click()
+    await addGrocery(page, { name: 'Rice', price: '900', paidByName: aisha, sharedByNames: [aisha, bilal, chloe] })
 
     // Chicken: ৳600, paid by Bilal, shared by Aisha/Bilal only.
-    await page.getByRole('button', { name: 'Add grocery' }).click()
-    dialog = page.getByRole('dialog')
-    await dialog.getByLabel('Grocery name').fill('Chicken')
-    await dialog.getByLabel('Price').fill('600')
-    await dialog.getByRole('combobox', { name: 'Paid by' }).click()
-    await dialog.getByRole('option', { name: 'Bilal Ahmed' }).click()
-    await dialog.getByRole('button', { name: 'Chloe' }).click()
-    await dialog.getByRole('button', { name: 'Daniyal' }).click()
-    await dialog.getByRole('button', { name: 'Add grocery' }).click()
-    await expect(dialog).not.toBeVisible()
+    await addGrocery(page, { name: 'Chicken', price: '600', paidByName: bilal, sharedByNames: [aisha, bilal] })
 
     // Members page: each of the three members shows their real, derived numbers.
     await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Members', exact: true }).click()
     await expect(page.getByRole('heading', { name: 'Members', exact: true })).toBeVisible()
 
-    const aishaCard = page.getByRole('button', { name: /Open Aisha Khan's profile/ })
+    const aishaCard = page.getByRole('button', { name: new RegExp(`Open ${aisha}'s profile`) })
     await expect(aishaCard.getByText('House owes')).toBeVisible()
     await expect(aishaCard.getByText('900', { exact: true })).toBeVisible()
 
-    const bilalCard = page.getByRole('button', { name: /Open Bilal Ahmed's profile/ })
+    const bilalCard = page.getByRole('button', { name: new RegExp(`Open ${bilal}'s profile`) })
     await expect(bilalCard.getByText('Settled up')).toBeVisible()
     await expect(bilalCard.getByText('600', { exact: true })).toBeVisible()
 
-    const chloeCard = page.getByRole('button', { name: /Open Chloe Lee's profile/ })
+    const chloeCard = page.getByRole('button', { name: new RegExp(`Open ${chloe}'s profile`) })
     await expect(chloeCard.getByText('Owes the house')).toBeVisible()
     await expect(chloeCard.getByText('0', { exact: true })).toBeVisible()
 
@@ -88,8 +85,8 @@ test.describe('Settlement reflects the real engine end to end', () => {
     // any unrelated markup change around it.
     await expect(page.getByRole('button', { name: 'Mark as paid' })).toHaveCount(1)
     const journeyCard = page.locator('li').filter({ has: page.getByRole('button', { name: 'Mark as paid' }) })
-    await expect(journeyCard.getByText('Chloe')).toBeVisible()
-    await expect(journeyCard.getByText('Aisha')).toBeVisible()
+    await expect(journeyCard.getByText(chloe)).toBeVisible()
+    await expect(journeyCard.getByText(aisha)).toBeVisible()
     await expect(journeyCard.getByText('৳300')).toBeVisible()
   })
 })

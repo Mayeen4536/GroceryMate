@@ -1,15 +1,20 @@
 import { test, expect, type Page } from '@playwright/test'
-import { enterApp } from './helpers'
+import { addMember, enterApp, FIXTURE_OWNER_NAME } from './helpers'
 
 // Regression coverage for QA-007 (a single Escape press used to close both
 // the "Remove from household" confirmation and the Member Profile drawer
 // underneath it at once, since Modal and Drawer each reacted independently).
 
-async function openFirstMemberProfile(page: Page) {
+/**
+ * Opens a specific member's profile by name — never just "the first"
+ * member, since the fixture household's very first member is always its
+ * owner, and an owner's profile deliberately has no
+ * archive/reactivate/remove controls at all (see docs/MEMBER_INTEGRATION.md,
+ * "owner self-archival gap"), which this spec needs to exercise.
+ */
+async function openMemberProfile(page: Page, name: string) {
   await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Members', exact: true }).click()
-  const firstProfileButton = page.getByRole('button', { name: /Open .+'s profile/ }).first()
-  await expect(firstProfileButton).toBeVisible()
-  await firstProfileButton.click()
+  await page.getByRole('button', { name: new RegExp(`Open ${name}'s profile`) }).click()
   await expect(page.getByRole('dialog', { name: 'Member profile' })).toBeVisible()
 }
 
@@ -20,7 +25,9 @@ test.describe('Nested overlay Escape handling', () => {
   })
 
   test('first Escape closes only the confirmation; second Escape closes the drawer beneath it', async ({ page }) => {
-    await openFirstMemberProfile(page)
+    const memberName = `Nested Escape Member ${Date.now()}`
+    await addMember(page, memberName)
+    await openMemberProfile(page, memberName)
     await page.getByRole('button', { name: 'Remove from household' }).click()
     const confirmDialog = page.getByRole('dialog', { name: /Remove .+ from the household\?/ })
     await expect(confirmDialog).toBeVisible()
@@ -34,7 +41,7 @@ test.describe('Nested overlay Escape handling', () => {
   })
 
   test('a standalone dialog (no nested confirmation) still closes with a single Escape', async ({ page }) => {
-    await openFirstMemberProfile(page)
+    await openMemberProfile(page, FIXTURE_OWNER_NAME)
     await page.keyboard.press('Escape')
     await expect(page.getByRole('dialog', { name: 'Member profile' })).not.toBeVisible()
   })

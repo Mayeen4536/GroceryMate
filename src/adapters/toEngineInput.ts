@@ -2,14 +2,11 @@ import type { Currency } from '@/domain/Currency'
 import type { GroceryCategory, GroceryItem as DomainGroceryItem } from '@/domain/GroceryItem'
 import type { Member as DomainMember } from '@/domain/Member'
 import type { GroceryItemId, HouseholdId, MemberId } from '@/domain/ids'
-import { mockHousehold } from '@/store/household'
 import type { GroceryItem as UIGroceryItem } from '@/types/grocery'
 import type { Member as UIMember } from '@/types/member'
 import { InvalidGroceryPriceError } from './errors'
 import { buildMemberNameIndex, resolveMemberIdByName } from './memberIdentity'
 import { parseMoneyInput } from './parseMoneyInput'
-
-const HOUSEHOLD_ID = mockHousehold.id as HouseholdId
 
 /**
  * The domain `Member`/`GroceryItem` types carry a `householdId` and real
@@ -29,30 +26,46 @@ function toDomainCategory(category: UIGroceryItem['category']): GroceryCategory 
   return category as GroceryCategory
 }
 
-function toDomainMember(member: UIMember): DomainMember {
+/**
+ * An exhaustive switch, not a ternary: the UI's `MemberStatus` has more
+ * cases than the domain's membership lifecycle (`'settled'|'owes'|'owed'`
+ * are financial sub-states of 'active', never their own domain status).
+ * Written this way specifically so adding a new UI status that isn't yet
+ * mapped is a compile error here, not a silent fall-through — exactly
+ * what a two-armed ternary would have done when 'archived' was added.
+ */
+function toDomainMember(member: UIMember, householdId: HouseholdId): DomainMember {
   const base = {
     id: member.id as MemberId,
-    householdId: HOUSEHOLD_ID,
+    householdId,
     name: member.name,
     email: member.email,
     role: member.role,
   }
-  return member.status === 'invited'
-    ? { ...base, membershipStatus: 'invited', invitedAt: PLACEHOLDER_TIMESTAMP }
-    : { ...base, membershipStatus: 'active', joinedAt: PLACEHOLDER_TIMESTAMP }
+  switch (member.status) {
+    case 'invited':
+      return { ...base, membershipStatus: 'invited', invitedAt: PLACEHOLDER_TIMESTAMP }
+    case 'archived':
+      return { ...base, membershipStatus: 'archived', archivedAt: PLACEHOLDER_TIMESTAMP }
+    case 'settled':
+    case 'owes':
+    case 'owed':
+      return { ...base, membershipStatus: 'active', joinedAt: PLACEHOLDER_TIMESTAMP }
+  }
 }
 
 function toDomainGroceryItem(
   item: UIGroceryItem,
   nameIndex: ReturnType<typeof buildMemberNameIndex>,
   currency: Currency,
+  householdId: HouseholdId,
 ): DomainGroceryItem {
   const parsedPrice = parseMoneyInput(item.price, currency.minorUnitDigits)
   if (!parsedPrice.ok) throw new InvalidGroceryPriceError(item.id, item.price)
 
   return {
     id: item.id as GroceryItemId,
-    householdId: HOUSEHOLD_ID,
+    householdId,
     name: item.name,
     category: toDomainCategory(item.category),
     unitPrice: { minorUnits: parsedPrice.minorUnits, currency },
@@ -90,10 +103,11 @@ export function toEngineInput(
   members: readonly UIMember[],
   groceries: readonly UIGroceryItem[],
   currency: Currency,
+  householdId: HouseholdId,
 ): EngineInput {
   const nameIndex = buildMemberNameIndex(members)
   return {
-    members: members.map(toDomainMember),
-    groceries: groceries.map((item) => toDomainGroceryItem(item, nameIndex, currency)),
+    members: members.map((member) => toDomainMember(member, householdId)),
+    groceries: groceries.map((item) => toDomainGroceryItem(item, nameIndex, currency, householdId)),
   }
 }

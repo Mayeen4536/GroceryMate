@@ -15,19 +15,32 @@ export interface InvitedMember {
 }
 
 /**
+ * A member who has been removed from active participation. Never hard
+ * deleted — household_members rows with any grocery history are protected
+ * by a database FK (ON DELETE RESTRICT), so archiving is the only removal
+ * path. Still present here (not filtered out of the engine's member list)
+ * so historical grocery references stay resolvable; excluded only from
+ * new-selection UI.
+ */
+export interface ArchivedMember {
+  readonly membershipStatus: 'archived'
+  readonly archivedAt: Date
+}
+
+/**
  * A person sharing a household. Responsibility: identity, role, and where
  * they are in the membership lifecycle — never financial standing, which
  * is derived from Settlements rather than stored on the member.
  *
- * `membershipStatus` is a discriminated union rather than an optional
- * `joinedAt`/`invitedAt` pair: an invited member has no join date yet, and
- * an active member's invite date isn't meaningful, so exactly one of the
- * two is always present, never both and never neither.
+ * `membershipStatus` is a discriminated union rather than optional
+ * `joinedAt`/`invitedAt`/`archivedAt` fields: exactly one is always
+ * present, never more than one and never none.
  */
 export type Member = {
   readonly id: MemberId
   readonly householdId: HouseholdId
   readonly name: string
-  readonly email: string
+  /** Non-account participants have no email — see docs/MEMBER_INTEGRATION.md. */
+  readonly email: string | null
   readonly role: MemberRole
-} & (ActiveMember | InvitedMember)
+} & (ActiveMember | InvitedMember | ArchivedMember)

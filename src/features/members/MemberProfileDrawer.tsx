@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AlertTriangle, HandCoins, ShoppingBasket, Sparkles, Trash2, type LucideIcon } from 'lucide-react'
+import { AlertTriangle, HandCoins, RotateCcw, ShoppingBasket, Sparkles, Trash2, type LucideIcon } from 'lucide-react'
 import { AnimatedNumber, Avatar, Badge, Button, Drawer, MEMBER_TONES, Modal, SwatchPicker } from '@/components/ui'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { STATUS_META } from '@/constants/memberStatus'
@@ -11,6 +11,14 @@ interface MemberProfileDrawerProps {
   onClose: () => void
   onChangeTone: (id: string, tone: number) => void
   onRemove: (id: string) => void
+  onReactivate: (id: string) => void
+  /**
+   * Migration 3's RLS already enforces owner-only membership management —
+   * this only hides controls a non-owner couldn't successfully use, it
+   * isn't itself a security boundary. A non-owner attempting the same
+   * write via the API directly would still be correctly rejected server-side.
+   */
+  isOwner: boolean
   /** See the same prop on `MemberCard` — the calculation currently can't run, so financial fields show as unavailable rather than a number that can no longer be trusted. */
   financialsUnavailable?: boolean
 }
@@ -27,11 +35,14 @@ export function MemberProfileDrawer({
   onClose,
   onChangeTone,
   onRemove,
+  onReactivate,
+  isOwner,
   financialsUnavailable = false,
 }: MemberProfileDrawerProps) {
   const isDesktop = useMediaQuery('(min-width: 1024px)')
   const status = member ? STATUS_META[member.status] : null
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const archived = member?.status === 'archived'
 
   const confirmRemove = () => {
     if (!member) return
@@ -47,15 +58,28 @@ export function MemberProfileDrawer({
       side={isDesktop ? 'right' : 'bottom'}
       panelClassName="sm:max-w-md"
       footer={
-        member ? (
-          <Button
-            variant="ghost"
-            iconLeft={Trash2}
-            onClick={() => setConfirmOpen(true)}
-            className="text-danger-600 hover:bg-danger-50 hover:text-danger-700"
-          >
-            Remove from household
-          </Button>
+        // The owner role can't be archived from here at all — Migration 1's
+        // schema keeps "never fewer than one owner" as an application-level
+        // invariant, not something RLS enforces on its own (an owner
+        // technically *can* archive their own row); ownership transfer is
+        // out of scope for this slice, so this is the safeguard until it
+        // exists. Regular/invited members can be archived; archived members
+        // can be reactivated — both owner-only, per Migration 3's RLS.
+        member && isOwner && member.role !== 'owner' ? (
+          archived ? (
+            <Button variant="secondary" iconLeft={RotateCcw} onClick={() => onReactivate(member.id)}>
+              Reactivate
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              iconLeft={Trash2}
+              onClick={() => setConfirmOpen(true)}
+              className="text-danger-600 hover:bg-danger-50 hover:text-danger-700"
+            >
+              Remove from household
+            </Button>
+          )
         ) : undefined
       }
     >
@@ -81,9 +105,7 @@ export function MemberProfileDrawer({
               <AlertTriangle size={19} aria-hidden="true" />
             </span>
             <p className="text-sm leading-relaxed text-ink-soft">
-              {member.role === 'owner'
-                ? `${member.name} is this household's owner. Removing them can't be undone from here.`
-                : `${member.name} will lose access to this household's groceries and settlements. This can't be undone from here.`}
+              {`${member.name} will lose access to this household's groceries and settlements. Their past activity stays intact, and you can reactivate them again later from this same profile.`}
             </p>
           </div>
         </Modal>

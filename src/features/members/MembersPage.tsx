@@ -1,11 +1,12 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { Heart, Search, UserPlus, Users } from 'lucide-react'
-import { Badge, Button, Input, SegmentedControl } from '@/components/ui'
+import { Badge, Button, Card, Input, SegmentedControl } from '@/components/ui'
 import { EmptyState } from '@/components/EmptyState'
 import { FinancialDataError } from '@/components/FinancialDataError'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { riseChild, transitionBase } from '@/animations/motion'
+import { useHousehold } from '@/household/useHousehold'
 import { useSettlementResult } from '@/hooks/useSettlementResult'
 import type { useMembers } from '@/hooks/useMembers'
 import type { GroceryItem } from '@/types/grocery'
@@ -23,10 +24,22 @@ import { MemberProfileDrawer } from './MemberProfileDrawer'
  * ("who logged this item"), not a financial value, and `GroceryItem` has
  * no concept of who added it (only who paid and who shares it) — there's
  * no real data this could be derived from yet.
+ *
+ * `status` is only ever overwritten for a member with no membership-
+ * lifecycle status of their own yet (the placeholder 'settled' every
+ * fresh active member starts with) — the engine includes archived and
+ * invited members in its balance output too (so a grocery that already
+ * references one stays resolvable), but 'archived'/'invited' are real,
+ * persisted states that must win over a computed financial one, or an
+ * archived member's card would silently stop reading as archived the
+ * moment they had any historical balance.
  */
 function withRealFinancials(member: Member, viewModel: SettlementViewModel): Member {
   const financials = viewModel.memberFinancials.find((entry) => entry.memberId === member.id)
   if (!financials) return member
+  if (member.status === 'archived' || member.status === 'invited') {
+    return { ...member, amountPaid: financials.amountPaid }
+  }
   return { ...member, amountPaid: financials.amountPaid, status: financials.status }
 }
 
@@ -40,6 +53,9 @@ export function MembersPage({
   direction = 1,
   groceries,
   members,
+  loading,
+  error,
+  refresh,
   search,
   setSearch,
   sortBy,
@@ -56,8 +72,13 @@ export function MembersPage({
   handleInvite,
   handleChangeTone,
   handleRemove,
+  handleReactivate,
 }: MembersPageProps & ReturnType<typeof useMembers>) {
   const settlementResult = useSettlementResult(members, groceries)
+  // RLS is the real authorization boundary (Migration 3) — this only hides
+  // controls a non-owner couldn't successfully use anyway.
+  const { currentMembership } = useHousehold()
+  const isOwner = currentMembership?.role === 'owner'
 
   return (
     <>
@@ -67,19 +88,43 @@ export function MembersPage({
             title="Members"
             description="The people sharing this household."
             action={
-              <>
-                <Button variant="secondary" size="sm" onClick={() => openDialog('invite')}>
-                  Invite
-                </Button>
-                <Button size="sm" iconLeft={UserPlus} onClick={() => openDialog('add')}>
-                  Add member
-                </Button>
-              </>
+              isOwner ? (
+                <>
+                  <Button variant="secondary" size="sm" onClick={() => openDialog('invite')}>
+                    Invite
+                  </Button>
+                  <Button size="sm" iconLeft={UserPlus} onClick={() => openDialog('add')}>
+                    Add member
+                  </Button>
+                </>
+              ) : undefined
             }
           />
         </motion.div>
 
-        {members.length === 0 ? (
+        {loading ? (
+          <motion.div variants={riseChild} className="flex justify-center py-16">
+            <div
+              role="status"
+              aria-label="Loading members"
+              className="size-8 animate-spin rounded-full border-2 border-line border-t-brand-600"
+            />
+          </motion.div>
+        ) : error ? (
+          // Never fabricate a roster on failure — a real error state, not
+          // an empty-household state, so it's distinguishable and retryable.
+          <motion.div variants={riseChild}>
+            <Card padding="lg">
+              <div className="flex flex-col items-center gap-3 py-4 text-center">
+                <p className="text-sm font-semibold text-ink">Couldn't load members</p>
+                <p className="text-sm text-ink-soft">{error}</p>
+                <Button variant="secondary" size="sm" onClick={() => void refresh()}>
+                  Try again
+                </Button>
+              </div>
+            </Card>
+          </motion.div>
+        ) : members.length === 0 ? (
           <motion.div variants={riseChild}>
             <EmptyState
               icon={Users}
@@ -94,9 +139,11 @@ export function MembersPage({
               title="Your household starts with people."
               description="Add members and every grocery split takes care of itself."
               action={
-                <Button iconLeft={UserPlus} onClick={() => openDialog('add')}>
-                  Add your first member
-                </Button>
+                isOwner ? (
+                  <Button iconLeft={UserPlus} onClick={() => openDialog('add')}>
+                    Add your first member
+                  </Button>
+                ) : undefined
               }
             />
           </motion.div>
@@ -202,6 +249,8 @@ export function MembersPage({
         onClose={() => setProfileId(null)}
         onChangeTone={handleChangeTone}
         onRemove={handleRemove}
+        onReactivate={handleReactivate}
+        isOwner={isOwner}
         financialsUnavailable={settlementResult.status === 'error'}
       />
     </>

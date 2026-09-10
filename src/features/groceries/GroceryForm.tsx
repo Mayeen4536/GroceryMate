@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Check, Minus, Plus } from 'lucide-react'
 import { Button, Dropdown, Input, Textarea } from '@/components/ui'
 import { transitionFast, springSnappy } from '@/animations/motion'
-import { mockUser } from '@/store/household'
+import { useHousehold } from '@/household/useHousehold'
 import { type GroceryDraft } from '@/hooks/useGroceries'
 import { useMemberOptions } from '@/hooks/useMemberOptions'
 import type { CategoryId, GroceryItem } from '@/types/grocery'
@@ -89,13 +89,18 @@ function resolveInitialSelection(initial: GroceryItem | null, memberOptions: Ret
 export function GroceryForm({ initial, members, onSubmit, onCancel }: GroceryFormProps) {
   const editing = initial != null
   const memberOptions = useMemberOptions(members)
+  // The signed-in user's own household_members.id (same id space as
+  // memberOptions, both from the same table) — not a name match, which
+  // would only ever coincidentally work and breaks entirely once real
+  // members replace the fixed mock roster.
+  const { currentMembership } = useHousehold()
   const [name, setName] = useState(initial?.name ?? '')
   const [price, setPrice] = useState(initial?.price ?? '')
   const [quantity, setQuantity] = useState(initial?.quantity ?? 1)
   const [category, setCategory] = useState<CategoryId>(initial?.category ?? 'produce')
   const [paidById, setPaidById] = useState<string | null>(() => {
     if (initial) return resolveInitialSelection(initial, memberOptions).paidById
-    const currentUserOption = memberOptions.options.find((option) => option.name === mockUser.name)
+    const currentUserOption = memberOptions.options.find((option) => option.id === currentMembership?.id)
     return currentUserOption?.id ?? memberOptions.options[0]?.id ?? null
   })
   const [sharedByIds, setSharedByIds] = useState<string[]>(() => {

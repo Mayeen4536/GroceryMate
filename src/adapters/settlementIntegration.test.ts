@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { CURRENCIES } from '@/domain/Currency'
+import type { HouseholdId } from '@/domain/ids'
 import { computeSettlement } from '@/engine'
 import { toEngineInput } from './toEngineInput'
 import { toSettlementViewModel } from './toSettlementViewModel'
@@ -17,6 +18,7 @@ import type { Member as UIMember } from '@/types/member'
  */
 
 const BDT = CURRENCIES.BDT
+const HOUSEHOLD_ID = 'household-1' as HouseholdId
 
 function makeUIMember(id: string, name: string): UIMember {
   return {
@@ -47,7 +49,7 @@ function makeUIGrocery(overrides: Partial<UIGroceryItem> & { id: string }): UIGr
 }
 
 function runFullPipeline(members: UIMember[], groceries: UIGroceryItem[]) {
-  const engineInput = toEngineInput(members, groceries, BDT)
+  const engineInput = toEngineInput(members, groceries, BDT, HOUSEHOLD_ID)
   const result = computeSettlement(engineInput.members, engineInput.groceries, BDT)
   return toSettlementViewModel(result, members)
 }
