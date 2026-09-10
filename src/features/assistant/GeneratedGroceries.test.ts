@@ -6,13 +6,13 @@ import type { Member } from '@/types/member'
 
 /**
  * Regression coverage for a real bug caught while wiring the Assistant's
- * review flow to the live roster (see docs / final report): treating an
- * item as "resolved" whenever its stored payer/sharer *strings* were
- * non-empty — regardless of whether those names still matched a current
- * member — would let a stale reference ride straight into the real
- * grocery list on submit, which the settlement engine would only catch
- * later. `isFullyResolved` must check against the current roster, not
- * just string presence.
+ * review flow to real persistence (see docs/GROCERY_INTEGRATION.md):
+ * treating an item as "resolved" whenever its stored payer/sharer *ids*
+ * were non-empty — regardless of whether those ids still matched a
+ * current, selectable member — would let a stale reference ride straight
+ * into the real grocery list on submit, which the settlement engine would
+ * only catch later. `isFullyResolved` must check against the current
+ * *selectable* roster, not just id presence.
  */
 
 function makeMember(overrides: Partial<Member> & { id: string; name: string }): Member {
@@ -35,8 +35,9 @@ function makeItem(overrides: Partial<GroceryItem> & { id: string }): GroceryItem
     price: '100',
     quantity: 1,
     category: 'pantry',
-    paidBy: '',
-    sharedBy: [],
+    paidByMemberId: '',
+    sharedByMemberIds: [],
+    createdByMemberId: '',
     notes: '',
     ...overrides,
   }
@@ -45,52 +46,49 @@ function makeItem(overrides: Partial<GroceryItem> & { id: string }): GroceryItem
 const CURRENT_MEMBERS = [makeMember({ id: 'm-1', name: 'Aisha Khan' }), makeMember({ id: 'm-2', name: 'Bilal Ahmed' })]
 
 describe('isFullyResolved', () => {
-  it('is resolved when payer and sharers all match current members', () => {
+  it('is resolved when payer and sharers all match current, selectable members', () => {
     const memberOptions = buildMemberOptions(CURRENT_MEMBERS)
-    const item = makeItem({ id: 'g-1', paidBy: 'Aisha Khan', sharedBy: ['Aisha Khan', 'Bilal Ahmed'] })
+    const item = makeItem({ id: 'g-1', paidByMemberId: 'm-1', sharedByMemberIds: ['m-1', 'm-2'] })
     expect(isFullyResolved(item, memberOptions)).toBe(true)
   })
 
-  it('is not resolved when the payer is empty', () => {
+  it('is not resolved when the payer id is empty', () => {
     const memberOptions = buildMemberOptions(CURRENT_MEMBERS)
-    const item = makeItem({ id: 'g-1', paidBy: '', sharedBy: ['Aisha Khan'] })
+    const item = makeItem({ id: 'g-1', paidByMemberId: '', sharedByMemberIds: ['m-1'] })
     expect(isFullyResolved(item, memberOptions)).toBe(false)
   })
 
-  it('is not resolved when sharedBy is empty', () => {
+  it('is not resolved when sharedByMemberIds is empty', () => {
     const memberOptions = buildMemberOptions(CURRENT_MEMBERS)
-    const item = makeItem({ id: 'g-1', paidBy: 'Aisha Khan', sharedBy: [] })
+    const item = makeItem({ id: 'g-1', paidByMemberId: 'm-1', sharedByMemberIds: [] })
     expect(isFullyResolved(item, memberOptions)).toBe(false)
   })
 
-  it('is NOT resolved when the payer name is non-empty but no longer matches any current member', () => {
+  it('is NOT resolved when the payer id no longer matches any current, selectable member', () => {
     const memberOptions = buildMemberOptions(CURRENT_MEMBERS)
-    // "Daniyal Raza" was removed from the household after this mock content was authored.
-    const item = makeItem({ id: 'g-1', paidBy: 'Daniyal Raza', sharedBy: ['Aisha Khan'] })
+    // "m-9" was removed from the household after this mock content was authored.
+    const item = makeItem({ id: 'g-1', paidByMemberId: 'm-9', sharedByMemberIds: ['m-1'] })
     expect(isFullyResolved(item, memberOptions)).toBe(false)
   })
 
-  it('is NOT resolved when sharedBy mixes one valid name with one stale name', () => {
+  it('is NOT resolved when sharedByMemberIds mixes one valid id with one stale id', () => {
     const memberOptions = buildMemberOptions(CURRENT_MEMBERS)
-    const item = makeItem({ id: 'g-1', paidBy: 'Aisha Khan', sharedBy: ['Aisha Khan', 'Daniyal Raza'] })
-    // Would previously have been treated as "resolved" (the string list was non-empty),
-    // letting the stale "Daniyal Raza" reference reach the real grocery list untouched.
+    const item = makeItem({ id: 'g-1', paidByMemberId: 'm-1', sharedByMemberIds: ['m-1', 'm-9'] })
+    // Would previously have been treated as "resolved" (the id list was non-empty),
+    // letting the stale "m-9" reference reach the real grocery list untouched.
     expect(isFullyResolved(item, memberOptions)).toBe(false)
   })
 
-  it('is NOT resolved when the payer name is ambiguous between two current members', () => {
-    const members = [
-      makeMember({ id: 'm-1', name: 'Sam Test' }),
-      makeMember({ id: 'm-2', name: 'Sam Test' }),
-    ]
+  it('is NOT resolved when the referenced id belongs to an archived member (no longer selectable)', () => {
+    const members = [...CURRENT_MEMBERS, makeMember({ id: 'm-3', name: 'Chloe Lee', status: 'archived' })]
     const memberOptions = buildMemberOptions(members)
-    const item = makeItem({ id: 'g-1', paidBy: 'Sam Test', sharedBy: ['Sam Test'] })
+    const item = makeItem({ id: 'g-1', paidByMemberId: 'm-3', sharedByMemberIds: ['m-1'] })
     expect(isFullyResolved(item, memberOptions)).toBe(false)
   })
 
   it('a newly-added member becomes a valid resolution target immediately', () => {
     const before = buildMemberOptions(CURRENT_MEMBERS)
-    const item = makeItem({ id: 'g-1', paidBy: 'Zara Islam', sharedBy: ['Zara Islam'] })
+    const item = makeItem({ id: 'g-1', paidByMemberId: 'm-3', sharedByMemberIds: ['m-3'] })
     expect(isFullyResolved(item, before)).toBe(false)
 
     const after = buildMemberOptions([...CURRENT_MEMBERS, makeMember({ id: 'm-3', name: 'Zara Islam' })])

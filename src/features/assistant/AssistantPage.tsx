@@ -55,7 +55,7 @@ export function AssistantPage({
 }: {
   direction?: number
   members: readonly Member[]
-  onAddGroceries: (items: GroceryItem[]) => void
+  onAddGroceries: (items: GroceryItem[]) => Promise<{ error?: string }>
 }) {
   const {
     phase,

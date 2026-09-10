@@ -55,3 +55,24 @@ export function parseMoneyInput(raw: string, minorUnitDigits = 2): ParseMoneyInp
   if (!Number.isSafeInteger(minorUnits)) return { ok: false, reason: 'too-large' }
   return { ok: true, minorUnits }
 }
+
+/**
+ * The inverse of `parseMoneyInput`: turns a persisted integer minor-units
+ * amount (e.g. `grocery_items.amount_minor`) back into the decimal string
+ * every existing form/display component already expects (`GroceryItem.price`).
+ * Same reasoning as the parser — whole-unit and fractional-unit parts are
+ * combined via integer arithmetic, never a float division of the decimal
+ * value, so a round trip through this and `parseMoneyInput` is always exact.
+ */
+export function formatMinorUnitsInput(minorUnits: number, minorUnitDigits = 2): string {
+  if (minorUnitDigits <= 0) return String(minorUnits)
+  const divisor = 10 ** minorUnitDigits
+  const whole = Math.trunc(minorUnits / divisor)
+  const fraction = Math.abs(minorUnits % divisor)
+  // A whole amount round-trips as a whole number ("240", not "240.00") —
+  // both parse back to the identical minorUnits via parseMoneyInput, so
+  // this is a cosmetic choice, not a correctness one: it's what a user
+  // would actually have typed for a whole-currency price.
+  if (fraction === 0) return String(whole)
+  return `${whole}.${String(fraction).padStart(minorUnitDigits, '0')}`
+}

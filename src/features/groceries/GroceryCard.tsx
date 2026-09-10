@@ -8,8 +8,12 @@ import type { GroceryItem } from '@/types/grocery'
 
 interface GroceryCardProps {
   item: GroceryItem
+  /** Resolves a stable `household_members.id` to its current display name — "Unknown member" for an id no longer resolvable (see docs/GROCERY_INTEGRATION.md). Includes archived members, unlike the new-selection pickers. */
+  memberNameById: (id: string) => string
   onEdit?: (id: string) => void
   onDelete?: (id: string) => void
+  /** RLS is the real authority (creator or household owner only) — this only hides controls the caller couldn't successfully use anyway. */
+  canEdit?: boolean
   /** Live-preview mode: no hover lift, no actions. */
   preview?: boolean
   /** One-shot mint flash for freshly added items. */
@@ -18,14 +22,23 @@ interface GroceryCardProps {
 
 const firstName = (name: string) => name.split(' ')[0]
 
-export function GroceryCard({ item, onEdit, onDelete, preview = false, highlight = false }: GroceryCardProps) {
+export function GroceryCard({
+  item,
+  memberNameById,
+  onEdit,
+  onDelete,
+  canEdit = true,
+  preview = false,
+  highlight = false,
+}: GroceryCardProps) {
   const category = categoryById(item.category)
-  const shownAvatars = item.sharedBy.slice(0, 4)
-  const extraShared = item.sharedBy.length - shownAvatars.length
+  const paidByName = item.paidByMemberId ? memberNameById(item.paidByMemberId) : ''
+  const shownConsumerIds = item.sharedByMemberIds.slice(0, 4)
+  const extraShared = item.sharedByMemberIds.length - shownConsumerIds.length
 
   const subline = [
-    item.paidBy ? `Paid by ${firstName(item.paidBy)}` : 'Paid by …',
-    item.sharedBy.length > 0 ? `${item.sharedBy.length} sharing` : 'not shared yet',
+    paidByName ? `Paid by ${firstName(paidByName)}` : 'Paid by …',
+    item.sharedByMemberIds.length > 0 ? `${item.sharedByMemberIds.length} sharing` : 'not shared yet',
     item.notes || null,
   ]
     .filter(Boolean)
@@ -80,8 +93,8 @@ export function GroceryCard({ item, onEdit, onDelete, preview = false, highlight
       </div>
 
       <div className="relative hidden -space-x-1.5 sm:flex">
-        {shownAvatars.map((name) => (
-          <Avatar key={name} name={name} size="sm" className="ring-2 ring-surface" />
+        {shownConsumerIds.map((id) => (
+          <Avatar key={id} name={memberNameById(id)} size="sm" className="ring-2 ring-surface" />
         ))}
         {extraShared > 0 && (
           <span className="flex size-8 items-center justify-center rounded-full bg-sand text-[0.6875rem] font-semibold text-ink-soft ring-2 ring-surface">
@@ -94,7 +107,7 @@ export function GroceryCard({ item, onEdit, onDelete, preview = false, highlight
         <AnimatedNumber value={Number.parseFloat(item.price) || 0} />
       </p>
 
-      {!preview && (
+      {!preview && canEdit && (
         <div className="flex gap-1 transition-all duration-200 sm:translate-x-1 sm:opacity-0 sm:group-focus-within:translate-x-0 sm:group-focus-within:opacity-100 sm:group-hover:translate-x-0 sm:group-hover:opacity-100">
           <Button
             variant="ghost"

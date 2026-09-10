@@ -19,7 +19,7 @@ export function exportAllData(): void {
     '---------',
     ...initialGroceries.map(
       (item) =>
-        `${item.name} × ${item.quantity} — ${formatTaka(Number.parseFloat(item.price) || 0)} (paid by ${item.paidBy})`,
+        `${item.name} × ${item.quantity} — ${formatTaka(Number.parseFloat(item.price) || 0)} (paid by ${item.paidByMemberId})`,
     ),
     '',
     'Pending settlements',

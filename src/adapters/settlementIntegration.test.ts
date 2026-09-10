@@ -41,8 +41,9 @@ function makeUIGrocery(overrides: Partial<UIGroceryItem> & { id: string }): UIGr
     price: '0',
     quantity: 1,
     category: 'pantry',
-    paidBy: '',
-    sharedBy: [],
+    paidByMemberId: '',
+    sharedByMemberIds: [],
+    createdByMemberId: '',
     notes: '',
     ...overrides,
   }
@@ -57,7 +58,7 @@ function runFullPipeline(members: UIMember[], groceries: UIGroceryItem[]) {
 describe('settlement integration (UI in, UI out)', () => {
   it('a personal item — payer and sole sharer are the same person — nets to zero with no transfer', () => {
     const members = [makeUIMember('m-1', 'Aisha Khan')]
-    const groceries = [makeUIGrocery({ id: 'g-1', price: '499', paidBy: 'Aisha Khan', sharedBy: ['Aisha Khan'] })]
+    const groceries = [makeUIGrocery({ id: 'g-1', price: '499', paidByMemberId: 'm-1', sharedByMemberIds: ['m-1'] })]
 
     const viewModel = runFullPipeline(members, groceries)
 
@@ -73,8 +74,8 @@ describe('settlement integration (UI in, UI out)', () => {
       makeUIGrocery({
         id: 'g-1',
         price: '100.01',
-        paidBy: 'Aisha Khan',
-        sharedBy: ['Aisha Khan', 'Bilal Ahmed', 'Chloe Lee'],
+        paidByMemberId: 'm-1',
+        sharedByMemberIds: ['m-1', 'm-2', 'm-3'],
       }),
     ]
 
@@ -93,7 +94,7 @@ describe('settlement integration (UI in, UI out)', () => {
   it('a member who pays but consumes none of it ends up owed, not settled', () => {
     const members = [makeUIMember('m-1', 'Aisha Khan'), makeUIMember('m-2', 'Bilal Ahmed')]
     const groceries = [
-      makeUIGrocery({ id: 'g-1', price: '2000', paidBy: 'Aisha Khan', sharedBy: ['Bilal Ahmed'] }),
+      makeUIGrocery({ id: 'g-1', price: '2000', paidByMemberId: 'm-1', sharedByMemberIds: ['m-2'] }),
     ]
 
     const viewModel = runFullPipeline(members, groceries)
@@ -108,8 +109,8 @@ describe('settlement integration (UI in, UI out)', () => {
   it('a member who consumes but never pays for anything ends up owing, not settled', () => {
     const members = [makeUIMember('m-1', 'Aisha Khan'), makeUIMember('m-2', 'Bilal Ahmed')]
     const groceries = [
-      makeUIGrocery({ id: 'g-1', price: '400', paidBy: 'Aisha Khan', sharedBy: ['Aisha Khan', 'Bilal Ahmed'] }),
-      makeUIGrocery({ id: 'g-2', price: '600', paidBy: 'Aisha Khan', sharedBy: ['Aisha Khan', 'Bilal Ahmed'] }),
+      makeUIGrocery({ id: 'g-1', price: '400', paidByMemberId: 'm-1', sharedByMemberIds: ['m-1', 'm-2'] }),
+      makeUIGrocery({ id: 'g-2', price: '600', paidByMemberId: 'm-1', sharedByMemberIds: ['m-1', 'm-2'] }),
     ]
 
     const viewModel = runFullPipeline(members, groceries)

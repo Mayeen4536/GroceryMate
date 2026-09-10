@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { addGrocery, addMember, enterApp } from './helpers'
+import { addGrocery, addMember, clearHouseholdGroceries, enterApp } from './helpers'
 
 /**
  * Proves the Settlements and Members pages genuinely run on the real
@@ -43,6 +43,14 @@ test.describe('Settlement reflects the real engine end to end', () => {
     const chloe = `Chloe${runId}`
 
     await enterApp(page)
+    // Groceries are now really persisted (see docs/GROCERY_INTEGRATION.md)
+    // — the shared fixture household accumulates them across every spec
+    // that touches groceries at all, so an exact-math test can't rely on
+    // "fresh page load == empty grocery list" the way it used to. Requires
+    // --workers=1 (see docs/GROCERY_INTEGRATION.md's Playwright section):
+    // a concurrent worker adding its own groceries at the same moment
+    // could otherwise be wiped out by this exact call.
+    await clearHouseholdGroceries(page)
     await addMember(page, aisha)
     await addMember(page, bilal)
     await addMember(page, chloe)

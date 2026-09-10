@@ -34,11 +34,19 @@ test.describe('Grocery form validation', () => {
     const dialog = page.getByRole('dialog')
     await dialog.getByRole('button', { name: 'Add grocery' }).click()
     await expect(dialog.getByText('Enter a name for this item.')).toBeVisible()
+    // A blank price is its own validation error too now — a real, persisted
+    // amount can't silently become "free" the way the old mock form allowed.
+    await expect(dialog.getByText('Enter a valid price.')).toBeVisible()
 
     await dialog.getByLabel('Grocery name').fill('Regression Coverage Item')
+    await dialog.getByLabel('Price').fill('199')
     await dialog.getByRole('button', { name: 'Add grocery' }).click()
 
-    await expect(dialog).not.toBeVisible()
+    // "Shared by" defaults to the household's entire current roster, which
+    // (across a long-lived, shared fixture household) can grow over many
+    // runs — a real consumer-row insert for all of them can take longer
+    // than the default timeout, unlike the old in-memory version.
+    await expect(dialog).not.toBeVisible({ timeout: 15000 })
     await expect(page.getByText('Regression Coverage Item')).toBeVisible()
   })
 
@@ -46,9 +54,10 @@ test.describe('Grocery form validation', () => {
     const dialog = page.getByRole('dialog')
     const nameField = dialog.getByLabel('Grocery name')
     await nameField.fill('Keyboard Submit Item')
+    await dialog.getByLabel('Price').fill('50')
     await nameField.press('Enter')
 
-    await expect(dialog).not.toBeVisible()
+    await expect(dialog).not.toBeVisible({ timeout: 15000 })
     await expect(page.getByText('Keyboard Submit Item')).toBeVisible()
   })
 })

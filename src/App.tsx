@@ -64,9 +64,10 @@ function AppRoutes({
                   key="assistant"
                   direction={direction}
                   members={members.members}
-                  onAddGroceries={(items) => {
-                    groceries.addGenerated(items)
-                    navigate('groceries')
+                  onAddGroceries={async (items) => {
+                    const result = await groceries.addGenerated(items)
+                    if (!result.error) navigate('groceries')
+                    return result
                   }}
                 />
               }

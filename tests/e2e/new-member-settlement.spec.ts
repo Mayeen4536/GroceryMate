@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { addGrocery, addMember, enterApp, FIXTURE_OWNER_FIRST_NAME, FIXTURE_OWNER_NAME } from './helpers'
+import { addGrocery, addMember, clearHouseholdGroceries, enterApp, FIXTURE_OWNER_FIRST_NAME, FIXTURE_OWNER_NAME } from './helpers'
 
 /**
  * Proves a member added through the normal Members flow immediately
@@ -33,6 +33,9 @@ test.describe('A newly-added member participates in the real settlement', () => 
     const zara = `Zara${Date.now()}`
 
     await enterApp(page)
+    // Groceries genuinely persist now — see the identical note in
+    // settlement-integration.spec.ts. Requires --workers=1.
+    await clearHouseholdGroceries(page)
     await addMember(page, zara)
 
     // Add a grocery paid by, and shared by, the new member plus the fixture owner.

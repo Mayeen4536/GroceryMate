@@ -1,8 +1,14 @@
 import type { LucideIcon } from 'lucide-react'
 
 /**
- * Display-only grocery model. Price stays a string on purpose: no math
- * happens in the UI layer; calculations arrive with the business logic.
+ * App-facing grocery model — real, persisted `grocery_items` identity
+ * (`paidByMemberId`/`sharedByMemberIds`/`createdByMemberId` are stable
+ * `household_members.id` values, never display names; see
+ * docs/GROCERY_INTEGRATION.md). `price` stays a decimal string, matching
+ * every existing display component's contract unchanged — the real
+ * integer `amount_minor` conversion happens only at the persistence
+ * boundary (`src/groceries/useHouseholdGroceries.ts`), never in this type
+ * or in any UI component. No math happens in the UI layer.
  */
 export type CategoryId = 'produce' | 'dairy' | 'bakery' | 'pantry' | 'beverages' | 'household'
 
@@ -12,8 +18,10 @@ export interface GroceryItem {
   price: string
   quantity: number
   category: CategoryId
-  paidBy: string
-  sharedBy: string[]
+  paidByMemberId: string
+  sharedByMemberIds: string[]
+  /** Who logged this entry — independent of who paid. Drives creator-or-owner edit/delete permission in the UI (RLS is the real authority). */
+  createdByMemberId: string
   notes: string
 }
 

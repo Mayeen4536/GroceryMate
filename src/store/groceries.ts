@@ -1,6 +1,15 @@
 import type { GroceryItem } from '@/types/grocery'
 
-/** Mock data for visual display only. */
+/**
+ * Mock data for visual display only — used solely by the Settings page's
+ * "export data" feature (`settingsExportService.ts`), which still exports
+ * its own fixed mock snapshot regardless of the real app's state (see
+ * docs/GROCERY_INTEGRATION.md's "what remains local/mock" — this export
+ * feature is a separate, pre-existing limitation, not part of grocery
+ * persistence). `paidByMemberId`/`sharedByMemberIds` hold plain display
+ * names here, not real ids — harmless, since nothing in this mock-only path
+ * ever resolves them against a real roster.
+ */
 export const initialGroceries: GroceryItem[] = [
   {
     id: 'g-1',
@@ -8,8 +17,9 @@ export const initialGroceries: GroceryItem[] = [
     price: '240',
     quantity: 2,
     category: 'dairy',
-    paidBy: 'Aisha Khan',
-    sharedBy: ['Aisha Khan', 'Bilal Ahmed', 'Chloe Lee', 'Daniyal Raza'],
+    paidByMemberId: 'Aisha Khan',
+    sharedByMemberIds: ['Aisha Khan', 'Bilal Ahmed', 'Chloe Lee', 'Daniyal Raza'],
+    createdByMemberId: 'Aisha Khan',
     notes: '',
   },
   {
@@ -18,8 +28,9 @@ export const initialGroceries: GroceryItem[] = [
     price: '1450',
     quantity: 1,
     category: 'pantry',
-    paidBy: 'Bilal Ahmed',
-    sharedBy: ['Aisha Khan', 'Bilal Ahmed', 'Chloe Lee', 'Daniyal Raza'],
+    paidByMemberId: 'Bilal Ahmed',
+    sharedByMemberIds: ['Aisha Khan', 'Bilal Ahmed', 'Chloe Lee', 'Daniyal Raza'],
+    createdByMemberId: 'Bilal Ahmed',
     notes: '',
   },
   {
@@ -28,8 +39,9 @@ export const initialGroceries: GroceryItem[] = [
     price: '180',
     quantity: 1,
     category: 'produce',
-    paidBy: 'Chloe Lee',
-    sharedBy: ['Aisha Khan', 'Chloe Lee', 'Daniyal Raza'],
+    paidByMemberId: 'Chloe Lee',
+    sharedByMemberIds: ['Aisha Khan', 'Chloe Lee', 'Daniyal Raza'],
+    createdByMemberId: 'Chloe Lee',
     notes: '',
   },
   {
@@ -38,8 +50,9 @@ export const initialGroceries: GroceryItem[] = [
     price: '220',
     quantity: 1,
     category: 'household',
-    paidBy: 'Aisha Khan',
-    sharedBy: ['Aisha Khan', 'Bilal Ahmed', 'Chloe Lee', 'Daniyal Raza'],
+    paidByMemberId: 'Aisha Khan',
+    sharedByMemberIds: ['Aisha Khan', 'Bilal Ahmed', 'Chloe Lee', 'Daniyal Raza'],
+    createdByMemberId: 'Aisha Khan',
     notes: 'Lemon one please',
   },
 ]

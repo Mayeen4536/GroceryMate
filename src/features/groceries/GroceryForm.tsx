@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Check, Minus, Plus } from 'lucide-react'
 import { Button, Dropdown, Input, Textarea } from '@/components/ui'
 import { transitionFast, springSnappy } from '@/animations/motion'
+import { parseMoneyInput } from '@/adapters'
 import { useHousehold } from '@/household/useHousehold'
 import { type GroceryDraft } from '@/hooks/useGroceries'
 import { useMemberOptions } from '@/hooks/useMemberOptions'
@@ -17,7 +18,7 @@ interface GroceryFormProps {
   initial: GroceryItem | null
   /** The household's current roster — the only source financial participant selection reads from. */
   members: readonly Member[]
-  onSubmit: (draft: GroceryDraft) => void
+  onSubmit: (draft: GroceryDraft) => Promise<{ error?: string }>
   onCancel: () => void
 }
 
@@ -68,20 +69,19 @@ function QuantityStepper({ value, onChange }: { value: number; onChange: (value:
 }
 
 /**
- * Resolves an existing item's stored payer/sharer names (see `src/adapters`
- * for why grocery data is name-keyed) to the current roster's ids, for
- * pre-filling the pickers below. A name that no longer matches exactly one
- * current, selectable member — removed, renamed, or now ambiguous — is
- * simply left out rather than guessed at; the picker can only ever offer
- * ids it actually has an option for.
+ * An existing item's persisted payer/sharer ids, filtered to whichever of
+ * them still match a *current, selectable* member — one that's since been
+ * archived or removed is simply left out of the pre-fill rather than kept
+ * (the picker can only ever offer an id it actually has an option for; the
+ * item's real persisted reference is untouched either way until the user
+ * explicitly changes and re-submits the form).
  */
 function resolveInitialSelection(initial: GroceryItem | null, memberOptions: ReturnType<typeof useMemberOptions>) {
   if (!initial) return { paidById: null, sharedByIds: [] as string[] }
+  const selectableIds = new Set(memberOptions.options.map((option) => option.id))
   return {
-    paidById: memberOptions.resolveIdForName(initial.paidBy),
-    sharedByIds: initial.sharedBy
-      .map((name) => memberOptions.resolveIdForName(name))
-      .filter((id): id is string => id !== null),
+    paidById: selectableIds.has(initial.paidByMemberId) ? initial.paidByMemberId : null,
+    sharedByIds: initial.sharedByMemberIds.filter((id) => selectableIds.has(id)),
   }
 }
 
@@ -109,10 +109,17 @@ export function GroceryForm({ initial, members, onSubmit, onCancel }: GroceryFor
   })
   const [notes, setNotes] = useState(initial?.notes ?? '')
   const [attemptedSubmit, setAttemptedSubmit] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string>()
   const formRef = useRef<HTMLFormElement>(null)
   const sharedByGroupRef = useRef<HTMLDivElement>(null)
 
   const nameError = attemptedSubmit && !name.trim() ? 'Enter a name for this item.' : undefined
+  // A real, persisted amount_minor requires a genuinely parseable price —
+  // unlike the old mock-only form, a blank price can no longer silently
+  // become "free" (that would understate real spending, the exact kind of
+  // silent guess this app avoids everywhere else too).
+  const priceError = attemptedSubmit && !parseMoneyInput(price).ok ? 'Enter a valid price.' : undefined
   const paidByError = attemptedSubmit && !paidById ? 'Choose who paid for this item.' : undefined
   const sharedByError =
     attemptedSubmit && sharedByIds.length === 0 ? 'Pick at least one person sharing this item.' : undefined
@@ -123,8 +130,9 @@ export function GroceryForm({ initial, members, onSubmit, onCancel }: GroceryFor
     price,
     quantity,
     category,
-    paidBy: memberOptions.nameForId(paidById),
-    sharedBy: sharedByIds.map((id) => memberOptions.nameForId(id)),
+    paidByMemberId: paidById ?? '',
+    sharedByMemberIds: sharedByIds,
+    createdByMemberId: initial?.createdByMemberId ?? currentMembership?.id ?? '',
     notes,
   }
 
@@ -133,15 +141,19 @@ export function GroceryForm({ initial, members, onSubmit, onCancel }: GroceryFor
     if (/^\d*\.?\d{0,2}$/.test(next)) setPrice(next)
   }
 
-  const handleSubmit = (event: FormEvent) => {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
-    if (!name.trim() || !paidById || sharedByIds.length === 0) {
+    if (submitting) return // belt-and-suspenders against a double Enter+click race; disabled below is the primary guard
+    const priceIsValid = parseMoneyInput(price).ok
+    if (!name.trim() || !priceIsValid || !paidById || sharedByIds.length === 0) {
       setAttemptedSubmit(true)
       // Move focus to the first invalid field, same as native constraint
       // validation would have — but reliably, since noValidate below stops
       // the browser from doing (and getting in the way of) that itself.
       if (!name.trim()) {
         formRef.current?.querySelector<HTMLInputElement>('#grocery-form-name')?.focus()
+      } else if (!priceIsValid) {
+        formRef.current?.querySelector<HTMLInputElement>('#grocery-form-price')?.focus()
       } else if (!paidById) {
         formRef.current?.querySelector<HTMLButtonElement>('#grocery-form-paid-by')?.focus()
       } else {
@@ -149,24 +161,36 @@ export function GroceryForm({ initial, members, onSubmit, onCancel }: GroceryFor
       }
       return
     }
-    onSubmit({
+    setSubmitting(true)
+    setSubmitError(undefined)
+    const result = await onSubmit({
       name: name.trim(),
       price,
       quantity,
       category,
-      paidBy: memberOptions.nameForId(paidById),
-      sharedBy: sharedByIds.map((id) => memberOptions.nameForId(id)),
+      paidByMemberId: paidById,
+      sharedByMemberIds: sharedByIds,
       notes: notes.trim(),
     })
+    setSubmitting(false)
+    if (result.error) setSubmitError(result.error)
+    // onCancel()/closing the panel is the parent's job (see useGroceries'
+    // handleSubmit) once the write is confirmed persisted — no local close here.
   }
 
   return (
     <form ref={formRef} onSubmit={handleSubmit} noValidate className="flex flex-col gap-5 pb-2">
+      {submitError && (
+        <p role="alert" className="rounded-lg bg-danger-50 px-3.5 py-2.5 text-sm text-danger-700">
+          {submitError}
+        </p>
+      )}
+
       <motion.div layout transition={transitionFast}>
         <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">
           Live preview
         </p>
-        <GroceryCard item={draft} preview />
+        <GroceryCard item={draft} memberNameById={memberOptions.nameForId} preview />
       </motion.div>
 
       <Input
@@ -178,15 +202,19 @@ export function GroceryForm({ initial, members, onSubmit, onCancel }: GroceryFor
         value={name}
         onChange={(event) => setName(event.target.value)}
         error={nameError}
+        disabled={submitting}
       />
 
       <div className="grid grid-cols-2 gap-4">
         <Input
+          id="grocery-form-price"
           label="Price"
           placeholder="0"
           inputMode="decimal"
           value={price}
           onChange={(event) => handlePriceChange(event.target.value)}
+          error={priceError}
+          disabled={submitting}
         />
         <QuantityStepper value={quantity} onChange={setQuantity} />
       </div>
@@ -218,14 +246,15 @@ export function GroceryForm({ initial, members, onSubmit, onCancel }: GroceryFor
         rows={2}
         value={notes}
         onChange={(event) => setNotes(event.target.value)}
+        disabled={submitting}
       />
 
       <div className="mt-1 flex justify-end gap-2 border-t border-line pt-4">
-        <Button variant="ghost" type="button" onClick={onCancel}>
+        <Button variant="ghost" type="button" onClick={onCancel} disabled={submitting}>
           Cancel
         </Button>
-        <Button type="submit" iconLeft={editing ? Check : Plus}>
-          {editing ? 'Save changes' : 'Add grocery'}
+        <Button type="submit" iconLeft={editing ? Check : Plus} disabled={submitting}>
+          {submitting ? (editing ? 'Saving…' : 'Adding…') : editing ? 'Save changes' : 'Add grocery'}
         </Button>
       </div>
     </form>

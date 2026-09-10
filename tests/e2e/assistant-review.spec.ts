@@ -62,7 +62,11 @@ test.describe('Assistant generated-groceries review', () => {
     await expect(page.getByText('Needs sharers')).toHaveCount(0)
 
     await page.getByRole('button', { name: 'Add to groceries' }).click()
-    await expect(page).toHaveURL(/\/groceries$/)
+    // Each of the 5 items now persists through a real, sequential
+    // add-grocery call (an item insert plus a consumer insert apiece) —
+    // genuinely slower than the old in-memory version, so this needs more
+    // room than the default timeout.
+    await expect(page).toHaveURL(/\/groceries$/, { timeout: 20000 })
 
     const milkCard = page.locator('main li').filter({ hasText: 'Milk (2L)' })
     await expect(milkCard.getByText(`Paid by ${FIXTURE_OWNER_FIRST_NAME} · 1 sharing`)).toBeVisible()

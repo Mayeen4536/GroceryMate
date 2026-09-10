@@ -1,10 +1,12 @@
+import { useMemo } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Apple, Carrot, Egg, Plus, ShoppingBasket } from 'lucide-react'
-import { Badge, Button, Drawer, Toast } from '@/components/ui'
+import { Badge, Button, Card, Drawer, Toast } from '@/components/ui'
 import { EmptyState } from '@/components/EmptyState'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PageTransition } from '@/components/layout/PageTransition'
 import { riseChild, springGentle, transitionBase } from '@/animations/motion'
+import { useHousehold } from '@/household/useHousehold'
 import type { useGroceries } from '@/hooks/useGroceries'
 import type { Member } from '@/types/member'
 import { GroceryCard } from './GroceryCard'
@@ -12,13 +14,14 @@ import { GroceryForm } from './GroceryForm'
 
 /**
  * The Grocery Flow: list, entry panel with live preview, floating CTA.
- * All state is visual mock state; calculations arrive with business logic.
+ * Groceries are real, Supabase-backed data (see docs/GROCERY_INTEGRATION.md).
  *
  * Takes `useGroceries()`'s return value as props rather than calling the
  * hook itself — the Assistant page needs to add to this same list, so the
  * state lives once in `App.tsx` and both pages share it. `members` is
- * threaded through the same way, purely so the add/edit form's payer and
- * shared-by pickers always reflect the current household roster.
+ * threaded through the same way: the add/edit form's payer and shared-by
+ * pickers, and this page's own id → display-name resolution, both read
+ * from the current household roster.
  */
 export function GroceriesPage({
   direction = 1,
@@ -27,11 +30,15 @@ export function GroceriesPage({
 }: { direction?: number; members: readonly Member[] } & ReturnType<typeof useGroceries>) {
   const {
     items,
+    loading,
+    error,
+    refresh,
     panelOpen,
     editingItem,
     lastAddedId,
     isDesktop,
     pendingDeletes,
+    deleteError,
     openAdd,
     openEdit,
     closePanel,
@@ -39,7 +46,24 @@ export function GroceriesPage({
     handleDelete,
     undoDelete,
     dismissDelete,
+    dismissDeleteError,
   } = groceries
+
+  // RLS is the real authority (creator or household owner may edit/delete —
+  // see Migration 3's grocery_items_update_creator_or_owner /
+  // _delete_creator_or_owner) — this only hides controls a caller couldn't
+  // successfully use anyway.
+  const { currentMembership } = useHousehold()
+  const isOwner = currentMembership?.role === 'owner'
+
+  // Includes archived members deliberately — a grocery logged before a
+  // member was archived must still show their real name, never "Unknown
+  // member" just because they're no longer active (see
+  // docs/GROCERY_INTEGRATION.md's archived-member historical behavior).
+  const memberNameById = useMemo(() => {
+    const byId = new Map(members.map((member) => [member.id, member.name] as const))
+    return (id: string) => (id ? (byId.get(id) ?? 'Unknown member') : '')
+  }, [members])
 
   return (
     <>
@@ -58,50 +82,76 @@ export function GroceriesPage({
           />
         </motion.div>
 
-        <motion.div variants={riseChild}>
-          {items.length === 0 ? (
-            <EmptyState
-              icon={ShoppingBasket}
-              tileClassName="from-brand-100 to-mint-100 text-brand-700"
-              glowClassName="bg-brand-500/10"
-              ringClassName="border-brand-300/50"
-              orbitChips={[
-                { icon: Apple, toneClassName: 'text-danger-500' },
-                { icon: Carrot, toneClassName: 'text-warning-500' },
-                { icon: Egg, toneClassName: 'text-member-gold-strong' },
-              ]}
-              title="Your first grocery starts here."
-              description="Add groceries and GroceryMate will take care of the math."
-              action={
-                <Button iconLeft={Plus} onClick={openAdd}>
-                  Add your first grocery
-                </Button>
-              }
+        {loading ? (
+          <motion.div variants={riseChild} className="flex justify-center py-16">
+            <div
+              role="status"
+              aria-label="Loading groceries"
+              className="size-8 animate-spin rounded-full border-2 border-line border-t-brand-600"
             />
-          ) : (
-            <ul className="space-y-2.5">
-              <AnimatePresence initial={false}>
-                {items.map((item) => (
-                  <motion.li
-                    key={item.id}
-                    layout
-                    initial={{ opacity: 0, y: 14, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.15 } }}
-                    transition={transitionBase}
-                  >
-                    <GroceryCard
-                      item={item}
-                      onEdit={openEdit}
-                      onDelete={handleDelete}
-                      highlight={item.id === lastAddedId}
-                    />
-                  </motion.li>
-                ))}
-              </AnimatePresence>
-            </ul>
-          )}
-        </motion.div>
+          </motion.div>
+        ) : error ? (
+          // Never fabricate a grocery list on failure — a real error state,
+          // not an empty-household state, so it's distinguishable and retryable.
+          <motion.div variants={riseChild}>
+            <Card padding="lg">
+              <div className="flex flex-col items-center gap-3 py-4 text-center">
+                <p className="text-sm font-semibold text-ink">Couldn't load groceries</p>
+                <p className="text-sm text-ink-soft">{error}</p>
+                <Button variant="secondary" size="sm" onClick={() => void refresh()}>
+                  Try again
+                </Button>
+              </div>
+            </Card>
+          </motion.div>
+        ) : (
+          <motion.div variants={riseChild}>
+            {items.length === 0 ? (
+              <EmptyState
+                icon={ShoppingBasket}
+                tileClassName="from-brand-100 to-mint-100 text-brand-700"
+                glowClassName="bg-brand-500/10"
+                ringClassName="border-brand-300/50"
+                orbitChips={[
+                  { icon: Apple, toneClassName: 'text-danger-500' },
+                  { icon: Carrot, toneClassName: 'text-warning-500' },
+                  { icon: Egg, toneClassName: 'text-member-gold-strong' },
+                ]}
+                title="Your first grocery starts here."
+                description="Add groceries and GroceryMate will take care of the math."
+                action={
+                  <Button iconLeft={Plus} onClick={openAdd}>
+                    Add your first grocery
+                  </Button>
+                }
+              />
+            ) : (
+              <ul className="space-y-2.5">
+                <AnimatePresence initial={false}>
+                  {items.map((item) => (
+                    <motion.li
+                      key={item.id}
+                      layout
+                      initial={{ opacity: 0, y: 14, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.15 } }}
+                      transition={transitionBase}
+                    >
+                      <GroceryCard
+                        item={item}
+                        memberNameById={memberNameById}
+                        onEdit={openEdit}
+                        onDelete={handleDelete}
+                        canEdit={isOwner || item.createdByMemberId === currentMembership?.id}
+                        highlight={item.id === lastAddedId}
+                      />
+                    </motion.li>
+                  ))}
+                </AnimatePresence>
+              </ul>
+            )}
+          </motion.div>
+        )}
       </PageTransition>
 
       {/* Floating CTA. Lives outside the page transform so `fixed` means the viewport.
@@ -142,9 +192,9 @@ export function GroceriesPage({
         />
       </Drawer>
 
-      {/* Undo toasts for deleted items. Sits above the FAB's own row (rather
-          than sharing it) so the two never crowd each other, and clears the
-          mobile bottom nav dock underneath both. */}
+      {/* Undo toasts for deleted items, plus a plain (non-actionable) toast
+          for a delete that failed to finalize — the item is still real and
+          persisted, so it's back in the list above; this just explains why. */}
       <div className="pointer-events-none fixed inset-x-4 z-40 flex flex-col items-start gap-2 bottom-[calc(var(--mobile-nav-clearance)+4rem)] lg:bottom-24">
         <AnimatePresence initial={false}>
           {pendingDeletes.map((pending) => (
@@ -156,6 +206,13 @@ export function GroceriesPage({
               onDismiss={() => dismissDelete(pending.id)}
             />
           ))}
+          {deleteError && (
+            <Toast
+              key={`delete-error-${deleteError.id}`}
+              message={`Couldn't delete that item: ${deleteError.message}`}
+              onDismiss={dismissDeleteError}
+            />
+          )}
         </AnimatePresence>
       </div>
     </>

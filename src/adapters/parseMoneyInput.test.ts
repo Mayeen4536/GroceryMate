@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseMoneyInput } from './parseMoneyInput'
+import { formatMinorUnitsInput, parseMoneyInput } from './parseMoneyInput'
 
 function minorUnitsOf(raw: string): number {
   const result = parseMoneyInput(raw)
@@ -97,5 +97,25 @@ describe('parseMoneyInput', () => {
       // that belongs to src/utils/money.ts, the display-layer formatter.
       expect(rejectionReasonOf('৳100')).toBe('malformed')
     })
+  })
+})
+
+describe('formatMinorUnitsInput', () => {
+  it('formats a whole amount with no trailing decimal', () => {
+    expect(formatMinorUnitsInput(24000)).toBe('240')
+    expect(formatMinorUnitsInput(0)).toBe('0')
+  })
+
+  it('formats a fractional amount with exactly minorUnitDigits decimals', () => {
+    expect(formatMinorUnitsInput(4999)).toBe('49.99')
+    expect(formatMinorUnitsInput(1)).toBe('0.01')
+  })
+
+  it('round-trips exactly through parseMoneyInput for both whole and fractional amounts', () => {
+    for (const minorUnits of [0, 1, 100, 4999, 24000, 999999]) {
+      const formatted = formatMinorUnitsInput(minorUnits)
+      const parsed = parseMoneyInput(formatted)
+      expect(parsed).toEqual({ ok: true, minorUnits })
+    }
   })
 })

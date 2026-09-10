@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { CURRENCIES } from '@/domain/Currency'
 import type { HouseholdId } from '@/domain/ids'
 import { computeSettlement } from '@/engine'
-import { AmbiguousMemberNameError, InvalidGroceryPriceError, UnresolvableMemberNameError } from './errors'
+import { InvalidGroceryPriceError } from './errors'
 import { toEngineInput } from './toEngineInput'
 import type { GroceryItem as UIGroceryItem } from '@/types/grocery'
 import type { Member as UIMember } from '@/types/member'
@@ -30,8 +30,9 @@ function makeUIGrocery(overrides: Partial<UIGroceryItem> & { id: string }): UIGr
     price: '0',
     quantity: 1,
     category: 'pantry',
-    paidBy: '',
-    sharedBy: [],
+    paidByMemberId: '',
+    sharedByMemberIds: [],
+    createdByMemberId: '',
     notes: '',
     ...overrides,
   }
@@ -41,7 +42,7 @@ describe('toEngineInput', () => {
   it('converts UI members and groceries into engine-valid domain input', () => {
     const members = [makeUIMember({ id: 'm-1', name: 'Aisha Khan' }), makeUIMember({ id: 'm-2', name: 'Bilal Ahmed' })]
     const groceries = [
-      makeUIGrocery({ id: 'g-1', name: 'Milk', price: '100', paidBy: 'Aisha Khan', sharedBy: ['Aisha Khan', 'Bilal Ahmed'] }),
+      makeUIGrocery({ id: 'g-1', name: 'Milk', price: '100', paidByMemberId: 'm-1', sharedByMemberIds: ['m-1', 'm-2'] }),
     ]
 
     const engineInput = toEngineInput(members, groceries, BDT, HOUSEHOLD_ID)
@@ -64,15 +65,15 @@ describe('toEngineInput', () => {
         id: 'g-1',
         name: 'Rice',
         price: '900',
-        paidBy: 'Aisha Khan',
-        sharedBy: ['Aisha Khan', 'Bilal Ahmed', 'Chloe Lee'],
+        paidByMemberId: 'm-1',
+        sharedByMemberIds: ['m-1', 'm-2', 'm-3'],
       }),
       makeUIGrocery({
         id: 'g-2',
         name: 'Chicken',
         price: '600',
-        paidBy: 'Bilal Ahmed',
-        sharedBy: ['Aisha Khan', 'Bilal Ahmed'],
+        paidByMemberId: 'm-2',
+        sharedByMemberIds: ['m-1', 'm-2'],
       }),
     ]
 
@@ -98,37 +99,39 @@ describe('toEngineInput', () => {
     expect(engineMembers[0].membershipStatus).toBe('archived')
   })
 
-  it('throws UnresolvableMemberNameError when a grocery item was paid by someone no longer a member', () => {
-    const members = [makeUIMember({ id: 'm-1', name: 'Aisha Khan' })]
-    const groceries = [makeUIGrocery({ id: 'g-1', paidBy: 'Someone Removed', sharedBy: ['Aisha Khan'] })]
-    expect(() => toEngineInput(members, groceries, BDT, HOUSEHOLD_ID)).toThrow(UnresolvableMemberNameError)
-  })
-
-  it('throws UnresolvableMemberNameError when a grocery item is shared by someone no longer a member', () => {
-    const members = [makeUIMember({ id: 'm-1', name: 'Aisha Khan' })]
-    const groceries = [makeUIGrocery({ id: 'g-1', paidBy: 'Aisha Khan', sharedBy: ['Aisha Khan', 'Ghost'] })]
-    expect(() => toEngineInput(members, groceries, BDT, HOUSEHOLD_ID)).toThrow(UnresolvableMemberNameError)
-  })
-
-  it('throws AmbiguousMemberNameError rather than guessing when two members share a name', () => {
-    const members = [makeUIMember({ id: 'm-1', name: 'Sam' }), makeUIMember({ id: 'm-2', name: 'Sam' })]
-    const groceries = [makeUIGrocery({ id: 'g-1', paidBy: 'Sam', sharedBy: ['Sam'] })]
-    expect(() => toEngineInput(members, groceries, BDT, HOUSEHOLD_ID)).toThrow(AmbiguousMemberNameError)
-  })
-
   it('throws InvalidGroceryPriceError for a price string that cannot be parsed', () => {
     const members = [makeUIMember({ id: 'm-1', name: 'Aisha Khan' })]
-    const groceries = [makeUIGrocery({ id: 'g-1', price: 'not-a-number', paidBy: 'Aisha Khan', sharedBy: ['Aisha Khan'] })]
+    const groceries = [
+      makeUIGrocery({ id: 'g-1', price: 'not-a-number', paidByMemberId: 'm-1', sharedByMemberIds: ['m-1'] }),
+    ]
     expect(() => toEngineInput(members, groceries, BDT, HOUSEHOLD_ID)).toThrow(InvalidGroceryPriceError)
   })
 
   it('converts a decimal price into exact minor units, matching parseMoneyInput', () => {
     const members = [makeUIMember({ id: 'm-1', name: 'Aisha Khan' })]
     const groceries = [
-      makeUIGrocery({ id: 'g-1', price: '49.99', paidBy: 'Aisha Khan', sharedBy: ['Aisha Khan'] }),
+      makeUIGrocery({ id: 'g-1', price: '49.99', paidByMemberId: 'm-1', sharedByMemberIds: ['m-1'] }),
     ]
     const { groceries: engineGroceries } = toEngineInput(members, groceries, BDT, HOUSEHOLD_ID)
     expect(engineGroceries[0].unitPrice.minorUnits).toBe(4999)
+  })
+
+  it('always feeds the engine quantity 1, regardless of the persisted item\'s own (display-only) quantity — price is already the line total, not a unit price', () => {
+    const members = [makeUIMember({ id: 'm-1', name: 'Aisha Khan' })]
+    const groceries = [
+      makeUIGrocery({ id: 'g-1', price: '100', quantity: 5, paidByMemberId: 'm-1', sharedByMemberIds: ['m-1'] }),
+    ]
+    const { groceries: engineGroceries } = toEngineInput(members, groceries, BDT, HOUSEHOLD_ID)
+    expect(engineGroceries[0].quantity).toBe(1)
+
+    // Confirms the engine itself would double-count if this weren't fixed at 1:
+    // consumedMinorUnits should be exactly 10000 (100 taka), not 50000 (× 5).
+    const result = computeSettlement(
+      toEngineInput(members, groceries, BDT, HOUSEHOLD_ID).members,
+      engineGroceries,
+      BDT,
+    )
+    expect(result.memberBalances[0].consumedMinorUnits).toBe(10000)
   })
 
   it('handles an empty grocery list against a non-empty household without error', () => {

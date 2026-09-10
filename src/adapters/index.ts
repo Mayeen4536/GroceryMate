@@ -10,7 +10,7 @@ export type {
 
 export { describeSettlementError } from './describeSettlementError'
 
-export { parseMoneyInput } from './parseMoneyInput'
+export { parseMoneyInput, formatMinorUnitsInput } from './parseMoneyInput'
 export type { ParseMoneyInputResult, MoneyInputRejectionReason } from './parseMoneyInput'
 
 export { buildMemberNameIndex, resolveMemberIdByName } from './memberIdentity'

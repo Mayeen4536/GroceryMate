@@ -12,16 +12,24 @@ async function nameOf(deleteButton: Locator) {
   return label!.replace(/^Delete /, '')
 }
 
-/** Groceries are session-local (see src/hooks/useGroceries.ts) — every test here needs at least two of its own, added through the real form. */
+/**
+ * Groceries are real, persisted data now (see docs/GROCERY_INTEGRATION.md)
+ * — every test here needs at least two of its own, added through the real
+ * form. Per-call unique names: groceries never expire from the shared
+ * fixture household the way session-local state used to, so a fixed name
+ * would eventually collide with a leftover row from an earlier run and
+ * make a "Delete <name>" locator match more than one item.
+ */
 async function seedTwoGroceries(page: Page) {
+  const runId = Date.now()
   await addGrocery(page, {
-    name: 'Milk (2L)',
+    name: `Milk (2L) ${runId}`,
     price: '240',
     paidByName: FIXTURE_OWNER_NAME,
     sharedByNames: [FIXTURE_OWNER_FIRST_NAME],
   })
   await addGrocery(page, {
-    name: 'Basmati rice (5kg)',
+    name: `Basmati rice (5kg) ${runId}`,
     price: '1450',
     paidByName: FIXTURE_OWNER_NAME,
     sharedByNames: [FIXTURE_OWNER_FIRST_NAME],
@@ -76,19 +84,23 @@ test.describe('Delete and undo details', () => {
   test('a deletion that is not undone stays deleted once the undo window passes', async ({ page }) => {
     await enterApp(page)
     await seedTwoGroceries(page)
-    // Install the clock only now (after the landing/entry animations have
-    // already played with real time) and virtually fast-forward instead of
-    // waiting out the real undo window, so this test isn't slow or flaky.
-    await page.clock.install()
-
+    // A real wait, not a virtual clock: the undo window's own finalize step
+    // now makes a genuine network call (the real, persisted delete), and
+    // mixing Playwright's fake timers with real async I/O is its own
+    // source of flakiness — simpler and more reliable to just wait out the
+    // real (short) window.
     const deleteButton = page.locator('main li').first().getByRole('button', { name: /^Delete /i })
     const itemName = await nameOf(deleteButton)
     await deleteButton.click()
     await expect(page.getByRole('button', { name: 'Undo' })).toBeVisible()
 
-    await page.clock.fastForward('00:06')
+    await expect(page.getByRole('button', { name: 'Undo' })).not.toBeVisible({ timeout: 8000 })
+    await expect(page.getByRole('button', { name: `Delete ${itemName}` })).toHaveCount(0)
 
-    await expect(page.getByRole('button', { name: 'Undo' })).not.toBeVisible()
+    // The undo window closing doesn't just hide it locally — a genuine
+    // reload proves it's gone server-side, not just from this one render.
+    await page.reload()
+    await expect(page.getByRole('heading', { name: 'Groceries', exact: true })).toBeVisible()
     await expect(page.getByRole('button', { name: `Delete ${itemName}` })).toHaveCount(0)
   })
 

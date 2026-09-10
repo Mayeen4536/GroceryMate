@@ -5,19 +5,20 @@ import type { GroceryItemId, HouseholdId, MemberId } from '@/domain/ids'
 import type { GroceryItem as UIGroceryItem } from '@/types/grocery'
 import type { Member as UIMember } from '@/types/member'
 import { InvalidGroceryPriceError } from './errors'
-import { buildMemberNameIndex, resolveMemberIdByName } from './memberIdentity'
 import { parseMoneyInput } from './parseMoneyInput'
 
 /**
  * The domain `Member`/`GroceryItem` types carry a `householdId` and real
- * join/added timestamps that the current mock UI has no equivalent of
+ * join/added timestamps that the current UI has no equivalent of
  * (`Member.joinedLabel` is a display string like "Joined Jan 2026", not a
- * parseable date, and `GroceryItem` has no timestamp at all). The engine's
- * calculation never reads either field — `calculateMemberBalances` only
- * ever touches `.id` on a member — so a fixed placeholder is harmless here.
- * Kept as an explicit, named constant rather than an inline `new Date(0)`
- * so its purpose (satisfy the type, not represent a real moment) reads
- * clearly at every call site.
+ * parseable date, and `GroceryItem` doesn't carry its persisted timestamp
+ * through this layer). The engine's calculation never reads either field —
+ * `calculateMemberBalances` only ever touches `.id` on a member and
+ * `.unitPrice`/`.quantity`/`.paidByMemberId`/`.sharedByMemberIds` on a
+ * grocery item — so a fixed placeholder is harmless here. Kept as an
+ * explicit, named constant rather than an inline `new Date(0)` so its
+ * purpose (satisfy the type, not represent a real moment) reads clearly at
+ * every call site.
  */
 const PLACEHOLDER_TIMESTAMP = new Date(0)
 
@@ -54,12 +55,19 @@ function toDomainMember(member: UIMember, householdId: HouseholdId): DomainMembe
   }
 }
 
-function toDomainGroceryItem(
-  item: UIGroceryItem,
-  nameIndex: ReturnType<typeof buildMemberNameIndex>,
-  currency: Currency,
-  householdId: HouseholdId,
-): DomainGroceryItem {
+/**
+ * `item.price` is already the persisted line's final total (`grocery_items
+ * .amount_minor`, round-tripped through `formatMinorUnitsInput` — see
+ * docs/GROCERY_INTEGRATION.md), never a per-unit price — so this always
+ * feeds the engine `quantity: 1`. `item.quantity` itself is carried through
+ * to `grocery_items.quantity` for display only ("× 2" on a grocery card);
+ * re-multiplying it into the engine's `unitPrice × quantity` here would
+ * double-count the line, exactly the mistake
+ * docs/SUPABASE_SCHEMA_DESIGN.md's "Engine reconstruction" section (written
+ * at Migration 2 time, before any of this integration existed) already
+ * calls out and guards against.
+ */
+function toDomainGroceryItem(item: UIGroceryItem, currency: Currency, householdId: HouseholdId): DomainGroceryItem {
   const parsedPrice = parseMoneyInput(item.price, currency.minorUnitDigits)
   if (!parsedPrice.ok) throw new InvalidGroceryPriceError(item.id, item.price)
 
@@ -69,11 +77,9 @@ function toDomainGroceryItem(
     name: item.name,
     category: toDomainCategory(item.category),
     unitPrice: { minorUnits: parsedPrice.minorUnits, currency },
-    quantity: item.quantity,
-    paidByMemberId: resolveMemberIdByName(nameIndex, item.paidBy, `paid for "${item.name || item.id}"`),
-    sharedByMemberIds: item.sharedBy.map((name) =>
-      resolveMemberIdByName(nameIndex, name, `shares "${item.name || item.id}"`),
-    ),
+    quantity: 1,
+    paidByMemberId: item.paidByMemberId as MemberId,
+    sharedByMemberIds: item.sharedByMemberIds as MemberId[],
     addedAt: PLACEHOLDER_TIMESTAMP,
     notes: item.notes || undefined,
   }
@@ -85,19 +91,26 @@ export interface EngineInput {
 }
 
 /**
- * Converts the app's live UI-shaped state (name-keyed grocery references,
- * decimal-string prices) into validated domain input the settlement engine
- * can run on. This is the ONLY place that translation happens — neither
- * the engine nor any page component should resolve a name to an id or
- * parse a price string itself.
+ * Converts the app's live UI-shaped state (decimal-string prices, already
+ * id-keyed member references) into validated domain input the settlement
+ * engine can run on. This is the ONLY place that translation happens —
+ * neither the engine nor any page component should parse a price string
+ * itself.
  *
- * Throws (never silently repairs) on:
- * - a `paidBy`/`sharedBy` name with no matching current member (`UnresolvableMemberNameError`)
- * - a name matching more than one current member (`AmbiguousMemberNameError`)
- * - a `price` string that doesn't parse to a valid amount (`InvalidGroceryPriceError`)
+ * Grocery member references are no longer resolved from a display name —
+ * `paidByMemberId`/`sharedByMemberIds` are real, persisted
+ * `household_members.id` values by the time they reach this function (see
+ * `src/groceries/useHouseholdGroceries.ts`). A reference to a member id
+ * that genuinely doesn't exist in `members` (e.g. corrupted state) is still
+ * caught, just one layer down — `calculateMemberBalances` itself throws
+ * `UnknownMemberError` for any id it can't find, so this function doesn't
+ * need its own redundant validation pass to preserve the "never silently
+ * repair" guarantee.
  *
- * Callers should run this inside the same try/catch that handles the
- * engine's own `SettlementEngineError` family — see `useSettlementResult`.
+ * Throws (never silently repairs) on a `price` string that doesn't parse to
+ * a valid amount (`InvalidGroceryPriceError`). Callers should run this
+ * inside the same try/catch that handles the engine's own
+ * `SettlementEngineError` family — see `useSettlementResult`.
  */
 export function toEngineInput(
   members: readonly UIMember[],
@@ -105,9 +118,8 @@ export function toEngineInput(
   currency: Currency,
   householdId: HouseholdId,
 ): EngineInput {
-  const nameIndex = buildMemberNameIndex(members)
   return {
     members: members.map((member) => toDomainMember(member, householdId)),
-    groceries: groceries.map((item) => toDomainGroceryItem(item, nameIndex, currency, householdId)),
+    groceries: groceries.map((item) => toDomainGroceryItem(item, currency, householdId)),
   }
 }

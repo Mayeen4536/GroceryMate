@@ -1,4 +1,9 @@
+import { readFileSync } from 'node:fs'
 import { expect, type Page } from '@playwright/test'
+
+const envText = readFileSync(new URL('../../.env.local', import.meta.url), 'utf8')
+const SUPABASE_URL = envText.match(/VITE_SUPABASE_URL=(.*)/)?.[1]?.trim()
+const PUBLISHABLE_KEY = envText.match(/VITE_SUPABASE_PUBLISHABLE_KEY=(.*)/)?.[1]?.trim()
 
 /**
  * The one real member every fresh run of the fixture household starts
@@ -21,16 +26,58 @@ export async function enterApp(page: Page) {
   await page.goto('/')
   await page.getByRole('button', { name: 'Start splitting fairly' }).click()
   await expect(page.getByRole('heading', { name: 'Groceries', exact: true })).toBeVisible()
-  // Groceries are session-local state (see src/hooks/useGroceries.ts) — a
-  // freshly loaded household always starts with an empty list, so unlike
-  // before this can no longer assume a populated one. The heading also
-  // renders before the staggered item list finishes animating in, so a
-  // caller that immediately reads existing items still needs to wait for
-  // real content rather than race that entrance animation — waiting for
-  // either real outcome (populated or genuinely empty) covers both.
+  // Groceries are real, persisted data now (see src/groceries/), so the
+  // fixture household's list only grows across runs — this can't assume
+  // either outcome. The heading also renders before the staggered item
+  // list finishes animating in, so a caller that immediately reads
+  // existing items still needs to wait for real content rather than race
+  // that entrance animation — waiting for either real outcome (populated
+  // or genuinely empty) covers both.
   await expect(
     page.getByText('Your first grocery starts here.').or(page.locator('main li').first()),
   ).toBeVisible()
+}
+
+/**
+ * Wipes every persisted grocery (and, via cascade, its consumers) from the
+ * *current* household — used only as test setup, before a spec that needs
+ * exact settlement math and so can't tolerate whatever accumulated from
+ * earlier runs sharing the same fixture household. Issues a real,
+ * RLS-gated REST call using the already-signed-in browser session's own
+ * JWT (read out of localStorage) plus the anon/publishable key — never
+ * service_role, exactly the same access the app's own UI already has.
+ * Assumes `enterApp` has already run (a session must exist to read).
+ */
+export async function clearHouseholdGroceries(page: Page) {
+  if (!SUPABASE_URL || !PUBLISHABLE_KEY) {
+    throw new Error('clearHouseholdGroceries: could not read VITE_SUPABASE_URL/VITE_SUPABASE_PUBLISHABLE_KEY from .env.local')
+  }
+  const token = await page.evaluate(() => {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key?.startsWith('sb-') && key.endsWith('-auth-token')) {
+        const raw = localStorage.getItem(key)
+        if (!raw) return null
+        return (JSON.parse(raw) as { access_token?: string }).access_token ?? null
+      }
+    }
+    return null
+  })
+  if (!token) throw new Error('clearHouseholdGroceries: no signed-in session found')
+
+  const headers = { apikey: PUBLISHABLE_KEY, Authorization: `Bearer ${token}` }
+  const householdsRes = await fetch(`${SUPABASE_URL}/rest/v1/households?select=id`, { headers })
+  const households = (await householdsRes.json()) as { id: string }[]
+  const householdId = households[0]?.id
+  if (!householdId) throw new Error('clearHouseholdGroceries: no household found for the current session')
+
+  const deleteRes = await fetch(`${SUPABASE_URL}/rest/v1/grocery_items?household_id=eq.${householdId}`, {
+    method: 'DELETE',
+    headers,
+  })
+  if (!deleteRes.ok) {
+    throw new Error(`clearHouseholdGroceries: delete failed with status ${deleteRes.status}`)
+  }
 }
 
 /**
@@ -87,6 +134,28 @@ export async function addMember(page: Page, name: string) {
   await dialog.getByRole('button', { name: 'Add member' }).click()
   await expect(dialog).not.toBeVisible()
   await expect(page.getByRole('button', { name: new RegExp(`Open ${name}'s profile`) })).toBeVisible()
+}
+
+/**
+ * Archives a real household member through the Members page's own
+ * "Remove from household" flow (archive, never a hard delete — see
+ * docs/MEMBER_INTEGRATION.md). Assumes the member's card is already
+ * reachable (real, current name) and that the caller is the household
+ * owner (archive is owner-only).
+ */
+export async function archiveMember(page: Page, name: string) {
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Members', exact: true }).click()
+  await page.getByRole('button', { name: new RegExp(`Open ${name}'s profile`) }).click()
+  const drawer = page.getByRole('dialog', { name: 'Member profile' })
+  await drawer.getByRole('button', { name: 'Remove from household' }).click()
+  await page.getByRole('button', { name: 'Yes, remove them' }).click()
+  // A successful archive closes the drawer (useMembers.handleRemove clears
+  // the open profile on success) — the confirmation is the member's own
+  // card now showing the Archived badge, not anything still inside the drawer.
+  await expect(drawer).not.toBeVisible()
+  await expect(
+    page.locator('main li').filter({ hasText: name }).filter({ hasText: 'Archived' }),
+  ).toBeVisible()
 }
 
 /**

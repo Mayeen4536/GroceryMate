@@ -3,15 +3,13 @@ import type { GroceryItem } from '@/types/grocery'
 /**
  * Mock output for the generation demo. Display-only; no math happens here.
  *
- * Every item ships with no payer or sharers at all — this used to mix in a
- * few items with both already filled in (paidBy/sharedBy naming the old
- * fixed mock roster), but that roster has no correspondence to any real
- * household's actual members (which, for a brand-new household, is just
- * its owner). Naming a real member here would either be wrong for almost
- * every household or coincidentally right for none, so nothing is ever
+ * Every item ships with no payer or sharers at all — a mock "AI" has no way
+ * to know a real household's actual member ids, so nothing is ever
  * pre-filled: the review step (GeneratedGroceries) asks about every item,
- * consistent with the same "never invent who paid or shared" principle
- * this whole review step exists to enforce.
+ * consistent with the "never invent who paid or shared" principle this
+ * whole review step exists to enforce. `createdByMemberId` is set once the
+ * item is actually persisted (`useGroceries.addGenerated`), never here —
+ * these are drafts, not yet real rows.
  */
 export const MOCK_GENERATED_ITEMS: GroceryItem[] = [
   {
@@ -20,8 +18,9 @@ export const MOCK_GENERATED_ITEMS: GroceryItem[] = [
     price: '240',
     quantity: 2,
     category: 'dairy',
-    paidBy: '',
-    sharedBy: [],
+    paidByMemberId: '',
+    sharedByMemberIds: [],
+    createdByMemberId: '',
     notes: '',
   },
   {
@@ -30,8 +29,9 @@ export const MOCK_GENERATED_ITEMS: GroceryItem[] = [
     price: '360',
     quantity: 1,
     category: 'dairy',
-    paidBy: '',
-    sharedBy: [],
+    paidByMemberId: '',
+    sharedByMemberIds: [],
+    createdByMemberId: '',
     notes: '',
   },
   {
@@ -40,8 +40,9 @@ export const MOCK_GENERATED_ITEMS: GroceryItem[] = [
     price: '180',
     quantity: 2,
     category: 'bakery',
-    paidBy: '',
-    sharedBy: [],
+    paidByMemberId: '',
+    sharedByMemberIds: [],
+    createdByMemberId: '',
     notes: '',
   },
   {
@@ -50,8 +51,9 @@ export const MOCK_GENERATED_ITEMS: GroceryItem[] = [
     price: '320',
     quantity: 1,
     category: 'dairy',
-    paidBy: '',
-    sharedBy: [],
+    paidByMemberId: '',
+    sharedByMemberIds: [],
+    createdByMemberId: '',
     notes: '',
   },
   {
@@ -60,8 +62,9 @@ export const MOCK_GENERATED_ITEMS: GroceryItem[] = [
     price: '260',
     quantity: 1,
     category: 'beverages',
-    paidBy: '',
-    sharedBy: [],
+    paidByMemberId: '',
+    sharedByMemberIds: [],
+    createdByMemberId: '',
     notes: '',
   },
 ]

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { AlertTriangle, Check, RotateCcw, Sparkles } from 'lucide-react'
 import { Badge, Button, Dropdown } from '@/components/ui'
@@ -14,27 +14,28 @@ interface GeneratedGroceriesProps {
   items: GroceryItem[]
   /** The household's current roster — the only source financial participant selection reads from. */
   members: readonly Member[]
-  onAddGroceries: (items: GroceryItem[]) => void
+  onAddGroceries: (items: GroceryItem[]) => Promise<{ error?: string }>
   onReset: () => void
 }
 
 /**
- * Whether an item's stored payer/sharer names both resolve to a member on
- * the *current* roster — not just whether the strings happen to be
- * non-empty. A generated item's suggested payer could name someone no
- * longer in the household (removed after this mock content was written,
- * or never a real match); treating that as "resolved" because the string
- * isn't blank would let an unresolvable reference reach the real grocery
- * list, where the settlement engine would only refuse it later.
+ * Whether an item's stored payer/sharer ids both match a member on the
+ * *current, selectable* roster — not just whether they're non-empty. A
+ * generated item's suggested payer/sharers could reference someone no
+ * longer selectable (archived, or removed after this mock content was
+ * generated); treating that as "resolved" because the id isn't blank would
+ * let a stale reference reach the real grocery list, where the settlement
+ * engine would only refuse it later.
  */
 export function isFullyResolved(item: GroceryItem, memberOptions: ReturnType<typeof useMemberOptions>): boolean {
-  const hasPayer = memberOptions.resolveIdForName(item.paidBy) !== null
-  // Every name must resolve, not just one of them: a mix of one valid and
-  // one stale sharer must still count as unresolved, or the stale name
-  // would ride along untouched into the real grocery list the moment the
-  // user submits without ever having to open this item's picker.
+  const validIds = new Set(memberOptions.options.map((option) => option.id))
+  const hasPayer = item.paidByMemberId !== '' && validIds.has(item.paidByMemberId)
+  // Every id must be valid, not just one of them: a mix of one valid and
+  // one stale sharer must still count as unresolved, or the stale
+  // reference would ride along untouched into the real grocery list the
+  // moment the user submits without ever having to open this item's picker.
   const hasSharers =
-    item.sharedBy.length > 0 && item.sharedBy.every((name) => memberOptions.resolveIdForName(name) !== null)
+    item.sharedByMemberIds.length > 0 && item.sharedByMemberIds.every((id) => validIds.has(id))
   return hasPayer && hasSharers
 }
 
@@ -53,19 +54,18 @@ function GeneratedItemReview({
   item: GroceryItem
   memberOptions: ReturnType<typeof useMemberOptions>
   showErrors: boolean
-  onChange: (patch: Partial<Pick<GroceryItem, 'paidBy' | 'sharedBy'>>) => void
+  onChange: (patch: Partial<Pick<GroceryItem, 'paidByMemberId' | 'sharedByMemberIds'>>) => void
 }) {
   const category = categoryById(item.category)
-  const paidById = memberOptions.resolveIdForName(item.paidBy)
-  const sharedByIds = item.sharedBy
-    .map((name) => memberOptions.resolveIdForName(name))
-    .filter((id): id is string => id !== null)
+  const validIds = useMemo(() => new Set(memberOptions.options.map((option) => option.id)), [memberOptions])
+  const paidById = item.paidByMemberId && validIds.has(item.paidByMemberId) ? item.paidByMemberId : null
+  const sharedByIds = item.sharedByMemberIds.filter((id) => validIds.has(id))
   const needsPayer = paidById === null
   // Flags a partially-stale list too (one valid sharer plus one that no
   // longer resolves), not just an empty one — matches `isFullyResolved`'s
-  // stricter "every name must resolve" rule below, so the badge and the
+  // stricter "every id must be valid" rule below, so the badge and the
   // submit gate never disagree about whether this item is really done.
-  const needsSharers = item.sharedBy.length === 0 || sharedByIds.length !== item.sharedBy.length
+  const needsSharers = item.sharedByMemberIds.length === 0 || sharedByIds.length !== item.sharedByMemberIds.length
 
   return (
     <motion.li variants={riseChild} className="card-surface space-y-4 rounded-lg p-4 shadow-soft">
@@ -104,14 +104,14 @@ function GeneratedItemReview({
           placeholder="Choose who paid"
           options={memberOptions.options.map((member) => ({ value: member.id, label: member.name }))}
           value={paidById}
-          onChange={(id) => onChange({ paidBy: memberOptions.nameForId(id) })}
+          onChange={(id) => onChange({ paidByMemberId: id ?? '' })}
           error={showErrors && needsPayer ? 'Choose who paid for this item.' : undefined}
         />
         <MemberChipPicker
           label="Shared by"
           members={memberOptions.options}
           selected={sharedByIds}
-          onChange={(ids) => onChange({ sharedBy: ids.map((id) => memberOptions.nameForId(id)) })}
+          onChange={(ids) => onChange({ sharedByMemberIds: ids })}
           error={showErrors && needsSharers ? 'Pick at least one person sharing this item.' : undefined}
         />
       </div>
@@ -123,21 +123,29 @@ function GeneratedItemReview({
 export function GeneratedGroceries({ items, members, onAddGroceries, onReset }: GeneratedGroceriesProps) {
   const [drafts, setDrafts] = useState<GroceryItem[]>(() => items.map((item) => ({ ...item })))
   const [attemptedSubmit, setAttemptedSubmit] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string>()
   const memberOptions = useMemberOptions(members)
 
-  const updateDraft = (id: string, patch: Partial<Pick<GroceryItem, 'paidBy' | 'sharedBy'>>) => {
+  const updateDraft = (id: string, patch: Partial<Pick<GroceryItem, 'paidByMemberId' | 'sharedByMemberIds'>>) => {
     setDrafts((current) => current.map((draft) => (draft.id === id ? { ...draft, ...patch } : draft)))
   }
 
   const allResolved = drafts.every((item) => isFullyResolved(item, memberOptions))
   const unresolvedCount = drafts.filter((item) => !isFullyResolved(item, memberOptions)).length
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
+    if (submitting) return
     if (!allResolved) {
       setAttemptedSubmit(true)
       return
     }
-    onAddGroceries(drafts)
+    setSubmitting(true)
+    setSubmitError(undefined)
+    const result = await onAddGroceries(drafts)
+    setSubmitting(false)
+    if (result.error) setSubmitError(result.error)
+    // Navigating away is the parent's job (App.tsx), once persistence is confirmed — no local action here either way.
   }
 
   return (
@@ -162,6 +170,12 @@ export function GeneratedGroceries({ items, members, onAddGroceries, onReset }: 
           AI generated
         </Badge>
       </div>
+
+      {submitError && (
+        <p role="alert" className="rounded-lg bg-danger-50 px-3.5 py-2.5 text-sm text-danger-700">
+          {submitError}
+        </p>
+      )}
 
       <motion.ul
         variants={staggerChildren}
@@ -190,10 +204,10 @@ export function GeneratedGroceries({ items, members, onAddGroceries, onReset }: 
       )}
 
       <div className="flex flex-wrap gap-3 pt-1">
-        <Button iconLeft={Check} onClick={handleAdd}>
-          Add to groceries
+        <Button iconLeft={Check} onClick={handleAdd} disabled={submitting}>
+          {submitting ? 'Adding…' : 'Add to groceries'}
         </Button>
-        <Button variant="ghost" iconLeft={RotateCcw} onClick={onReset}>
+        <Button variant="ghost" iconLeft={RotateCcw} onClick={onReset} disabled={submitting}>
           Try another prompt
         </Button>
       </div>
