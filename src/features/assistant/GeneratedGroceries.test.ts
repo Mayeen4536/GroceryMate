@@ -39,6 +39,7 @@ function makeItem(overrides: Partial<GroceryItem> & { id: string }): GroceryItem
     sharedByMemberIds: [],
     createdByMemberId: '',
     notes: '',
+    createdAt: '2026-01-01T00:00:00.000Z',
     ...overrides,
   }
 }

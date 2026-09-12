@@ -44,6 +44,7 @@ export function mapGroceryItemRow(row: GroceryItemRow, consumerIds: readonly str
     sharedByMemberIds: [...consumerIds],
     createdByMemberId: row.created_by_member_id,
     notes: row.notes ?? '',
+    createdAt: row.created_at,
   }
 }
 

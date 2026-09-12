@@ -12,6 +12,7 @@ import {
   SwatchPicker,
 } from '@/components/ui'
 import { springPop, springSnappy } from '@/animations/motion'
+import { useHousehold } from '@/household/useHousehold'
 import type { AddMemberTab, NewMemberDraft } from '@/hooks/useMembers'
 
 interface AddMemberDialogProps {
@@ -29,6 +30,7 @@ const INVITE_LINK = 'grocerymate.app/join/flat-4b'
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export function AddMemberDialog({ open, initialTab, onClose, onAdd, onInvite }: AddMemberDialogProps) {
+  const { household } = useHousehold()
   const [tab, setTab] = useState<AddMemberTab>(initialTab)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -225,7 +227,7 @@ export function AddMemberDialog({ open, initialTab, onClose, onAdd, onInvite }: 
                   {copied ? 'Copied' : 'Copy'}
                 </Button>
               </div>
-              <p className="text-sm text-muted">Anyone with the link can join Flat 4B.</p>
+              <p className="text-sm text-muted">Anyone with the link can join {household?.name ?? 'this household'}.</p>
             </div>
 
             <div className="flex items-center gap-3 text-xs font-medium uppercase tracking-wide text-muted">

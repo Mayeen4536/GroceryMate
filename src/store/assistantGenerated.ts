@@ -22,6 +22,7 @@ export const MOCK_GENERATED_ITEMS: GroceryItem[] = [
     sharedByMemberIds: [],
     createdByMemberId: '',
     notes: '',
+    createdAt: '',
   },
   {
     id: 'ai-2',
@@ -33,6 +34,7 @@ export const MOCK_GENERATED_ITEMS: GroceryItem[] = [
     sharedByMemberIds: [],
     createdByMemberId: '',
     notes: '',
+    createdAt: '',
   },
   {
     id: 'ai-3',
@@ -44,6 +46,7 @@ export const MOCK_GENERATED_ITEMS: GroceryItem[] = [
     sharedByMemberIds: [],
     createdByMemberId: '',
     notes: '',
+    createdAt: '',
   },
   {
     id: 'ai-4',
@@ -55,6 +58,7 @@ export const MOCK_GENERATED_ITEMS: GroceryItem[] = [
     sharedByMemberIds: [],
     createdByMemberId: '',
     notes: '',
+    createdAt: '',
   },
   {
     id: 'ai-5',
@@ -66,5 +70,6 @@ export const MOCK_GENERATED_ITEMS: GroceryItem[] = [
     sharedByMemberIds: [],
     createdByMemberId: '',
     notes: '',
+    createdAt: '',
   },
 ]

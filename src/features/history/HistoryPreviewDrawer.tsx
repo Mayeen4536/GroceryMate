@@ -1,68 +1,75 @@
 import { Download } from 'lucide-react'
-import { AnimatedNumber, Avatar, Badge, Button, Drawer } from '@/components/ui'
+import { AnimatedNumber, Avatar, Button, Drawer } from '@/components/ui'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { categoryById } from '@/utils/groceryCategory'
 import { formatTaka } from '@/utils/currency'
 import { firstName } from '@/utils/name'
-import { SESSION_STATUS_META, settlementStatusMeta } from '@/constants/historyStatus'
-import type { HistorySession } from '@/types/history'
+import type { GroceryHistoryEntry } from '@/types/history'
 
 interface HistoryPreviewDrawerProps {
-  session: HistorySession | null
+  entry: GroceryHistoryEntry | null
   onClose: () => void
-  onExport: (session: HistorySession) => void
+  onExport: (entry: GroceryHistoryEntry) => void
 }
 
-/** Full detail for one grocery session: items, members, and any pending payments. */
-export function HistoryPreviewDrawer({ session, onClose, onExport }: HistoryPreviewDrawerProps) {
+/** Full detail for one real, persisted grocery: amount, category, who paid, who shared, and any notes. */
+export function HistoryPreviewDrawer({ entry, onClose, onExport }: HistoryPreviewDrawerProps) {
   const isDesktop = useMediaQuery('(min-width: 1024px)')
+  const category = entry ? categoryById(entry.category) : null
 
   return (
     <Drawer
-      open={session != null}
+      open={entry != null}
       onClose={onClose}
-      title="Session details"
+      title="Grocery details"
       side={isDesktop ? 'right' : 'bottom'}
       panelClassName="sm:max-w-md"
       footer={
-        session ? (
-          <Button iconLeft={Download} onClick={() => onExport(session)}>
-            Export session
+        entry ? (
+          <Button iconLeft={Download} onClick={() => onExport(entry)}>
+            Export
           </Button>
         ) : undefined
       }
     >
-      {session && (
+      {entry && category && (
         <div className="flex flex-col gap-6 pb-4">
           <div>
-            <p className="text-lg font-semibold tracking-tight text-ink">{session.title}</p>
-            <p className="text-sm text-muted">{session.dateLabel}</p>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              <Badge tone={SESSION_STATUS_META[session.status].tone}>
-                {SESSION_STATUS_META[session.status].label}
-              </Badge>
-              <Badge tone={settlementStatusMeta(session).tone}>
-                {settlementStatusMeta(session).label}
-              </Badge>
+            <div className="flex items-center gap-3">
+              <span
+                className={`flex size-10 shrink-0 items-center justify-center rounded-lg bg-linear-to-br shadow-soft ring-1 ring-ink/5 ${category.tile}`}
+              >
+                <category.icon size={18} aria-hidden="true" />
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-lg font-semibold tracking-tight text-ink">{entry.name}</p>
+                <p className="text-sm text-muted">{entry.dateLabel}</p>
+              </div>
             </div>
-            {session.notes && <p className="mt-3 text-sm text-ink-soft">{session.notes}</p>}
+            {entry.notes && <p className="mt-3 text-sm text-ink-soft">{entry.notes}</p>}
           </div>
 
           <div className="card-surface rounded-lg p-4 shadow-soft">
-            <p className="text-xs text-muted">Total</p>
+            <p className="text-xs text-muted">Amount</p>
             <p className="mt-1 text-2xl font-bold tabular-nums tracking-tight text-ink">
-              <AnimatedNumber value={Number.parseFloat(session.total) || 0} format={formatTaka} />
+              <AnimatedNumber value={Number.parseFloat(entry.amount) || 0} format={formatTaka} />
             </p>
           </div>
 
           <div className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-ink">
-              Members ({session.members.length})
+            <span className="text-sm font-medium text-ink">Paid by</span>
+            <span className="flex items-center gap-2 rounded-full bg-sand py-1 pl-1 pr-3 text-sm text-ink-soft">
+              <Avatar name={entry.paidByName} size="sm" />
+              {entry.paidByName}
             </span>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <span className="text-sm font-medium text-ink">Shared by ({entry.sharedByNames.length})</span>
             <div className="flex flex-wrap gap-2">
-              {session.members.map((name) => (
+              {entry.sharedByNames.map((name, index) => (
                 <span
-                  key={name}
+                  key={`${name}-${index}`}
                   className="flex items-center gap-2 rounded-full bg-sand py-1 pl-1 pr-3 text-sm text-ink-soft"
                 >
                   <Avatar name={name} size="sm" />
@@ -71,56 +78,6 @@ export function HistoryPreviewDrawer({ session, onClose, onExport }: HistoryPrev
               ))}
             </div>
           </div>
-
-          <div className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-ink">Items ({session.items.length})</span>
-            <ul className="space-y-1.5">
-              {session.items.map((item) => {
-                const category = categoryById(item.category)
-                return (
-                  <li
-                    key={item.name}
-                    className="card-surface flex items-center gap-3 rounded-lg px-3.5 py-2.5 shadow-soft"
-                  >
-                    <span
-                      className={`flex size-8 shrink-0 items-center justify-center rounded-md bg-linear-to-br ${category.tile}`}
-                    >
-                      <category.icon size={15} aria-hidden="true" />
-                    </span>
-                    <span className="min-w-0 flex-1 truncate text-sm text-ink-soft">
-                      {item.name}
-                      <span className="text-muted"> · paid by {firstName(item.paidBy)}</span>
-                    </span>
-                    <span className="shrink-0 text-sm font-semibold tabular-nums text-ink">
-                      {formatTaka(Number.parseFloat(item.price) || 0)}
-                    </span>
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-
-          {session.payments.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-ink">Pending payments</span>
-              <ul className="space-y-1.5">
-                {session.payments.map((payment) => (
-                  <li
-                    key={`${payment.from}-${payment.to}`}
-                    className="card-surface flex items-center gap-2.5 rounded-lg px-3.5 py-2.5 shadow-soft"
-                  >
-                    <Avatar name={payment.from} size="sm" />
-                    <span className="min-w-0 flex-1 truncate text-sm text-ink-soft">
-                      {firstName(payment.from)} owes {firstName(payment.to)}
-                    </span>
-                    <span className="shrink-0 text-sm font-semibold tabular-nums text-warning-700">
-                      {formatTaka(Number.parseFloat(payment.amount) || 0)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
       )}
     </Drawer>

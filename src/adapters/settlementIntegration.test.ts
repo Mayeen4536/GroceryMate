@@ -45,6 +45,7 @@ function makeUIGrocery(overrides: Partial<UIGroceryItem> & { id: string }): UIGr
     sharedByMemberIds: [],
     createdByMemberId: '',
     notes: '',
+    createdAt: '2026-01-01T00:00:00.000Z',
     ...overrides,
   }
 }

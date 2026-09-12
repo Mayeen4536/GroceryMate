@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { exportAllData } from '@/services/settingsExportService'
 
 export type InfoVariant = 'about' | 'privacy' | 'feedback'
 
@@ -9,7 +8,12 @@ const DEFAULT_NOTIFICATIONS: Record<string, boolean> = {
   digest: false,
 }
 
-/** Owns the Settings feature's state: every toggle/dropdown, and the export/reset actions. */
+/**
+ * Owns the Settings feature's state: every toggle/dropdown, and the reset
+ * action. Data export lives outside this hook (see `SettingsPage`) since it
+ * needs the household's real, live groceries/members/settlements — not
+ * something this local-preferences hook has any reason to hold.
+ */
 export function useSettings() {
   const [darkMode, setDarkMode] = useState(false)
   const [accent, setAccent] = useState('brand')
@@ -47,6 +51,5 @@ export function useSettings() {
     infoVariant,
     setInfoVariant,
     resetPreferences,
-    exportAllData,
   }
 }

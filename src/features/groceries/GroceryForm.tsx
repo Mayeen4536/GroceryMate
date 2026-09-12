@@ -134,6 +134,7 @@ export function GroceryForm({ initial, members, onSubmit, onCancel }: GroceryFor
     sharedByMemberIds: sharedByIds,
     createdByMemberId: initial?.createdByMemberId ?? currentMembership?.id ?? '',
     notes,
+    createdAt: initial?.createdAt ?? '',
   }
 
   const handlePriceChange = (next: string) => {

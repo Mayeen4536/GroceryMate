@@ -94,12 +94,44 @@ function AppRoutes({
                 />
               }
             />
-            <Route path="/analytics" element={<AnalyticsPage key="analytics" direction={direction} />} />
-            <Route path="/history" element={<HistoryPage key="history" direction={direction} />} />
+            <Route
+              path="/analytics"
+              element={
+                <AnalyticsPage
+                  key="analytics"
+                  direction={direction}
+                  groceries={groceries.items}
+                  members={members.members}
+                  loading={groceries.loading}
+                  error={groceries.error}
+                  onRetry={() => void groceries.refresh()}
+                />
+              }
+            />
+            <Route
+              path="/history"
+              element={
+                <HistoryPage
+                  key="history"
+                  direction={direction}
+                  groceries={groceries.items}
+                  members={members.members}
+                  loading={groceries.loading}
+                  error={groceries.error}
+                  onRetry={() => void groceries.refresh()}
+                />
+              }
+            />
             <Route
               path="/settings"
               element={
-                <SettingsPage key="settings" direction={direction} onBack={() => navigate(priorPage)} />
+                <SettingsPage
+                  key="settings"
+                  direction={direction}
+                  onBack={() => navigate(priorPage)}
+                  groceries={groceries.items}
+                  members={members.members}
+                />
               }
             />
             {/* Any other path under the app shell falls back to the default page. */}

@@ -1,45 +1,29 @@
 import { downloadTextFile } from '@/services/downloadTextFile'
 import { formatTaka } from '@/utils/currency'
-import type { HistorySession } from '@/types/history'
+import type { GroceryHistoryEntry } from '@/types/history'
 
-function sessionReport(session: HistorySession): string {
+function entryReport(entry: GroceryHistoryEntry): string {
   const lines = [
-    `${session.title}`,
-    `${session.dateLabel}`,
+    `${entry.name}`,
+    `${entry.dateLabel}`,
     '',
-    `Members: ${session.members.join(', ')}`,
-    `Status: ${session.status === 'completed' ? 'Completed' : 'In progress'}`,
-    `Settlement: ${session.settlement === 'settled' ? 'All settled' : `${session.payments.length} pending`}`,
-    '',
-    'Items',
-    '-----',
-    ...session.items.map((item) => `${item.name} — ${formatTaka(Number.parseFloat(item.price) || 0)} (paid by ${item.paidBy})`),
-    '',
-    `Total: ${formatTaka(Number.parseFloat(session.total) || 0)}`,
+    `Category: ${entry.category}`,
+    `Amount: ${formatTaka(Number.parseFloat(entry.amount) || 0)}`,
+    `Paid by: ${entry.paidByName}`,
+    `Shared by: ${entry.sharedByNames.join(', ')}`,
   ]
-
-  if (session.payments.length > 0) {
-    lines.push(
-      '',
-      'Pending payments',
-      '----------------',
-      ...session.payments.map(
-        (payment) => `${payment.from} owes ${payment.to} ${formatTaka(Number.parseFloat(payment.amount) || 0)}`,
-      ),
-    )
-  }
-
+  if (entry.notes) lines.push('', `Notes: ${entry.notes}`)
   return lines.join('\n')
 }
 
-/** Downloads a single session as a plain-text summary. Client-side only. */
-export function exportSession(session: HistorySession): void {
-  const filename = `grocerymate-${session.sortKey}-${session.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.txt`
-  downloadTextFile(filename, sessionReport(session))
+/** Downloads a single real grocery entry as a plain-text summary. Client-side only. */
+export function exportEntry(entry: GroceryHistoryEntry): void {
+  const filename = `grocerymate-${entry.createdAt.slice(0, 10)}-${entry.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.txt`
+  downloadTextFile(filename, entryReport(entry))
 }
 
-/** Downloads a combined summary of several sessions. Client-side only. */
-export function exportSessions(sessions: HistorySession[]): void {
-  const content = sessions.map(sessionReport).join('\n\n' + '='.repeat(32) + '\n\n')
-  downloadTextFile(`grocerymate-history-${sessions.length}-sessions.txt`, content)
+/** Downloads a combined summary of several real grocery entries. Client-side only. */
+export function exportEntries(entries: readonly GroceryHistoryEntry[]): void {
+  const content = entries.map(entryReport).join('\n\n' + '='.repeat(32) + '\n\n')
+  downloadTextFile(`grocerymate-history-${entries.length}-entries.txt`, content)
 }

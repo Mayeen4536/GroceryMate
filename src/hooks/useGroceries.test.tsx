@@ -12,6 +12,7 @@ const MILK: GroceryItem = {
   sharedByMemberIds: ['member-1', 'member-2'],
   createdByMemberId: 'member-1',
   notes: '',
+  createdAt: '2026-01-01T00:00:00.000Z',
 }
 
 const RICE: GroceryItem = {
@@ -24,6 +25,7 @@ const RICE: GroceryItem = {
   sharedByMemberIds: ['member-1'],
   createdByMemberId: 'member-1',
   notes: '',
+  createdAt: '2026-01-02T00:00:00.000Z',
 }
 
 const mocks = vi.hoisted(() => ({

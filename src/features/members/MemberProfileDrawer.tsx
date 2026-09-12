@@ -1,13 +1,18 @@
 import { useState } from 'react'
-import { AlertTriangle, HandCoins, RotateCcw, ShoppingBasket, Sparkles, Trash2, type LucideIcon } from 'lucide-react'
+import { AlertTriangle, RotateCcw, ShoppingBasket, Sparkles, Trash2, type LucideIcon } from 'lucide-react'
 import { AnimatedNumber, Avatar, Badge, Button, Drawer, MEMBER_TONES, Modal, SwatchPicker } from '@/components/ui'
+import { useHousehold } from '@/household/useHousehold'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { STATUS_META } from '@/constants/memberStatus'
+import { fullDateLabel } from '@/utils/date'
 import { firstName } from '@/utils/name'
+import type { GroceryItem } from '@/types/grocery'
 import type { Member } from '@/types/member'
 
 interface MemberProfileDrawerProps {
   member: Member | null
+  /** Same real, already-loaded list every other page uses — recent activity is derived from it, never a second query. */
+  groceries: readonly GroceryItem[]
   onClose: () => void
   onChangeTone: (id: string, tone: number) => void
   onRemove: (id: string) => void
@@ -23,15 +28,35 @@ interface MemberProfileDrawerProps {
   financialsUnavailable?: boolean
 }
 
-/** Mock activity rows; display only. */
-const activityFor = (member: Member): Array<{ icon: LucideIcon; text: string; when: string }> => [
-  { icon: ShoppingBasket, text: `${firstName(member.name)} added Milk (2L)`, when: 'Yesterday' },
-  { icon: HandCoins, text: `Settled up with Aisha`, when: 'Monday' },
-  { icon: Sparkles, text: `Joined Flat 4B`, when: member.joinedLabel },
-]
+const RECENT_ACTIVITY_LIMIT = 3
+
+/**
+ * Real recent activity: the member's own most-recently-logged groceries
+ * (`createdByMemberId`, newest first — `groceries` already loads that way),
+ * plus their real join date. There is no persisted "settled up" event yet
+ * (same limitation as the Settlements page's payment timeline — see
+ * docs/HISTORY_INTEGRATION.md), so no such row is fabricated here either.
+ */
+function buildActivity(
+  member: Member,
+  groceries: readonly GroceryItem[],
+  householdName: string,
+): Array<{ id: string; icon: LucideIcon; text: string; when: string }> {
+  const added = groceries
+    .filter((item) => item.createdByMemberId === member.id)
+    .slice(0, RECENT_ACTIVITY_LIMIT)
+    .map((item) => ({
+      id: item.id,
+      icon: ShoppingBasket,
+      text: `${firstName(member.name)} added ${item.name}`,
+      when: fullDateLabel(item.createdAt),
+    }))
+  return [...added, { id: 'joined', icon: Sparkles, text: `Joined ${householdName}`, when: member.joinedLabel }]
+}
 
 export function MemberProfileDrawer({
   member,
+  groceries,
   onClose,
   onChangeTone,
   onRemove,
@@ -40,6 +65,7 @@ export function MemberProfileDrawer({
   financialsUnavailable = false,
 }: MemberProfileDrawerProps) {
   const isDesktop = useMediaQuery('(min-width: 1024px)')
+  const { household } = useHousehold()
   const status = member ? STATUS_META[member.status] : null
   const [confirmOpen, setConfirmOpen] = useState(false)
   const archived = member?.status === 'archived'
@@ -143,7 +169,7 @@ export function MemberProfileDrawer({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="card-surface rounded-lg p-4 shadow-soft">
-              <p className="text-xs text-muted">Paid this month</p>
+              <p className="text-xs text-muted">Total paid</p>
               <p className="mt-1 text-xl font-bold tabular-nums tracking-tight text-ink">
                 {financialsUnavailable ? '—' : <AnimatedNumber value={Number.parseFloat(member.amountPaid) || 0} />}
               </p>
@@ -159,9 +185,9 @@ export function MemberProfileDrawer({
           <div className="flex flex-col gap-2">
             <span className="text-sm font-medium text-ink">Recent activity</span>
             <ul className="space-y-1.5">
-              {activityFor(member).map(({ icon: Icon, text, when }) => (
+              {buildActivity(member, groceries, household?.name ?? 'this household').map(({ id, icon: Icon, text, when }) => (
                 <li
-                  key={text}
+                  key={id}
                   className="card-surface flex items-center gap-3 rounded-lg px-3.5 py-2.5 shadow-soft"
                 >
                   <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-sand text-ink-soft">
@@ -172,7 +198,6 @@ export function MemberProfileDrawer({
                 </li>
               ))}
             </ul>
-            <p className="text-xs text-muted">Activity is illustrative until sessions go live.</p>
           </div>
         </div>
       )}

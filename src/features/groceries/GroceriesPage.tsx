@@ -8,6 +8,7 @@ import { PageTransition } from '@/components/layout/PageTransition'
 import { riseChild, springGentle, transitionBase } from '@/animations/motion'
 import { useHousehold } from '@/household/useHousehold'
 import type { useGroceries } from '@/hooks/useGroceries'
+import { buildMemberNameResolver } from '@/members/resolveMemberName'
 import type { Member } from '@/types/member'
 import { GroceryCard } from './GroceryCard'
 import { GroceryForm } from './GroceryForm'
@@ -61,8 +62,8 @@ export function GroceriesPage({
   // member" just because they're no longer active (see
   // docs/GROCERY_INTEGRATION.md's archived-member historical behavior).
   const memberNameById = useMemo(() => {
-    const byId = new Map(members.map((member) => [member.id, member.name] as const))
-    return (id: string) => (id ? (byId.get(id) ?? 'Unknown member') : '')
+    const resolve = buildMemberNameResolver(members)
+    return resolve
   }, [members])
 
   return (

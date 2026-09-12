@@ -84,7 +84,7 @@ test.describe('Settlement reflects the real engine end to end', () => {
     await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Settlements', exact: true }).click()
     await expect(page.getByRole('heading', { name: 'Settlements', exact: true })).toBeVisible()
 
-    await expect(page.getByText('Outstanding across Flat 4B')).toBeVisible()
+    await expect(page.getByText('Outstanding across E2E Fixture Household')).toBeVisible()
     await expect(page.getByText('৳300', { exact: true }).first()).toBeVisible()
 
     // Exactly one settling transfer — Bilal, being settled, appears in neither

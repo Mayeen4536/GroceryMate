@@ -70,7 +70,7 @@ export function MemberCard({ member, onOpen, highlight = false, financialsUnavai
 
       <div className="relative mt-4 flex items-end justify-between gap-3">
         <div>
-          <p className="text-xs text-muted">{invited ? 'Waiting on' : 'Paid this month'}</p>
+          <p className="text-xs text-muted">{invited ? 'Waiting on' : 'Total paid'}</p>
           {invited ? (
             <p className="text-sm font-semibold text-ink-soft">First shop</p>
           ) : financialsUnavailable ? (

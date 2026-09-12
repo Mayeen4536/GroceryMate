@@ -1,46 +1,33 @@
 import type { CategoryId } from './grocery'
 
 /**
- * Display-only grocery history model. Amounts stay strings on purpose: no
- * math happens in the UI layer. `sortKey` is an ISO date used only to order
- * and group sessions, not for calculation.
+ * One real, persisted grocery, reshaped for the History timeline. There is
+ * no "shopping session"/"trip" concept in the schema (see
+ * docs/HISTORY_INTEGRATION.md) — each entry is exactly one
+ * `grocery_items` row, never a fabricated grouping of several. Amounts
+ * stay strings on purpose: no math happens in the UI layer. Names
+ * (`paidByName`/`sharedByNames`) are resolved for display only — identity
+ * is always the underlying member id (see `GroceryHistoryEntry.paidByMemberId`
+ * / `sharedByMemberIds`).
  */
-export type SessionStatus = 'completed' | 'in-progress'
-export type SettlementStatus = 'settled' | 'pending'
-
-export interface HistoryItem {
-  name: string
-  category: CategoryId
-  price: string
-  paidBy: string
-  /** Who consumed this item — one name means personal, more than one means shared. */
-  sharedBy: string[]
-}
-
-export interface HistoryPayment {
-  from: string
-  to: string
-  amount: string
-}
-
-export interface HistorySession {
-  id: string
-  title: string
-  /** Day of month, e.g. '24'. */
-  day: string
-  /** Short month, e.g. 'Jul'. */
-  monthShort: string
-  /** Full display date, e.g. 'Friday, Jul 24'. */
-  dateLabel: string
-  /** Grouping key, e.g. 'July 2026'. */
-  monthLabel: string
-  /** ISO date used only for sort order. */
-  sortKey: string
-  members: string[]
-  total: string
-  status: SessionStatus
-  settlement: SettlementStatus
-  payments: HistoryPayment[]
-  items: HistoryItem[]
-  notes?: string
+export interface GroceryHistoryEntry {
+  readonly id: string
+  readonly name: string
+  readonly category: CategoryId
+  readonly amount: string
+  readonly notes: string
+  /** ISO timestamp this was actually logged — the real basis for every date label/grouping below. */
+  readonly createdAt: string
+  /** '24' */
+  readonly day: string
+  /** 'Jul' */
+  readonly monthShort: string
+  /** 'Friday, Jul 24' */
+  readonly dateLabel: string
+  /** 'July 2026' — grouping key for the timeline. */
+  readonly monthLabel: string
+  readonly paidByMemberId: string
+  readonly paidByName: string
+  readonly sharedByMemberIds: readonly string[]
+  readonly sharedByNames: readonly string[]
 }

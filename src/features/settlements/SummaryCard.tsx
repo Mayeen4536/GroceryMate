@@ -1,5 +1,6 @@
 import { AnimatedNumber, Avatar, Badge, Card } from '@/components/ui'
 import { FlowDots } from '@/components/experience'
+import { useHousehold } from '@/household/useHousehold'
 import { formatTaka } from '@/utils/currency'
 import { firstName } from '@/utils/name'
 import type { SettlementSummaryViewModel } from '@/adapters'
@@ -29,6 +30,8 @@ interface SummaryCardProps {
 
 /** Outstanding-balance summary, derived from the real settlement engine result. */
 export function SummaryCard({ pendingCount, summary }: SummaryCardProps) {
+  const { household } = useHousehold()
+
   return (
     <Card variant="highlighted" padding="lg" className="relative overflow-hidden">
       {/* Money quietly flowing along the top edge */}
@@ -36,7 +39,7 @@ export function SummaryCard({ pendingCount, summary }: SummaryCardProps) {
 
       <div className="relative flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
         <div>
-          <p className="text-xs text-muted">Outstanding across Flat 4B</p>
+          <p className="text-xs text-muted">Outstanding across {household?.name ?? 'your household'}</p>
           <p className="mt-1 text-3xl font-bold tabular-nums tracking-tight text-ink">
             <AnimatedNumber
               value={Number.parseFloat(summary.outstanding) || 0}

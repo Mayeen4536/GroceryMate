@@ -36,6 +36,6 @@ export const NAV_ITEMS: NavItem[] = [
     id: 'history',
     label: 'History',
     icon: History,
-    description: 'Past grocery sessions, saved for reference.',
+    description: 'Every grocery your household has logged, in one real timeline.',
   },
 ]

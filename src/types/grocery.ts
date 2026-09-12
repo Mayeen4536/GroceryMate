@@ -23,6 +23,8 @@ export interface GroceryItem {
   /** Who logged this entry — independent of who paid. Drives creator-or-owner edit/delete permission in the UI (RLS is the real authority). */
   createdByMemberId: string
   notes: string
+  /** ISO timestamp — `grocery_items.created_at`. The real basis for chronological history (see docs/HISTORY_INTEGRATION.md); never a display-formatted string. */
+  createdAt: string
 }
 
 export interface CategoryConfig {

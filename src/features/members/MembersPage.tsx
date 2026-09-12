@@ -17,13 +17,14 @@ import { AddMemberDialog } from './AddMemberDialog'
 import { MemberProfileDrawer } from './MemberProfileDrawer'
 
 /**
- * Overrides a member's `amountPaid`/`status` with the real, engine-derived
- * values for the exact same fields — `MemberCard`/`MemberProfileDrawer`
- * keep reading a plain `Member`, unaware any calculation happened at all.
- * `itemsAdded` is deliberately left untouched: it's an activity count
- * ("who logged this item"), not a financial value, and `GroceryItem` has
- * no concept of who added it (only who paid and who shares it) — there's
- * no real data this could be derived from yet.
+ * Overrides a member's `amountPaid`/`status`/`itemsAdded` with real values
+ * derived from the actual persisted groceries — `MemberCard`/
+ * `MemberProfileDrawer` keep reading a plain `Member`, unaware any
+ * calculation happened at all. `itemsAdded` counts real `grocery_items`
+ * rows this member logged (`createdByMemberId`, independent of who paid or
+ * shared it — see docs/GROCERY_INTEGRATION.md); it's real regardless of
+ * whether the settlement calculation itself succeeded, since counting
+ * needs no balance math.
  *
  * `status` is only ever overwritten for a member with no membership-
  * lifecycle status of their own yet (the placeholder 'settled' every
@@ -34,13 +35,18 @@ import { MemberProfileDrawer } from './MemberProfileDrawer'
  * archived member's card would silently stop reading as archived the
  * moment they had any historical balance.
  */
-function withRealFinancials(member: Member, viewModel: SettlementViewModel): Member {
-  const financials = viewModel.memberFinancials.find((entry) => entry.memberId === member.id)
-  if (!financials) return member
+function withRealFinancials(
+  member: Member,
+  groceries: readonly GroceryItem[],
+  viewModel: SettlementViewModel | null,
+): Member {
+  const itemsAdded = groceries.filter((item) => item.createdByMemberId === member.id).length
+  const financials = viewModel?.memberFinancials.find((entry) => entry.memberId === member.id)
+  if (!financials) return { ...member, itemsAdded }
   if (member.status === 'archived' || member.status === 'invited') {
-    return { ...member, amountPaid: financials.amountPaid }
+    return { ...member, itemsAdded, amountPaid: financials.amountPaid }
   }
-  return { ...member, amountPaid: financials.amountPaid, status: financials.status }
+  return { ...member, itemsAdded, amountPaid: financials.amountPaid, status: financials.status }
 }
 
 interface MembersPageProps {
@@ -211,11 +217,11 @@ export function MembersPage({
                         transition={transitionBase}
                       >
                         <MemberCard
-                          member={
-                            settlementResult.status === 'ok'
-                              ? withRealFinancials(member, settlementResult.viewModel)
-                              : member
-                          }
+                          member={withRealFinancials(
+                            member,
+                            groceries,
+                            settlementResult.status === 'ok' ? settlementResult.viewModel : null,
+                          )}
                           onOpen={setProfileId}
                           highlight={member.id === lastAddedId}
                           financialsUnavailable={settlementResult.status === 'error'}
@@ -242,10 +248,15 @@ export function MembersPage({
 
       <MemberProfileDrawer
         member={
-          profileMember && settlementResult.status === 'ok'
-            ? withRealFinancials(profileMember, settlementResult.viewModel)
-            : profileMember
+          profileMember
+            ? withRealFinancials(
+                profileMember,
+                groceries,
+                settlementResult.status === 'ok' ? settlementResult.viewModel : null,
+              )
+            : null
         }
+        groceries={groceries}
         onClose={() => setProfileId(null)}
         onChangeTone={handleChangeTone}
         onRemove={handleRemove}

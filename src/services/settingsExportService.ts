@@ -1,43 +1,66 @@
+import { buildHistoryEntries } from '@/features/history/buildHistoryEntries'
 import { downloadTextFile } from '@/services/downloadTextFile'
-import { initialGroceries } from '@/store/groceries'
-import { initialMembers } from '@/store/members'
-import { initialSettlements } from '@/store/settlements'
-import { initialHistory } from '@/store/history'
-import { mockHousehold } from '@/store/household'
 import { formatTaka } from '@/utils/currency'
+import type { GroceryItem } from '@/types/grocery'
+import type { Member } from '@/types/member'
+import type { Settlement } from '@/types/settlement'
 
-/** Downloads a plain-text snapshot of the household's mock data. Client-side only. */
-export function exportAllData(): void {
+export interface ExportAllDataInput {
+  householdId: string
+  householdName: string
+  members: readonly Member[]
+  groceries: readonly GroceryItem[]
+  /** Real, engine-derived pending transfers (see `useSettlementResult`) — `[]` when the settlement calculation itself failed, never a guess. */
+  transfers: readonly Settlement[]
+}
+
+/**
+ * Downloads a plain-text snapshot of the household's real, persisted data —
+ * members, groceries, real settlement transfers, and the same real grocery
+ * history shown on the History page (see docs/HISTORY_INTEGRATION.md).
+ * Deliberately excluded: appearance/notification preferences (device-local,
+ * not household data) and the settlement "payment timeline" (nothing
+ * persisted exists yet for it — see `useSettlements`). Nothing here is
+ * fabricated to fill a section; an empty section says so honestly.
+ */
+export function exportAllData({ householdId, householdName, members, groceries, transfers }: ExportAllDataInput): void {
+  const nameOf = new Map(members.map((member) => [member.id, member.name] as const))
+  const historyEntries = buildHistoryEntries(groceries, members)
+
   const lines = [
-    `GroceryMate export — ${mockHousehold.name}`,
+    `GroceryMate export — ${householdName}`,
     '',
     'Members',
     '-------',
-    ...initialMembers.map((member) => `${member.name} (${member.email}) — ${member.role}`),
+    ...(members.length > 0
+      ? members.map((member) => `${member.name}${member.email ? ` (${member.email})` : ''} — ${member.role}`)
+      : ['No members yet.']),
     '',
     'Groceries',
     '---------',
-    ...initialGroceries.map(
-      (item) =>
-        `${item.name} × ${item.quantity} — ${formatTaka(Number.parseFloat(item.price) || 0)} (paid by ${item.paidByMemberId})`,
-    ),
+    ...(groceries.length > 0
+      ? groceries.map(
+          (item) =>
+            `${item.name} × ${item.quantity} — ${formatTaka(Number.parseFloat(item.price) || 0)} (paid by ${nameOf.get(item.paidByMemberId) ?? 'Unknown member'})`,
+        )
+      : ['No groceries logged yet.']),
     '',
     'Pending settlements',
     '--------------------',
-    ...(initialSettlements.length > 0
-      ? initialSettlements.map(
-          (settlement) =>
-            `${settlement.from} owes ${settlement.to} ${formatTaka(Number.parseFloat(settlement.amount) || 0)}`,
+    ...(transfers.length > 0
+      ? transfers.map(
+          (settlement) => `${settlement.from} owes ${settlement.to} ${formatTaka(Number.parseFloat(settlement.amount) || 0)}`,
         )
       : ['Everyone is settled up.']),
     '',
-    'Session history',
+    'Grocery history',
     '---------------',
-    ...initialHistory.map(
-      (session) =>
-        `${session.dateLabel} — ${session.title} — ${formatTaka(Number.parseFloat(session.total) || 0)}`,
-    ),
+    ...(historyEntries.length > 0
+      ? historyEntries.map(
+          (entry) => `${entry.dateLabel} — ${entry.name} — ${formatTaka(Number.parseFloat(entry.amount) || 0)}`,
+        )
+      : ['No history yet.']),
   ]
 
-  downloadTextFile(`grocerymate-${mockHousehold.id}-export.txt`, lines.join('\n'))
+  downloadTextFile(`grocerymate-${householdId}-export.txt`, lines.join('\n'))
 }

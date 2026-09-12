@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { initialTimeline } from '@/store/settlements'
 import { formatTaka } from '@/utils/currency'
 import { firstName } from '@/utils/name'
 import type { Settlement, TimelineEvent } from '@/types/settlement'
@@ -10,10 +9,11 @@ import type { Settlement, TimelineEvent } from '@/types/settlement'
  * one source of financial truth; this hook never computes a balance
  * itself). Two things live here, deliberately not treated the same way:
  *
- * - `timeline`: still the original hand-written mock feed
- *   (`store/settlements.ts`'s `initialTimeline`) — a real activity log
- *   needs real event persistence, which is out of scope for this phase
- *   (see docs on the Mark Paid design decision).
+ * - `timeline`: starts empty — there is no persisted payment history yet
+ *   (see docs/HISTORY_INTEGRATION.md's settlement-timeline note), so
+ *   nothing is fabricated to fill it. Every entry it ever holds is a real
+ *   "Mark as paid" dismissal from *this* browser session (see below); the
+ *   feed itself is never persisted or restored on refresh.
  * - `dismissedIds`: which real transfers "Mark as paid" has hidden for
  *   this browser session. NOT a record of an actual payment — nothing is
  *   persisted, and the underlying balance is recomputed in full, for
@@ -26,7 +26,7 @@ import type { Settlement, TimelineEvent } from '@/types/settlement'
  */
 export function useSettlements(transfers: readonly Settlement[]) {
   const [dismissedIds, setDismissedIds] = useState<ReadonlySet<string>>(new Set())
-  const [timeline, setTimeline] = useState<TimelineEvent[]>(initialTimeline)
+  const [timeline, setTimeline] = useState<TimelineEvent[]>([])
 
   const pending = transfers.filter((entry) => !dismissedIds.has(entry.id))
   // Deliberately NOT `pending.length === 0`: whether the household is

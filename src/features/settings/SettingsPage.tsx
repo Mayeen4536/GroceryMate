@@ -20,7 +20,13 @@ import { CURRENCY_OPTIONS } from '@/constants/currencyOptions'
 import { LANGUAGE_OPTIONS } from '@/constants/languageOptions'
 import { NOTIFICATION_SETTINGS } from '@/constants/notificationSettings'
 import { ACCENT_OPTIONS } from '@/constants/accentOptions'
+import { useHousehold } from '@/household/useHousehold'
 import { useSettings } from '@/hooks/useSettings'
+import { useSettlementResult } from '@/hooks/useSettlementResult'
+import { exportAllData } from '@/services/settingsExportService'
+import type { GroceryItem } from '@/types/grocery'
+import type { Member } from '@/types/member'
+import type { Settlement } from '@/types/settlement'
 import { AccountSection } from './AccountSection'
 import { DarkModeToggle } from './DarkModeToggle'
 import { DataSection } from './DataSection'
@@ -29,7 +35,11 @@ import { InfoDrawer } from './InfoDrawer'
 interface SettingsPageProps {
   direction?: number
   onBack: () => void
+  groceries: readonly GroceryItem[]
+  members: readonly Member[]
 }
+
+const NO_TRANSFERS: readonly Settlement[] = []
 
 function LinkRow({
   icon: Icon,
@@ -65,7 +75,7 @@ function LinkRow({
 }
 
 /** The Settings experience: appearance, preferences, notifications, data, and support. */
-export function SettingsPage({ direction = 1, onBack }: SettingsPageProps) {
+export function SettingsPage({ direction = 1, onBack, groceries, members }: SettingsPageProps) {
   const {
     darkMode,
     setDarkMode,
@@ -82,8 +92,20 @@ export function SettingsPage({ direction = 1, onBack }: SettingsPageProps) {
     infoVariant,
     setInfoVariant,
     resetPreferences,
-    exportAllData,
   } = useSettings()
+
+  const { household } = useHousehold()
+  const settlementResult = useSettlementResult(members, groceries)
+  const transfers = settlementResult.status === 'ok' ? settlementResult.viewModel.transfers : NO_TRANSFERS
+
+  const handleExportAll = () =>
+    exportAllData({
+      householdId: household?.id ?? 'household',
+      householdName: household?.name ?? 'Your household',
+      members,
+      groceries,
+      transfers,
+    })
 
   return (
     <>
@@ -211,7 +233,7 @@ export function SettingsPage({ direction = 1, onBack }: SettingsPageProps) {
               icon={Database}
               accent="brand"
             >
-              <DataSection onExportAll={exportAllData} onConfirmDelete={resetPreferences} />
+              <DataSection onExportAll={handleExportAll} onConfirmDelete={resetPreferences} />
             </Card>
           </motion.div>
 
