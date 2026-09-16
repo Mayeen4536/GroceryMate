@@ -22,8 +22,11 @@ Captured via `supabase db advisors --linked --type security|performance`.
 (Numbered 1–5 to match the advisor's own finding count; #1 and #2 are the
 same function flagged for two different roles.)
 
-**Performance (7 findings, all triaged, none fixed in this slice):** see
-"Performance advisories" below.
+**Performance (7 findings, all triaged):** 2 (`profiles` RLS initplan)
+**fixed** in a small dedicated follow-up migration
+(`20260916085502_profiles_rls_initplan_optimization.sql`); 5 (unindexed
+FKs) reviewed and deferred, untouched. See "Performance advisories"
+below.
 
 ## 1–2. `public.rls_auto_enable()` — origin, purpose, and fix
 
@@ -180,22 +183,53 @@ are genuine schema-derived findings, not environment noise.
 
 ### `auth_rls_initplan` — `profiles_select_own` / `profiles_update_own` re-evaluate `auth.uid()` per row
 
-**Classification: FIX BEFORE BETA.** Both policies use bare `auth.uid()`
-in their `USING`/`WITH CHECK` clauses instead of `(select auth.uid())`;
-the latter lets Postgres's planner evaluate it once per statement
-(an "InitPlan") instead of once per row scanned. This is a pure,
-semantically-neutral rewrite — `id = auth.uid()` and
-`id = (select auth.uid())` filter identically; there is no authorization
-change, so this doesn't fall under "don't rewrite RLS for linter
-cosmetics if it risks changing authorization." Every other table's
-policies (`households`, `household_members`, `grocery_items`,
-`grocery_item_consumers`) route through `private.is_household_member()`/
-`private.is_household_owner()` helper functions instead of a bare
-`auth.uid()` comparison, which is presumably why only `profiles` is
-flagged. Deliberately **not bundled into this slice's migration** — this
-slice's migration is scoped to the advisor's *security* findings only;
-this is a real, low-risk, easy fix, recommended as the very next small
-migration, not attempted here to keep this one single-purpose.
+**Classification: FIX BEFORE BETA — fixed**, in a small dedicated
+follow-up migration (`20260916085502_profiles_rls_initplan_optimization.sql`),
+deliberately kept separate from Migration 5's security-only hardening.
+
+Both policies used bare `auth.uid()` in their `USING`/`WITH CHECK`
+clauses:
+
+```
+-- before
+profiles_select_own  USING (id = auth.uid())
+profiles_update_own  USING (id = auth.uid())  WITH CHECK (id = auth.uid())
+```
+
+`auth.uid()` written directly inline gives Postgres's planner no reason
+to treat it as safe to hoist out of the per-row check — it can end up
+re-invoked once per candidate row scanned. Wrapping it as an
+uncorrelated scalar subquery signals the opposite: a subquery that
+doesn't reference the outer row is recognized as returning a constant
+result for the query's duration, so the planner computes it once (an
+"InitPlan") and reuses that cached value for every row instead of
+recomputing it per row:
+
+```
+-- after
+profiles_select_own  USING (id = (select auth.uid()))
+profiles_update_own  USING (id = (select auth.uid()))  WITH CHECK (id = (select auth.uid()))
+```
+
+`auth.uid()` depends only on the caller's own JWT, never on the row
+being checked, so the two forms are semantically identical —
+**authorization behavior is unchanged**: same policies, same commands
+(`SELECT`/`UPDATE`), same `to authenticated` role, same rows matched.
+Applied via `ALTER POLICY` (not drop+recreate), so both policies kept
+their existing identity; nothing else — grants, other tables' policies,
+`create_household()`, `set_updated_at()`, the `private.*` helpers — was
+touched. Verified locally: policy count unchanged at 14, no
+duplicate/missing policy, targeted profiles authorization regression
+(both users' SELECT/UPDATE isolation, anon denial, TRUNCATE denial,
+column-grant checks) all pass, and both `auth_rls_initplan` advisory
+findings are gone from the local advisor while the 5 unindexed-FK INFO
+findings remain (untouched, as intended).
+
+Every other table's policies (`households`, `household_members`,
+`grocery_items`, `grocery_item_consumers`) already route through
+`private.is_household_member()`/`private.is_household_owner()` helper
+functions instead of a bare `auth.uid()` comparison, which is presumably
+why only `profiles` was ever flagged — nothing needed changing there.
 
 ### `unindexed_foreign_keys` (5 findings, INFO level)
 
@@ -309,6 +343,10 @@ nothing left over locally.
   new migration: `rls_auto_enable` grants revoked (guarded), `set_updated_at`
   search_path pinned. No RLS policy, table, or grant on any application
   table was touched.
+- `supabase/migrations/20260916085502_profiles_rls_initplan_optimization.sql` —
+  new migration: `profiles_select_own`/`profiles_update_own` rewritten via
+  `ALTER POLICY` to use `(select auth.uid())` instead of bare `auth.uid()`.
+  No other policy, table, grant, or function touched.
 - `docs/RELEASE_SECURITY.md` — this file.
 
 No application code (`src/`) was changed in this slice.
