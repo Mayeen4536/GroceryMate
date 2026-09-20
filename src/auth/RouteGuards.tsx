@@ -1,7 +1,8 @@
-import type { ReactNode } from 'react'
-import { Navigate } from 'react-router-dom'
+import { useState, type ReactNode } from 'react'
+import { Navigate, useSearchParams } from 'react-router-dom'
 import { AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui'
+import { isSafeJoinRedirect } from '@/invite/routes'
 import { useAuth } from './useAuth'
 
 function FullScreenSpinner() {
@@ -58,11 +59,28 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
   return <>{children}</>
 }
 
-/** Gates /sign-in and /sign-up: an already-authenticated visitor is sent into the app. */
+/**
+ * Gates /sign-in and /sign-up: an already-authenticated visitor is sent
+ * into the app — or, if this exact page load carried a safe
+ * `?redirect=/join/:token` (e.g. a second tab, or landing here already
+ * signed in), back to that invite instead. See src/invite/routes.ts.
+ *
+ * The redirect target is captured ONCE, on this component's first render,
+ * via `useState`'s lazy initializer — never re-read from the live
+ * `location.search` on later renders. That matters because App.tsx keeps
+ * this component mounted for a moment during its own exit animation after
+ * SignInPage/SignUpPage's *own* successful-submit `navigate()` has already
+ * fired: without freezing the value, this component would re-render with
+ * the *new* (post-navigate) location — which has no `redirect` param
+ * anymore — and fire a second, competing `<Navigate>` to '/groceries'
+ * that clobbers the correct destination just set.
+ */
 export function GuestRoute({ children }: { children: ReactNode }) {
   const { status } = useAuth()
+  const [searchParams] = useSearchParams()
+  const [redirect] = useState(() => searchParams.get('redirect'))
 
   if (status === 'loading') return <FullScreenSpinner />
-  if (status === 'signed-in') return <Navigate to="/groceries" replace />
+  if (status === 'signed-in') return <Navigate to={isSafeJoinRedirect(redirect) ? redirect : '/groceries'} replace />
   return <>{children}</>
 }

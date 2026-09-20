@@ -1,14 +1,21 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { MailCheck } from 'lucide-react'
 import { Button, Input } from '@/components/ui'
 import { useAuth } from '@/auth/useAuth'
+import { isSafeJoinRedirect } from '@/invite/routes'
 import { AuthLayout } from './AuthLayout'
 import { PasswordInput } from './PasswordInput'
 import { validateEmail, validatePassword } from './validation'
 
-/** Shown after a successful signUp() call that returned no session — hosted Supabase requires email confirmation. */
-function ConfirmationRequired({ email }: { email: string }) {
+/**
+ * Shown after a successful signUp() call that returned no session —
+ * hosted Supabase requires email confirmation. When this signup started
+ * from an invite, `signUp()` was given that path as `emailRedirectTo`, so
+ * the confirmation link itself lands the user back on the invite — no
+ * further action needed here, and no token stored in this browser.
+ */
+function ConfirmationRequired({ email, signInHref }: { email: string; signInHref: string }) {
   return (
     <AuthLayout
       title="Check your email"
@@ -16,7 +23,7 @@ function ConfirmationRequired({ email }: { email: string }) {
       footer={
         <>
           Already confirmed?{' '}
-          <Link to="/sign-in" className="font-medium text-brand-700 hover:underline">
+          <Link to={signInHref} className="font-medium text-brand-700 hover:underline">
             Sign in
           </Link>
         </>
@@ -38,6 +45,10 @@ function ConfirmationRequired({ email }: { email: string }) {
 export function SignUpPage() {
   const { signUp } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const redirect = searchParams.get('redirect')
+  const safeRedirect = isSafeJoinRedirect(redirect) ? redirect : null
+  const signInHref = safeRedirect ? `/sign-in?redirect=${encodeURIComponent(safeRedirect)}` : '/sign-in'
 
   const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
@@ -48,7 +59,7 @@ export function SignUpPage() {
   const [submitting, setSubmitting] = useState(false)
   const [confirmationEmail, setConfirmationEmail] = useState<string>()
 
-  if (confirmationEmail) return <ConfirmationRequired email={confirmationEmail} />
+  if (confirmationEmail) return <ConfirmationRequired email={confirmationEmail} signInHref={signInHref} />
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -60,7 +71,7 @@ export function SignUpPage() {
     if (nextEmailError || nextPasswordError) return
 
     setSubmitting(true)
-    const result = await signUp(email.trim(), password, displayName.trim())
+    const result = await signUp(email.trim(), password, displayName.trim(), safeRedirect ?? undefined)
     setSubmitting(false)
 
     if (result.kind === 'error') {
@@ -68,7 +79,7 @@ export function SignUpPage() {
     } else if (result.kind === 'confirmation-required') {
       setConfirmationEmail(email.trim())
     } else {
-      navigate('/groceries', { replace: true })
+      navigate(safeRedirect ?? '/groceries', { replace: true })
     }
   }
 
@@ -79,7 +90,7 @@ export function SignUpPage() {
       footer={
         <>
           Already have an account?{' '}
-          <Link to="/sign-in" className="font-medium text-brand-700 hover:underline">
+          <Link to={signInHref} className="font-medium text-brand-700 hover:underline">
             Sign in
           </Link>
         </>

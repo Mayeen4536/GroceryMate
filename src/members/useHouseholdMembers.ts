@@ -100,33 +100,6 @@ export function useHouseholdMembers() {
     [householdId, refresh],
   )
 
-  const inviteMember = useCallback(
-    async (displayName: string, email: string): Promise<AddMemberResult> => {
-      const trimmedName = displayName.trim()
-      const trimmedEmail = email.trim()
-      if (!householdId) return { error: 'No household loaded yet.' }
-      if (!trimmedName) return { error: 'Give this member a name.' }
-      if (!trimmedEmail) return { error: 'An invite needs an email address.' }
-
-      const { data, error } = await supabase
-        .from('household_members')
-        .insert({
-          household_id: householdId,
-          display_name: trimmedName,
-          invited_email: trimmedEmail,
-          role: 'member',
-          status: 'invited',
-          invited_at: new Date().toISOString(),
-        })
-        .select('id')
-        .single()
-      if (error || !data) return { error: normalizeMemberError(error) }
-      await refresh()
-      return { id: data.id }
-    },
-    [householdId, refresh],
-  )
-
   const archiveMember = useCallback(
     async (memberId: string): Promise<MemberWriteResult> => {
       const { data, error } = await supabase
@@ -171,7 +144,6 @@ export function useHouseholdMembers() {
     error: state.error,
     refresh,
     addMember,
-    inviteMember,
     archiveMember,
     reactivateMember,
   }

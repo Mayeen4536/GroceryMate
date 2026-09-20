@@ -142,31 +142,6 @@ describe('useHouseholdMembers', () => {
     expect(mocks.from).not.toHaveBeenCalled()
   })
 
-  it('inviteMember inserts an invited row with the given email', async () => {
-    mocks.insertResult = { data: { id: 'member-invited' }, error: null }
-    const { result } = renderHook(() => useHouseholdMembers())
-    await waitFor(() => expect(result.current.loading).toBe(false))
-
-    let inviteResult
-    await act(async () => {
-      inviteResult = await result.current.inviteMember('Fatima', 'fatima@example.com')
-    })
-
-    expect(inviteResult).toEqual({ id: 'member-invited' })
-  })
-
-  it('inviteMember requires a non-blank email', async () => {
-    const { result } = renderHook(() => useHouseholdMembers())
-    await waitFor(() => expect(result.current.loading).toBe(false))
-
-    let inviteResult
-    await act(async () => {
-      inviteResult = await result.current.inviteMember('Fatima', '   ')
-    })
-
-    expect(inviteResult).toEqual({ error: expect.any(String) })
-  })
-
   it('archiveMember succeeds when RLS permits the update (owner acting)', async () => {
     mocks.updateResult = { data: { id: 'member-2' }, error: null }
     const { result } = renderHook(() => useHouseholdMembers())

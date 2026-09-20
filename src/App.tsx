@@ -6,6 +6,7 @@ import { PWAUpdatePrompt } from '@/components/PWAUpdatePrompt'
 import { Landing } from '@/features/landing/Landing'
 import { SignInPage } from '@/features/auth/SignInPage'
 import { SignUpPage } from '@/features/auth/SignUpPage'
+import { JoinPage } from '@/features/join/JoinPage'
 import { useAppNavigation } from '@/hooks/useAppNavigation'
 import { useAuth } from '@/auth/useAuth'
 import { useGroceries } from '@/hooks/useGroceries'
@@ -13,6 +14,7 @@ import { useMembers } from '@/hooks/useMembers'
 import { useShowDesignSystem } from '@/hooks/useShowDesignSystem'
 import { GuestRoute, ProtectedRoute } from '@/auth/RouteGuards'
 import { HouseholdGate } from '@/household/HouseholdGate'
+import { extractJoinToken } from '@/invite/routes'
 import { easeSoft } from '@/animations/motion'
 
 // Code-split every destination past the landing page: a first visit only
@@ -152,6 +154,11 @@ export default function App() {
   const isSignIn = location.pathname === '/sign-in'
   const isSignUp = location.pathname === '/sign-up'
   const isAuthRoute = isSignIn || isSignUp
+  // Reachable while signed out, and never gated by <HouseholdGate> — a
+  // recipient who doesn't have a household yet (or belongs to a different
+  // one) must still be able to see and accept this invite. See
+  // src/features/join/JoinPage.tsx and docs/INVITE_JOIN_DESIGN.md.
+  const joinToken = extractJoinToken(location.pathname)
   // Owned here, not inside GroceriesPage: the Assistant page adds to this same
   // list, so both pages need to share one instance rather than each holding
   // their own copy.
@@ -188,6 +195,18 @@ export default function App() {
               transition={{ duration: 0.16, ease: easeSoft }}
             >
               <GuestRoute>{isSignIn ? <SignInPage /> : <SignUpPage />}</GuestRoute>
+            </motion.div>
+          ) : joinToken ? (
+            <motion.div
+              key="join"
+              exit={{ opacity: 0, y: -10, scale: 0.99, filter: 'blur(4px)' }}
+              transition={{ duration: 0.16, ease: easeSoft }}
+            >
+              {/* Deliberately outside both <ProtectedRoute> and
+                  <HouseholdGate> — this page handles signed-out, signed-in
+                  with no household, and signed-in-with-a-household visitors
+                  all on its own. */}
+              <JoinPage token={joinToken} />
             </motion.div>
           ) : (
             <motion.div

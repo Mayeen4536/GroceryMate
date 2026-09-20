@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Button, Input } from '@/components/ui'
 import { useAuth } from '@/auth/useAuth'
+import { isSafeJoinRedirect } from '@/invite/routes'
 import { AuthLayout } from './AuthLayout'
 import { PasswordInput } from './PasswordInput'
 import { validateEmail, validatePassword } from './validation'
@@ -9,6 +10,12 @@ import { validateEmail, validatePassword } from './validation'
 export function SignInPage() {
   const { signIn } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  // Only ever our own /join/:token shape is honored — anything else in
+  // `redirect` is ignored outright, not sanitized, so this can never become
+  // an open redirect. See src/invite/routes.ts.
+  const redirect = searchParams.get('redirect')
+  const safeRedirect = isSafeJoinRedirect(redirect) ? redirect : null
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -33,7 +40,7 @@ export function SignInPage() {
     if (result.kind === 'error') {
       setFormError(result.message)
     } else {
-      navigate('/groceries', { replace: true })
+      navigate(safeRedirect ?? '/groceries', { replace: true })
     }
   }
 
@@ -44,7 +51,10 @@ export function SignInPage() {
       footer={
         <>
           New to GroceryMate?{' '}
-          <Link to="/sign-up" className="font-medium text-brand-700 hover:underline">
+          <Link
+            to={safeRedirect ? `/sign-up?redirect=${encodeURIComponent(safeRedirect)}` : '/sign-up'}
+            className="font-medium text-brand-700 hover:underline"
+          >
             Create an account
           </Link>
         </>

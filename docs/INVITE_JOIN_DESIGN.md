@@ -636,6 +636,71 @@ column list (no `role`, no raw token, no `updated_at`), the single-use
 model, the RPC surface, the authorization rules, and the security/abuse
 handling all shipped as designed.
 
+## 17. Slice 8C implementation notes — deviations from this design
+
+Slice 8C implemented §2/§3/§6/§9/§11/§12 database-only... no, frontend-only:
+routing, the invite client layer, owner link generation, `/join/:token`,
+the logged-out/authenticated acceptance flows, and removal of the fake
+email path. Three points are recorded here because they materially
+differ from, or resolve an open question in, §6 and §12 above.
+
+**1. No `localStorage`/`sessionStorage` breadcrumb was implemented
+anywhere — the Slice 8A approval's refinement is honored exactly, not
+just "by default."** §6's design offered the breadcrumb as the mechanism
+the design *depended on*, with `emailRedirectTo` as a "nice-to-have"
+optimization on top. The actual implementation inverts that: a
+`?redirect=/join/:token` query parameter (validated against exactly one
+shape — see `src/invite/routes.ts`'s `isSafeJoinRedirect`, which accepts
+nothing else, making an open redirect structurally impossible rather than
+merely filtered) carries the destination through the plain sign-in and
+immediate-session sign-up paths, and `emailRedirectTo` — passed to
+`supabase.auth.signUp()` only when the signup started from an invite —
+carries it through hosted Supabase's real email-confirmation step,
+because the destination is encoded in the *emailed link itself*, needing
+no client-side storage of any kind, on any device. No code path in this
+slice reads or writes `localStorage`/`sessionStorage` for invite state.
+
+**2. One genuine unresolved item, exactly where §6 flagged it might
+be:** whether the hosted project's Supabase Auth "Redirect URLs"
+allow-list already covers `/join/*` cannot be confirmed from a local
+implementation slice — dashboard Auth configuration is out of scope here
+(and was out of scope for Slice 8B too). If it does not, a hosted
+signup-with-confirmation-required invite acceptance would fall back to
+landing on the project's default Site URL instead of the invite, though
+the *account itself* would still be created correctly and the user could
+still open the same invite link manually afterward and accept it — not a
+security gap, only a lost convenience. This needs a hosted verification
+pass (the same kind Slice 8B went through) before relying on it in
+production; local verification (confirmations disabled) fully passes and
+is not affected.
+
+**3. A real concurrency-adjacent bug was found and fixed during
+implementation, unrelated to the backend:** `GuestRoute` (gating
+`/sign-in`/`/sign-up`) already redirects an already-authenticated visitor
+away; making that redirect honor `?redirect=` too (for the edge case of
+landing on sign-in already signed in) initially raced against
+`SignInPage`/`SignUpPage`'s own explicit post-submit `navigate()` — both
+components stay mounted for a moment during `App.tsx`'s
+`AnimatePresence` exit transition, and `GuestRoute` re-rendering during
+that window with the *now-changed* location (after the correct navigate
+already happened) would recompute `redirect` as `null` and fire a second,
+competing redirect to `/groceries`, intermittently clobbering the correct
+destination. Fixed by capturing `GuestRoute`'s redirect target once, via
+`useState`'s lazy initializer, rather than re-deriving it from the live
+location on every render — confirmed fixed under real Playwright
+execution (`tests/e2e/invite-join.spec.ts`), not just reasoned about.
+
+No revoke button was added to the owner's UI — §3's minimum ("copyable
+real URL, expiry information, clear success/error state") doesn't call
+for one, and `docs/INVITE_JOIN_DESIGN.md` never asked for a pending-
+invites management view. `revokeHouseholdInvite` exists in
+`src/invite/inviteService.ts` and is unit-tested, ready for a future
+slice if that UI is ever wanted. The fake "or send it for them" email
+path (`AddMemberDialog`'s email field, `useHouseholdMembers.inviteMember`,
+`useMembers.handleInvite`) was deleted outright, not merely hidden or
+disabled — there is no remaining code path that can create a
+`household_members` row with `status='invited'`.
+
 ---
 
 ## Final report

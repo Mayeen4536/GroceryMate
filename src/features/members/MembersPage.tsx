@@ -75,7 +75,6 @@ export function MembersPage({
   closeDialog,
   setProfileId,
   handleAdd,
-  handleInvite,
   handleChangeTone,
   handleRemove,
   handleReactivate,
@@ -242,7 +241,6 @@ export function MembersPage({
           initialTab={dialogTab}
           onClose={closeDialog}
           onAdd={handleAdd}
-          onInvite={handleInvite}
         />
       )}
 

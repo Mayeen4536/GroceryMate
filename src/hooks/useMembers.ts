@@ -27,8 +27,7 @@ const sorters: Record<SortBy, (a: Member, b: Member) => number> = {
  * same shape this hook already returned before the migration.
  */
 export function useMembers() {
-  const { members, loading, error, refresh, addMember, inviteMember, archiveMember, reactivateMember } =
-    useHouseholdMembers()
+  const { members, loading, error, refresh, addMember, archiveMember, reactivateMember } = useHouseholdMembers()
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState<SortBy>('name')
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -74,24 +73,6 @@ export function useMembers() {
     return result
   }
 
-  const handleInvite = async (email: string) => {
-    // The invite form only collects an email; a display name is derived
-    // from it locally, matching this hook's pre-migration behavior exactly
-    // (no UI change) — invited_email is what actually identifies the
-    // invite, the derived name is just a placeholder until acceptance
-    // (out of scope — see Migration 4/docs/MEMBER_INTEGRATION.md).
-    const namePart = email.split('@')[0].replace(/[._-]+/g, ' ').trim() || 'New member'
-    const name = namePart
-      .split(' ')
-      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-      .join(' ')
-    const result = await inviteMember(name, email)
-    if (!result.error && result.id) {
-      setLastAddedId(result.id)
-    }
-    return result
-  }
-
   // Kept as a real, working action (rather than removed) since nothing in
   // this slice's scope asked for the color-theme UI feature to go away.
   const handleChangeTone = (id: string, tone: number) => {
@@ -126,7 +107,6 @@ export function useMembers() {
     closeDialog: () => setDialogOpen(false),
     setProfileId,
     handleAdd,
-    handleInvite,
     handleChangeTone,
     handleRemove,
     handleReactivate,

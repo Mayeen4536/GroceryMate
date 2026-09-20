@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { expect, type Page } from '@playwright/test'
 
 const envText = readFileSync(new URL('../../.env.local', import.meta.url), 'utf8')
@@ -116,6 +117,64 @@ export async function addGrocery(
   await expect(dialog).not.toBeVisible()
 }
 
+/** Reads the current signed-in session's access token out of localStorage — see clearHouseholdGroceries's identical logic. */
+async function getSessionAccessToken(page: Page): Promise<string> {
+  const token = await page.evaluate(() => {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key?.startsWith('sb-') && key.endsWith('-auth-token')) {
+        const raw = localStorage.getItem(key)
+        if (!raw) return null
+        return (JSON.parse(raw) as { access_token?: string }).access_token ?? null
+      }
+    }
+    return null
+  })
+  if (!token) throw new Error('getSessionAccessToken: no signed-in session found')
+  return token
+}
+
+/**
+ * Revokes a real invite by its raw token — used only to reach the
+ * "revoked" state deterministically in tests, since the app's own UI
+ * deliberately has no revoke button for this MVP (see
+ * src/features/members/AddMemberDialog.tsx). Looks the invite up by
+ * hashing the token exactly as accept_household_invite itself does
+ * (SHA-256, hex), then calls the real revoke_household_invite RPC over
+ * REST using the *owner's own* signed-in session — never service_role —
+ * so this only ever succeeds because RLS/the RPC's own owner check allows
+ * it, the same as if the owner had clicked a real button.
+ */
+export async function revokeInviteByToken(page: Page, token: string) {
+  if (!SUPABASE_URL || !PUBLISHABLE_KEY) {
+    throw new Error('revokeInviteByToken: could not read VITE_SUPABASE_URL/VITE_SUPABASE_PUBLISHABLE_KEY from .env.local')
+  }
+  const accessToken = await getSessionAccessToken(page)
+  const headers = {
+    apikey: PUBLISHABLE_KEY,
+    Authorization: `Bearer ${accessToken}`,
+    'Content-Type': 'application/json',
+  }
+  const tokenHash = createHash('sha256').update(token).digest('hex')
+
+  const lookupRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/household_invites?token_hash=eq.${tokenHash}&select=id`,
+    { headers },
+  )
+  const rows = (await lookupRes.json()) as { id: string }[]
+  const inviteId = rows[0]?.id
+  if (!inviteId) throw new Error('revokeInviteByToken: no invite row found for this token')
+
+  const revokeRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/revoke_household_invite`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ p_invite_id: inviteId }),
+  })
+  if (!revokeRes.ok) {
+    throw new Error(`revokeInviteByToken: revoke RPC failed with status ${revokeRes.status}`)
+  }
+}
+
 /**
  * Adds one real, no-account household member through the Members page's
  * "Add member" flow (owner-only — see docs/MEMBER_INTEGRATION.md), and
@@ -156,6 +215,45 @@ export async function archiveMember(page: Page, name: string) {
   await expect(
     page.locator('main li').filter({ hasText: name }).filter({ hasText: 'Archived' }),
   ).toBeVisible()
+}
+
+/**
+ * From inside the app (any authenticated page belonging to a household
+ * owner), opens Members → Invite and waits for a real, single-use invite
+ * link to appear (AddMemberDialog generates a fresh one via
+ * create_household_invite every time this tab opens — see
+ * src/features/members/AddMemberDialog.tsx). Leaves the dialog open;
+ * callers that need to keep using `page` afterward should close it
+ * themselves (Escape or the dialog's own Close button).
+ */
+export async function generateInviteLink(page: Page): Promise<{ url: string; token: string }> {
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Members', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Members', exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'Invite', exact: true }).click()
+  const input = page.getByRole('dialog').getByLabel('Invite link')
+  await expect(input).not.toHaveValue('')
+  await expect(input).not.toHaveValue('Generating your invite link…')
+  const url = await input.inputValue()
+  const token = url.split('/join/')[1]
+  if (!token) throw new Error(`generateInviteLink: couldn't parse a token out of "${url}"`)
+  return { url, token }
+}
+
+/**
+ * Fills in and submits the real sign-up form — local Supabase has
+ * confirmations disabled, so this always lands in a session immediately
+ * (see global-setup.ts's identical assumption). Assumes `page` is already
+ * showing /sign-up (plain `page.goto('/sign-up')`, or a real click through
+ * "Create account to join" so any `?redirect=` it set survives — calling
+ * `page.goto()` again here would overwrite that query string and silently
+ * drop the invite return destination, which is exactly the bug this
+ * helper used to have).
+ */
+export async function signUpNewUser(page: Page, options: { name: string; email: string; password: string }) {
+  await page.getByLabel('Display name').fill(options.name)
+  await page.getByLabel('Email').fill(options.email)
+  await page.getByLabel('Password', { exact: true }).fill(options.password)
+  await page.getByRole('button', { name: 'Create account' }).click()
 }
 
 /**

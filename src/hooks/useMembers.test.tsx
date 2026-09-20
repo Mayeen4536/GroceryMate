@@ -34,7 +34,6 @@ const mocks = vi.hoisted(() => ({
   error: null as string | null,
   refresh: vi.fn(),
   addMember: vi.fn(),
-  inviteMember: vi.fn(),
   archiveMember: vi.fn(),
   reactivateMember: vi.fn(),
 }))
@@ -46,7 +45,6 @@ vi.mock('@/members/useHouseholdMembers', () => ({
     error: mocks.error,
     refresh: mocks.refresh,
     addMember: mocks.addMember,
-    inviteMember: mocks.inviteMember,
     archiveMember: mocks.archiveMember,
     reactivateMember: mocks.reactivateMember,
   }),
@@ -60,7 +58,6 @@ beforeEach(() => {
   mocks.error = null
   mocks.refresh.mockReset()
   mocks.addMember.mockReset().mockResolvedValue({ id: 'member-3' })
-  mocks.inviteMember.mockReset().mockResolvedValue({ id: 'member-4' })
   mocks.archiveMember.mockReset().mockResolvedValue({})
   mocks.reactivateMember.mockReset().mockResolvedValue({})
 })
@@ -102,17 +99,6 @@ describe('useMembers', () => {
     expect(addResult).toEqual({ error: 'Something went wrong.' })
     expect(result.current.dialogOpen).toBe(true)
     expect(result.current.lastAddedId).toBeNull()
-  })
-
-  it('handleInvite derives a display name from the email and delegates to inviteMember', async () => {
-    const { result } = renderHook(() => useMembers())
-
-    await act(async () => {
-      await result.current.handleInvite('fatima.rahman@example.com')
-    })
-
-    expect(mocks.inviteMember).toHaveBeenCalledWith('Fatima Rahman', 'fatima.rahman@example.com')
-    expect(result.current.lastAddedId).toBe('member-4')
   })
 
   it('handleRemove archives (never hard-deletes) and clears the open profile on success', async () => {

@@ -104,11 +104,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const retryProfile = useCallback(() => setProfileReloadToken((n) => n + 1), [])
 
-  const signUp = useCallback(async (email: string, password: string, displayName: string) => {
+  const signUp = useCallback(async (email: string, password: string, displayName: string, redirectTo?: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { display_name: displayName } },
+      options: {
+        data: { display_name: displayName },
+        // Only set when the signup started from an invite — otherwise
+        // omitted entirely, so a plain signup keeps using the project's
+        // own default Site URL, exactly as before this option existed.
+        ...(redirectTo ? { emailRedirectTo: `${window.location.origin}${redirectTo}` } : {}),
+      },
     })
     if (error) return { kind: 'error', message: normalizeAuthError(error) } as const
     // Hosted Supabase requires email confirmation, so a successful signUp

@@ -1,18 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Check, Copy, Dices, Send, UserPlus } from 'lucide-react'
-import {
-  Avatar,
-  Badge,
-  Button,
-  Input,
-  MEMBER_TONES,
-  Modal,
-  SegmentedControl,
-  SwatchPicker,
-} from '@/components/ui'
-import { springPop, springSnappy } from '@/animations/motion'
+import { Check, Copy, Dices, UserPlus } from 'lucide-react'
+import { Avatar, Button, Input, MEMBER_TONES, Modal, SegmentedControl, SwatchPicker } from '@/components/ui'
+import { springSnappy } from '@/animations/motion'
 import { useHousehold } from '@/household/useHousehold'
+import { createHouseholdInvite } from '@/invite/inviteService'
+import { joinPath } from '@/invite/routes'
 import type { AddMemberTab, NewMemberDraft } from '@/hooks/useMembers'
 
 interface AddMemberDialogProps {
@@ -20,40 +13,59 @@ interface AddMemberDialogProps {
   initialTab: AddMemberTab
   onClose: () => void
   onAdd: (draft: NewMemberDraft) => Promise<{ error?: string }>
-  onInvite: (email: string) => Promise<{ error?: string }>
 }
 
-const INVITE_LINK = 'grocerymate.app/join/flat-4b'
+/** Human-readable "expires in N days" from a real `expires_at` timestamp — never a hardcoded "7 days". */
+function formatExpiry(expiresAt: string): string {
+  const days = Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000))
+  if (days <= 0) return 'Expires soon'
+  return days === 1 ? 'Expires in 1 day' : `Expires in ${days} days`
+}
 
-// Deliberately simple (not full RFC 5322): local@domain.tld, no whitespace. Good
-// enough to reject obvious garbage without pretending to verify deliverability.
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-export function AddMemberDialog({ open, initialTab, onClose, onAdd, onInvite }: AddMemberDialogProps) {
+export function AddMemberDialog({ open, initialTab, onClose, onAdd }: AddMemberDialogProps) {
   const { household } = useHousehold()
   const [tab, setTab] = useState<AddMemberTab>(initialTab)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [tone, setTone] = useState(2)
-  const [inviteEmail, setInviteEmail] = useState('')
   const [copied, setCopied] = useState(false)
-  const [inviteSent, setInviteSent] = useState(false)
   const [nameAttempted, setNameAttempted] = useState(false)
-  const [inviteAttempted, setInviteAttempted] = useState(false)
   const [addSubmitting, setAddSubmitting] = useState(false)
-  const [inviteSubmitting, setInviteSubmitting] = useState(false)
   const [addError, setAddError] = useState<string>()
-  const [inviteError, setInviteError] = useState<string>()
 
-  // Both toasts auto-dismiss on a timer; tracked here so closing the dialog
-  // mid-timer (or unmounting) cancels it instead of setting state on a gone component.
-  const copiedTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
-  const inviteSentTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  // A fresh, real, single-use link — generated once per dialog-open on the
+  // invite tab (the parent only mounts this component while `open`, so a
+  // close+reopen naturally requests a new one; the old one simply expires
+  // in 7 days if unused, matching the backend's own single-use design —
+  // see docs/INVITE_JOIN_DESIGN.md).
+  const [inviteUrl, setInviteUrl] = useState<string>()
+  const [inviteExpiry, setInviteExpiry] = useState<string>()
+  const [inviteLoading, setInviteLoading] = useState(false)
+  const [inviteError, setInviteError] = useState<string>()
+  const inviteRequestedFor = useRef<string | undefined>(undefined)
+
   useEffect(() => {
-    return () => {
-      clearTimeout(copiedTimer.current)
-      clearTimeout(inviteSentTimer.current)
-    }
+    if (tab !== 'invite' || !household?.id || inviteRequestedFor.current === household.id) return
+    inviteRequestedFor.current = household.id
+    setInviteLoading(true)
+    setInviteError(undefined)
+    createHouseholdInvite(household.id).then((result) => {
+      setInviteLoading(false)
+      if (result.error || !result.invite) {
+        setInviteError(result.error ?? 'Something went wrong.')
+        return
+      }
+      setInviteUrl(`${window.location.origin}${joinPath(result.invite.token)}`)
+      setInviteExpiry(formatExpiry(result.invite.expiresAt))
+    })
+  }, [tab, household?.id])
+
+  // The copy toast auto-dismisses on a timer; tracked here so closing the
+  // dialog mid-timer (or unmounting) cancels it instead of setting state on
+  // a gone component.
+  const copiedTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  useEffect(() => {
+    return () => clearTimeout(copiedTimer.current)
   }, [])
 
   // Reset per open; keyed by `open` from the parent via remount.
@@ -63,7 +75,8 @@ export function AddMemberDialog({ open, initialTab, onClose, onAdd, onInvite }: 
   }
 
   const handleCopy = () => {
-    navigator.clipboard?.writeText(INVITE_LINK).catch(() => undefined)
+    if (!inviteUrl) return
+    navigator.clipboard?.writeText(inviteUrl).catch(() => undefined)
     setCopied(true)
     clearTimeout(copiedTimer.current)
     copiedTimer.current = setTimeout(() => setCopied(false), 1600)
@@ -85,28 +98,6 @@ export function AddMemberDialog({ open, initialTab, onClose, onAdd, onInvite }: 
     }
     // onClose() is called by the parent once the new member is confirmed
     // persisted (see MembersPage's closeDialog) — no local close here.
-  }
-
-  const handleInvite = async () => {
-    if (inviteSubmitting) return
-    const trimmed = inviteEmail.trim()
-    if (!trimmed || !EMAIL_PATTERN.test(trimmed)) {
-      setInviteAttempted(true)
-      return
-    }
-    setInviteSubmitting(true)
-    setInviteError(undefined)
-    const result = await onInvite(trimmed)
-    setInviteSubmitting(false)
-    if (result.error) {
-      setInviteError(result.error)
-      return
-    }
-    setInviteSent(true)
-    setInviteAttempted(false)
-    setInviteEmail('')
-    clearTimeout(inviteSentTimer.current)
-    inviteSentTimer.current = setTimeout(() => setInviteSent(false), 2200)
   }
 
   return (
@@ -212,67 +203,27 @@ export function AddMemberDialog({ open, initialTab, onClose, onAdd, onInvite }: 
 
             <div className="flex flex-col gap-1.5">
               <span className="text-sm font-medium text-ink">Household link</span>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <input
                   readOnly
-                  value={INVITE_LINK}
-                  className="h-11 w-full rounded-md border border-line-strong bg-sand/60 px-3.5 text-sm text-ink-soft focus:outline-none"
+                  aria-label="Invite link"
+                  value={inviteLoading ? 'Generating your invite link…' : (inviteUrl ?? '')}
+                  className="h-11 min-w-0 flex-1 truncate rounded-md border border-line-strong bg-sand/60 px-3.5 text-sm text-ink-soft focus:outline-none"
                 />
                 <Button
                   variant="secondary"
                   iconLeft={copied ? Check : Copy}
                   onClick={handleCopy}
+                  disabled={!inviteUrl}
                   className="shrink-0"
                 >
                   {copied ? 'Copied' : 'Copy'}
                 </Button>
               </div>
-              <p className="text-sm text-muted">Anyone with the link can join {household?.name ?? 'this household'}.</p>
-            </div>
-
-            <div className="flex items-center gap-3 text-xs font-medium uppercase tracking-wide text-muted">
-              <span className="h-px flex-1 bg-line" />
-              or send it for them
-              <span className="h-px flex-1 bg-line" />
-            </div>
-
-            <div className="flex items-end gap-2">
-              <Input
-                label="Email"
-                type="email"
-                placeholder="fatima@flat4b.home"
-                required
-                value={inviteEmail}
-                onChange={(event) => setInviteEmail(event.target.value)}
-                error={
-                  inviteAttempted && !inviteEmail.trim()
-                    ? 'Enter an email to invite.'
-                    : inviteAttempted && !EMAIL_PATTERN.test(inviteEmail.trim())
-                      ? 'Enter a valid email address.'
-                      : undefined
-                }
-                className="flex-1"
-                disabled={inviteSubmitting}
-              />
-              <Button iconLeft={Send} onClick={handleInvite} className="shrink-0" disabled={inviteSubmitting}>
-                {inviteSubmitting ? 'Sending…' : 'Send invite'}
-              </Button>
-            </div>
-
-            <div className="flex min-h-7 items-center justify-center">
-              <AnimatePresence>
-                {inviteSent && (
-                  <motion.span
-                    initial={{ opacity: 0, scale: 0.8, y: 4 }}
-                    animate={{ opacity: 1, scale: 1, y: 0, transition: springPop }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                  >
-                    <Badge tone="success" icon={Check}>
-                      Invite on its way
-                    </Badge>
-                  </motion.span>
-                )}
-              </AnimatePresence>
+              <p className="text-sm text-muted">
+                {inviteExpiry ? `${inviteExpiry} · anyone with this link can join` : 'Anyone with this link can join'}{' '}
+                {household?.name ?? 'this household'}.
+              </p>
             </div>
           </motion.div>
         )}
