@@ -19,9 +19,17 @@ interface HouseholdState {
   error: string | null
 }
 
-const IDLE_STATE: HouseholdState = { status: 'loading', household: null, currentMembership: null, error: null }
+const IDLE_STATE: HouseholdState = {
+  status: 'loading',
+  household: null,
+  currentMembership: null,
+  error: null,
+}
 
-async function loadHouseholdDetail(membershipRow: MembershipRow, status: 'ready' | 'archived'): Promise<HouseholdState> {
+async function loadHouseholdDetail(
+  membershipRow: MembershipRow,
+  status: 'ready' | 'archived',
+): Promise<HouseholdState> {
   const [householdResult, countResult] = await Promise.all([
     supabase
       .from('households')
@@ -36,7 +44,12 @@ async function loadHouseholdDetail(membershipRow: MembershipRow, status: 'ready'
   ])
 
   if (householdResult.error || !householdResult.data) {
-    return { status: 'error', household: null, currentMembership: null, error: normalizeHouseholdError(householdResult.error) }
+    return {
+      status: 'error',
+      household: null,
+      currentMembership: null,
+      error: normalizeHouseholdError(householdResult.error),
+    }
   }
 
   return {
@@ -62,7 +75,12 @@ async function loadHousehold(profileId: string): Promise<HouseholdState> {
     .returns<MembershipRow[]>()
 
   if (error) {
-    return { status: 'error', household: null, currentMembership: null, error: normalizeHouseholdError(error) }
+    return {
+      status: 'error',
+      household: null,
+      currentMembership: null,
+      error: normalizeHouseholdError(error),
+    }
   }
 
   const rows = data ?? []

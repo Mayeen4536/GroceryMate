@@ -67,7 +67,11 @@ function toDomainMember(member: UIMember, householdId: HouseholdId): DomainMembe
  * at Migration 2 time, before any of this integration existed) already
  * calls out and guards against.
  */
-function toDomainGroceryItem(item: UIGroceryItem, currency: Currency, householdId: HouseholdId): DomainGroceryItem {
+function toDomainGroceryItem(
+  item: UIGroceryItem,
+  currency: Currency,
+  householdId: HouseholdId,
+): DomainGroceryItem {
   const parsedPrice = parseMoneyInput(item.price, currency.minorUnitDigits)
   if (!parsedPrice.ok) throw new InvalidGroceryPriceError(item.id, item.price)
 

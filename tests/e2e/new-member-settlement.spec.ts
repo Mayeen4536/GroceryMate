@@ -1,5 +1,12 @@
 import { test, expect } from '@playwright/test'
-import { addGrocery, addMember, clearHouseholdGroceries, enterApp, FIXTURE_OWNER_FIRST_NAME, FIXTURE_OWNER_NAME } from './helpers'
+import {
+  addGrocery,
+  addMember,
+  clearHouseholdGroceries,
+  enterApp,
+  FIXTURE_OWNER_FIRST_NAME,
+  FIXTURE_OWNER_NAME,
+} from './helpers'
 
 /**
  * Proves a member added through the normal Members flow immediately
@@ -21,10 +28,15 @@ import { addGrocery, addMember, clearHouseholdGroceries, enterApp, FIXTURE_OWNER
 
 test.describe('A newly-added member participates in the real settlement', () => {
   test.beforeEach(({ isMobile }) => {
-    test.skip(isMobile, 'this is a calculation-correctness concern, not viewport-dependent; desktop coverage is sufficient')
+    test.skip(
+      isMobile,
+      'this is a calculation-correctness concern, not viewport-dependent; desktop coverage is sufficient',
+    )
   })
 
-  test('adding a member, then a grocery involving them, produces the correct real settlement', async ({ page }) => {
+  test('adding a member, then a grocery involving them, produces the correct real settlement', async ({
+    page,
+  }) => {
     // A single-token name: both the "Paid by" dropdown (full name) and the
     // sharing chip/card text (first name only) end up reading the same
     // string, so this run's unique suffix keeps every locator below
@@ -39,7 +51,10 @@ test.describe('A newly-added member participates in the real settlement', () => 
     await addMember(page, zara)
 
     // Add a grocery paid by, and shared by, the new member plus the fixture owner.
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Groceries', exact: true }).click()
+    await page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('button', { name: 'Groceries', exact: true })
+      .click()
     await addGrocery(page, {
       name: 'Snacks',
       price: '500',
@@ -49,7 +64,10 @@ test.describe('A newly-added member participates in the real settlement', () => 
     await expect(page.getByText(`Paid by ${zara} · 2 sharing`)).toBeVisible()
 
     // Members page: Zara's real, engine-derived numbers.
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Members', exact: true }).click()
+    await page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('button', { name: 'Members', exact: true })
+      .click()
     await expect(page.getByRole('heading', { name: 'Members', exact: true })).toBeVisible()
     const zaraCard = page.getByRole('button', { name: new RegExp(`Open ${zara}'s profile`) })
     await expect(zaraCard.getByText('House owes')).toBeVisible()
@@ -58,7 +76,10 @@ test.describe('A newly-added member participates in the real settlement', () => 
     await expect(ownerCard.getByText('Owes the house')).toBeVisible()
 
     // Settlements page: the real transfer names the new member correctly.
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Settlements', exact: true }).click()
+    await page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('button', { name: 'Settlements', exact: true })
+      .click()
     await expect(page.getByRole('heading', { name: 'Settlements', exact: true })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Mark as paid' })).toHaveCount(1)
     const journeyCard = page.locator('li').filter({ has: page.getByRole('button', { name: 'Mark as paid' }) })

@@ -11,8 +11,11 @@ import { transitionBase } from '@/animations/motion'
  * right after the first successful install. Rendered once at the app root.
  */
 export function PWAUpdatePrompt() {
-  const { offlineReady: [offlineReady, setOfflineReady], needRefresh: [needRefresh, setNeedRefresh], updateServiceWorker } =
-    useRegisterSW()
+  const {
+    offlineReady: [offlineReady, setOfflineReady],
+    needRefresh: [needRefresh, setNeedRefresh],
+    updateServiceWorker,
+  } = useRegisterSW()
 
   const close = () => {
     setOfflineReady(false)

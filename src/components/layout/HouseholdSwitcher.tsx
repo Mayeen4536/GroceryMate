@@ -89,12 +89,7 @@ export function HouseholdSwitcher({
         <House size={15} aria-hidden="true" />
       </span>
       <span className="min-w-0 flex-1">
-        <span
-          className={cn(
-            'block truncate text-sm font-semibold',
-            dark ? 'text-pine-text' : 'text-ink',
-          )}
-        >
+        <span className={cn('block truncate text-sm font-semibold', dark ? 'text-pine-text' : 'text-ink')}>
           {household.name}
         </span>
         <span className={cn('block text-xs', dark ? 'text-pine-muted' : 'text-muted')}>

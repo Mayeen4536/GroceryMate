@@ -19,7 +19,13 @@ function makeChain(result: unknown) {
 const mocks = vi.hoisted(() => ({
   authValue: {
     status: 'signed-in' as 'signed-in' | 'signed-out' | 'loading',
-    profile: { id: 'user-1', email: 'user-1@example.com', displayName: 'Aisha', createdAt: '', updatedAt: '' } as {
+    profile: {
+      id: 'user-1',
+      email: 'user-1@example.com',
+      displayName: 'Aisha',
+      createdAt: '',
+      updatedAt: '',
+    } as {
       id: string
       email: string
       displayName: string
@@ -73,7 +79,13 @@ const HOUSEHOLD_ROW = {
 
 beforeEach(() => {
   mocks.authValue.status = 'signed-in'
-  mocks.authValue.profile = { id: 'user-1', email: 'user-1@example.com', displayName: 'Aisha', createdAt: '', updatedAt: '' }
+  mocks.authValue.profile = {
+    id: 'user-1',
+    email: 'user-1@example.com',
+    displayName: 'Aisha',
+    createdAt: '',
+    updatedAt: '',
+  }
   mocks.membershipsResult = { data: [], error: null }
   mocks.householdResult = { data: null, error: null }
   mocks.countResult = { count: 0, error: null }
@@ -128,7 +140,11 @@ describe('HouseholdProvider / useHousehold', () => {
       createdAt: '2026-01-01T00:00:00Z',
       memberCount: 3,
     })
-    expect(result.current.currentMembership).toMatchObject({ id: 'member-1', role: 'owner', status: 'active' })
+    expect(result.current.currentMembership).toMatchObject({
+      id: 'member-1',
+      role: 'owner',
+      status: 'active',
+    })
   })
 
   it('more than one active membership → unsupported, never guesses', async () => {
@@ -243,7 +259,13 @@ describe('HouseholdProvider / useHousehold', () => {
 
     // User B has no household of their own.
     mocks.membershipsResult = { data: [], error: null }
-    mocks.authValue.profile = { id: 'user-2', email: 'user-2@example.com', displayName: 'Bilal', createdAt: '', updatedAt: '' }
+    mocks.authValue.profile = {
+      id: 'user-2',
+      email: 'user-2@example.com',
+      displayName: 'Bilal',
+      createdAt: '',
+      updatedAt: '',
+    }
     rerender()
 
     // Reset is synchronous (render-time), so User A's household is gone immediately.

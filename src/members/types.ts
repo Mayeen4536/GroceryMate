@@ -40,7 +40,8 @@ const TONE_COUNT = 6
  * involved in a settlement calculation.
  */
 export function mapHouseholdMemberRow(row: HouseholdMemberRow): Member {
-  const status: MemberStatus = row.status === 'invited' ? 'invited' : row.status === 'archived' ? 'archived' : 'settled'
+  const status: MemberStatus =
+    row.status === 'invited' ? 'invited' : row.status === 'archived' ? 'archived' : 'settled'
   return {
     id: row.id,
     name: row.display_name,

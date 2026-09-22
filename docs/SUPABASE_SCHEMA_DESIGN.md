@@ -24,17 +24,17 @@ This is the single most important finding. `src/domain/` was built in an
 earlier phase as a persistence-agnostic model, and it already expresses
 almost everything this schema needs:
 
-| Domain type | What it models | Schema relevance |
-|---|---|---|
-| `Money` | `{ minorUnits: integer, currency: Currency }` | Exactly how money should be stored — integer minor units, never a float |
-| `Currency` / `CURRENCIES` | `BDT\|USD\|EUR\|GBP\|INR`, each with `minorUnitDigits` | Currency is already a first-class concept, not hardcoded |
-| `Household` | `{ id, name, currency, memberIds, createdAt }` | Maps almost directly to a `households` table |
-| `Member` | `{ id, householdId, name, email, role } & (ActiveMember \| InvitedMember)` | Maps to `household_members` — **missing an `Archived` variant**, see §4 |
-| `GroceryItem` | `{ id, householdId, name, category, unitPrice, quantity, paidByMemberId, sharedByMemberIds, addedAt, notes? }` | Maps to `grocery_items` + `grocery_item_consumers` |
-| `Settlement` / `Payment` | Debt + payoff record types | Already anticipates a payments concept (§8) |
-| `HistorySession` | Groups items+members into one shopping trip | A real, well-modeled concept — **not persisted in MVP**, see §9 |
-| `Receipt` / `AIParsedItem` | Photo/pasted receipt → AI-extracted candidate items | AI-specific — **not part of this schema**, see below |
-| `Brand<T, Name>` + `ids.ts` | Nominal-typed ids (`MemberId`, `GroceryItemId`, ...) | Directly reflects UUID primary keys, one per entity |
+| Domain type                 | What it models                                                                                                 | Schema relevance                                                        |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `Money`                     | `{ minorUnits: integer, currency: Currency }`                                                                  | Exactly how money should be stored — integer minor units, never a float |
+| `Currency` / `CURRENCIES`   | `BDT\|USD\|EUR\|GBP\|INR`, each with `minorUnitDigits`                                                         | Currency is already a first-class concept, not hardcoded                |
+| `Household`                 | `{ id, name, currency, memberIds, createdAt }`                                                                 | Maps almost directly to a `households` table                            |
+| `Member`                    | `{ id, householdId, name, email, role } & (ActiveMember \| InvitedMember)`                                     | Maps to `household_members` — **missing an `Archived` variant**, see §4 |
+| `GroceryItem`               | `{ id, householdId, name, category, unitPrice, quantity, paidByMemberId, sharedByMemberIds, addedAt, notes? }` | Maps to `grocery_items` + `grocery_item_consumers`                      |
+| `Settlement` / `Payment`    | Debt + payoff record types                                                                                     | Already anticipates a payments concept (§8)                             |
+| `HistorySession`            | Groups items+members into one shopping trip                                                                    | A real, well-modeled concept — **not persisted in MVP**, see §9         |
+| `Receipt` / `AIParsedItem`  | Photo/pasted receipt → AI-extracted candidate items                                                            | AI-specific — **not part of this schema**, see below                    |
+| `Brand<T, Name>` + `ids.ts` | Nominal-typed ids (`MemberId`, `GroceryItemId`, ...)                                                           | Directly reflects UUID primary keys, one per entity                     |
 
 None of this is wired to a database — it was built as the target shape for
 one, and this schema is that shape made real in Postgres.
@@ -65,12 +65,14 @@ This separation is the actual point of Step 1 — not everything currently
 sitting in a frontend object deserves a column.
 
 **Real current domain data (needs persistence):**
+
 - Household identity (name, currency)
 - Household membership (who's in it, their role, their status, account link)
 - Grocery items (name, amount, category, who paid, when)
 - Who shares each grocery item
 
 **Temporary UI state (must NOT be persisted):**
+
 - `useGroceries`'s `panelOpen`, `editingId`, `pendingDeletes` (the 5-second
   undo window), `lastAddedId` (highlight animation)
 - `useMembers`'s `search`, `sortBy`, `dialogOpen`, `profileId`
@@ -79,6 +81,7 @@ sitting in a frontend object deserves a column.
 - Landing/onboarding animation state, design-system showcase toggles
 
 **Derived data (must NOT be persisted — recomputed from source rows):**
+
 - `spentMinorUnits` / `consumedMinorUnits` / `netBalanceMinorUnits` per
   member (`MemberSettlementSummary`)
 - Settlement transfers (`DebtTransfer[]` — who should pay whom)
@@ -88,6 +91,7 @@ sitting in a frontend object deserves a column.
 See §7 for why, and the one real exception.
 
 **Mock/demo data (stays exactly as mock, not part of this schema):**
+
 - `store/history.ts`'s 9 fabricated shopping sessions (Analytics/History
   pages) — see §9
 - `store/household.ts`'s `mockMembers`/`mockUser` used only by the Landing
@@ -108,13 +112,13 @@ concepts — nothing here exists because a future feature "might" need it.
 **Purpose:** one row per authenticated Supabase user — the account
 identity, independent of any household.
 
-| Column | Type | Nullable | Notes |
-|---|---|---|---|
-| `id` | `uuid` | not null, PK | Same value as `auth.users.id` (1:1) |
-| `email` | `text` | not null | Mirrored from `auth.users` for convenient querying |
-| `display_name` | `text` | not null | What `Member.name` is today |
-| `created_at` | `timestamptz` | not null, default `now()` | |
-| `updated_at` | `timestamptz` | not null, default `now()` | |
+| Column         | Type          | Nullable                  | Notes                                              |
+| -------------- | ------------- | ------------------------- | -------------------------------------------------- |
+| `id`           | `uuid`        | not null, PK              | Same value as `auth.users.id` (1:1)                |
+| `email`        | `text`        | not null                  | Mirrored from `auth.users` for convenient querying |
+| `display_name` | `text`        | not null                  | What `Member.name` is today                        |
+| `created_at`   | `timestamptz` | not null, default `now()` |                                                    |
+| `updated_at`   | `timestamptz` | not null, default `now()` |                                                    |
 
 - **PK:** `id` (shared with `auth.users`, not a separate surrogate key)
 - **FK:** `id → auth.users(id)`, `ON DELETE CASCADE` (if a Supabase auth
@@ -127,14 +131,14 @@ identity, independent of any household.
 
 **Purpose:** one row per household — the unit everything else belongs to.
 
-| Column | Type | Nullable | Notes |
-|---|---|---|---|
-| `id` | `uuid` | not null, PK, default `gen_random_uuid()` | |
-| `name` | `text` | not null | e.g. "Flat 4B" |
-| `currency_code` | `text` | not null, default `'BDT'` | CHECK against the same 5 codes as `CurrencyCode` |
-| `created_by` | `uuid` | not null | FK → `profiles(id)`. Provenance only — not "current owner," see §3 |
-| `created_at` | `timestamptz` | not null, default `now()` | |
-| `updated_at` | `timestamptz` | not null, default `now()` | |
+| Column          | Type          | Nullable                                  | Notes                                                              |
+| --------------- | ------------- | ----------------------------------------- | ------------------------------------------------------------------ |
+| `id`            | `uuid`        | not null, PK, default `gen_random_uuid()` |                                                                    |
+| `name`          | `text`        | not null                                  | e.g. "Flat 4B"                                                     |
+| `currency_code` | `text`        | not null, default `'BDT'`                 | CHECK against the same 5 codes as `CurrencyCode`                   |
+| `created_by`    | `uuid`        | not null                                  | FK → `profiles(id)`. Provenance only — not "current owner," see §3 |
+| `created_at`    | `timestamptz` | not null, default `now()`                 |                                                                    |
+| `updated_at`    | `timestamptz` | not null, default `now()`                 |                                                                    |
 
 - **PK:** `id`
 - **FK:** `created_by → profiles(id)`, `ON DELETE RESTRICT` (a household
@@ -148,20 +152,20 @@ identity, independent of any household.
 participation in one household. See §3 for the full membership design;
 this is the column reference.
 
-| Column | Type | Nullable | Notes |
-|---|---|---|---|
-| `id` | `uuid` | not null, PK, default `gen_random_uuid()` | This is `MemberId` — what `grocery_items`/`grocery_item_consumers` reference |
-| `household_id` | `uuid` | not null | FK → `households(id)`, `ON DELETE CASCADE` |
-| `profile_id` | `uuid` | **nullable** | FK → `profiles(id)`, `ON DELETE SET NULL`. Null = no account (invited-pending or permanently account-less) |
-| `display_name` | `text` | not null | The name shown/used regardless of account status — see §3 |
-| `invited_email` | `text` | nullable | Set only while `status = 'invited'`, used to resolve the invite to a real account later |
-| `role` | `text` | not null, default `'member'` | `'owner' \| 'member'`, CHECK-constrained |
-| `status` | `text` | not null, default `'active'` | `'active' \| 'invited' \| 'archived'`, CHECK-constrained |
-| `invited_at` | `timestamptz` | nullable | Set when `status` first becomes `'invited'` |
-| `joined_at` | `timestamptz` | nullable | Set when `status` first becomes `'active'` |
-| `archived_at` | `timestamptz` | nullable | Set when `status` becomes `'archived'` |
-| `created_at` | `timestamptz` | not null, default `now()` | |
-| `updated_at` | `timestamptz` | not null, default `now()` | |
+| Column          | Type          | Nullable                                  | Notes                                                                                                      |
+| --------------- | ------------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `id`            | `uuid`        | not null, PK, default `gen_random_uuid()` | This is `MemberId` — what `grocery_items`/`grocery_item_consumers` reference                               |
+| `household_id`  | `uuid`        | not null                                  | FK → `households(id)`, `ON DELETE CASCADE`                                                                 |
+| `profile_id`    | `uuid`        | **nullable**                              | FK → `profiles(id)`, `ON DELETE SET NULL`. Null = no account (invited-pending or permanently account-less) |
+| `display_name`  | `text`        | not null                                  | The name shown/used regardless of account status — see §3                                                  |
+| `invited_email` | `text`        | nullable                                  | Set only while `status = 'invited'`, used to resolve the invite to a real account later                    |
+| `role`          | `text`        | not null, default `'member'`              | `'owner' \| 'member'`, CHECK-constrained                                                                   |
+| `status`        | `text`        | not null, default `'active'`              | `'active' \| 'invited' \| 'archived'`, CHECK-constrained                                                   |
+| `invited_at`    | `timestamptz` | nullable                                  | Set when `status` first becomes `'invited'`                                                                |
+| `joined_at`     | `timestamptz` | nullable                                  | Set when `status` first becomes `'active'`                                                                 |
+| `archived_at`   | `timestamptz` | nullable                                  | Set when `status` becomes `'archived'`                                                                     |
+| `created_at`    | `timestamptz` | not null, default `now()`                 |                                                                                                            |
+| `updated_at`    | `timestamptz` | not null, default `now()`                 |                                                                                                            |
 
 - **PK:** `id`
 - **FKs:** `household_id → households(id)` `ON DELETE CASCADE`;
@@ -190,18 +194,18 @@ this is the column reference.
 **Purpose:** one purchased line item. Enough data to reconstruct the
 settlement calculation exactly — nothing more.
 
-| Column | Type | Nullable | Notes |
-|---|---|---|---|
-| `id` | `uuid` | not null, PK, default `gen_random_uuid()` | |
-| `household_id` | `uuid` | not null | FK → `households(id)`, `ON DELETE CASCADE` |
-| `name` | `text` | not null | |
-| `category` | `text` | not null, default `'pantry'` | CHECK against the 6 `GROCERY_CATEGORIES` values |
-| `amount_minor` | `integer` | not null, CHECK `> 0` | **Total** cost of this line — see §6 on why this isn't split into unit price × quantity |
-| `quantity` | `integer` | not null, default `1`, CHECK `> 0` | Informational only — display, not re-multiplied into `amount_minor` |
-| `paid_by_member_id` | `uuid` | not null | Composite FK — see below |
-| `notes` | `text` | nullable | |
-| `created_at` | `timestamptz` | not null, default `now()` | |
-| `updated_at` | `timestamptz` | not null, default `now()` | |
+| Column              | Type          | Nullable                                  | Notes                                                                                   |
+| ------------------- | ------------- | ----------------------------------------- | --------------------------------------------------------------------------------------- |
+| `id`                | `uuid`        | not null, PK, default `gen_random_uuid()` |                                                                                         |
+| `household_id`      | `uuid`        | not null                                  | FK → `households(id)`, `ON DELETE CASCADE`                                              |
+| `name`              | `text`        | not null                                  |                                                                                         |
+| `category`          | `text`        | not null, default `'pantry'`              | CHECK against the 6 `GROCERY_CATEGORIES` values                                         |
+| `amount_minor`      | `integer`     | not null, CHECK `> 0`                     | **Total** cost of this line — see §6 on why this isn't split into unit price × quantity |
+| `quantity`          | `integer`     | not null, default `1`, CHECK `> 0`        | Informational only — display, not re-multiplied into `amount_minor`                     |
+| `paid_by_member_id` | `uuid`        | not null                                  | Composite FK — see below                                                                |
+| `notes`             | `text`        | nullable                                  |                                                                                         |
+| `created_at`        | `timestamptz` | not null, default `now()`                 |                                                                                         |
+| `updated_at`        | `timestamptz` | not null, default `now()`                 |                                                                                         |
 
 - **PK:** `id`
 - **FK (household):** `household_id → households(id)`, `ON DELETE CASCADE`
@@ -222,12 +226,12 @@ settlement calculation exactly — nothing more.
 **Purpose:** who shares a grocery item's cost — a real relation table, not
 name strings.
 
-| Column | Type | Nullable | Notes |
-|---|---|---|---|
-| `grocery_item_id` | `uuid` | not null | FK → `grocery_items(id)`, `ON DELETE CASCADE` |
-| `household_member_id` | `uuid` | not null | Composite FK — see below |
-| `household_id` | `uuid` | not null | Denormalized — see below |
-| `created_at` | `timestamptz` | not null, default `now()` | |
+| Column                | Type          | Nullable                  | Notes                                         |
+| --------------------- | ------------- | ------------------------- | --------------------------------------------- |
+| `grocery_item_id`     | `uuid`        | not null                  | FK → `grocery_items(id)`, `ON DELETE CASCADE` |
+| `household_member_id` | `uuid`        | not null                  | Composite FK — see below                      |
+| `household_id`        | `uuid`        | not null                  | Denormalized — see below                      |
+| `created_at`          | `timestamptz` | not null, default `now()` |                                               |
 
 - **PK:** composite `(grocery_item_id, household_member_id)` — this
   alone makes a duplicate consumer record (the same member listed twice
@@ -266,13 +270,13 @@ what `grocery_items`/`grocery_item_consumers` reference — never
 `profiles` directly. This one decision is what makes every case below
 representable without special-casing:
 
-| Case | `profile_id` | `status` | `role` | Notes |
-|---|---|---|---|---|
-| **Owner** | set (required by CHECK) | `active` | `owner` | The person who created the household, or who's since been made owner |
-| **Joined member** | set | `active` | `member` | Has an account, has accepted |
-| **Invited member** | `NULL` | `invited` | `member` | `invited_email` set; becomes `active` + gets a `profile_id` the moment they sign up and accept — **same row**, so any future references stay valid |
-| **Non-account participant** | `NULL` | `active` | `member` | Someone who shares costs but will never log in themselves (a housemate who doesn't want the app, a child, etc.) — `display_name` is their only identity |
-| **Inactive / archived member** | unchanged from before archiving | `archived` | unchanged | See §4 |
+| Case                           | `profile_id`                    | `status`   | `role`    | Notes                                                                                                                                                   |
+| ------------------------------ | ------------------------------- | ---------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owner**                      | set (required by CHECK)         | `active`   | `owner`   | The person who created the household, or who's since been made owner                                                                                    |
+| **Joined member**              | set                             | `active`   | `member`  | Has an account, has accepted                                                                                                                            |
+| **Invited member**             | `NULL`                          | `invited`  | `member`  | `invited_email` set; becomes `active` + gets a `profile_id` the moment they sign up and accept — **same row**, so any future references stay valid      |
+| **Non-account participant**    | `NULL`                          | `active`   | `member`  | Someone who shares costs but will never log in themselves (a housemate who doesn't want the app, a child, etc.) — `display_name` is their only identity |
+| **Inactive / archived member** | unchanged from before archiving | `archived` | unchanged | See §4                                                                                                                                                  |
 
 The key insight: **"has an account" and "membership lifecycle stage" are
 two independent dimensions**, not one combined enum. `status` tracks
@@ -288,6 +292,7 @@ want a household-specific display name later. It's the field
 resolve to for display — never a `profiles` join for financial UI.
 
 **What this deliberately does NOT do (keeping MVP complexity down):**
+
 - No separate "pending invite" table — an invite is just a
   `household_members` row with `status = 'invited'`.
 - No multi-household role hierarchy beyond `owner`/`member`.
@@ -348,7 +353,7 @@ that means:
   in-progress add).
 - Anyone else: the application should call this "archive" in the UI, not
   "remove" or "delete," and the underlying operation is an `UPDATE
-  household_members SET status = 'archived', archived_at = now()`, never
+household_members SET status = 'archived', archived_at = now()`, never
   a `DELETE`.
 
 **One real domain-model consequence of this decision:** `src/domain/Member.ts`
@@ -398,8 +403,8 @@ This is a direct continuation of the philosophy already built into
 database should be a faithful mirror of that, not a second, different
 implementation of the same "never lose a paisa" guarantee.
 
-`integer` (max ~2.1 billion) comfortably covers any realistic single
-grocery line (~৳21 million) with enormous headroom, and Postgres's
+`integer` (max ~~2.1 billion) comfortably covers any realistic single
+grocery line (~~৳21 million) with enormous headroom, and Postgres's
 `SUM()` aggregate over an `integer` column automatically widens to avoid
 overflow — so per-row `integer` doesn't create a household-total ceiling.
 `bigint` is an equally valid, more conservative alternative if the extra
@@ -419,7 +424,7 @@ else).** Three reasons, in order of how load-bearing they are:
    rules for the conversion itself) that nothing in this product needs.
 3. **It closes off an entire bug class by construction.** With currency
    only on `households`, `MixedCurrencyError` (which the engine already
-   defends against defensively) becomes something the *schema* makes
+   defends against defensively) becomes something the _schema_ makes
    impossible to create in the first place — there's no column on
    `grocery_items` where a mismatched currency could even be recorded.
 
@@ -441,6 +446,7 @@ from `household_members` + `grocery_items` + `grocery_item_consumers`
 alone, that value is **never** persisted. Recompute it on read.
 
 Explicitly not stored:
+
 - `spentMinorUnits` / `consumedMinorUnits` / `netBalanceMinorUnits` per member
 - Settlement transfers (`DebtTransfer[]` — the "who should pay whom" suggestions)
 - "Outstanding total" (Settlements page summary)
@@ -456,7 +462,7 @@ a cached copy would be solving a performance problem that doesn't exist
 while introducing a consistency problem that would.
 
 **The one real exception: recorded payments (§8) are NOT derived.** A
-payment is a historical *event* — money that actually changed hands. It
+payment is a historical _event_ — money that actually changed hands. It
 cannot be recomputed from grocery data, because grocery data alone has no
 way to know whether a suggested transfer was ever actually paid. This is
 genuinely new source-of-truth information, which is exactly why §8
@@ -471,16 +477,16 @@ writing the reconciliation logic that would consume it.**
 
 ### The table: `payments`
 
-| Column | Type | Nullable | Notes |
-|---|---|---|---|
-| `id` | `uuid` | not null, PK, default `gen_random_uuid()` | |
-| `household_id` | `uuid` | not null | FK → `households(id)`, `ON DELETE CASCADE` |
-| `from_member_id` | `uuid` | not null | Composite FK → `household_members(id, household_id)` — who paid |
-| `to_member_id` | `uuid` | not null | Composite FK → `household_members(id, household_id)` — who received it |
-| `amount_minor` | `integer` | not null, CHECK `> 0` | No currency column — inherits `households.currency_code`, same reasoning as §6 |
-| `note` | `text` | nullable | Free-text context ("cash, Tuesday") |
-| `recorded_by_profile_id` | `uuid` | nullable | FK → `profiles(id)`. The **account** that entered this record — distinct from `from_member_id`/`to_member_id`, which are household members and may not have accounts at all |
-| `created_at` | `timestamptz` | not null, default `now()` | |
+| Column                   | Type          | Nullable                                  | Notes                                                                                                                                                                       |
+| ------------------------ | ------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                     | `uuid`        | not null, PK, default `gen_random_uuid()` |                                                                                                                                                                             |
+| `household_id`           | `uuid`        | not null                                  | FK → `households(id)`, `ON DELETE CASCADE`                                                                                                                                  |
+| `from_member_id`         | `uuid`        | not null                                  | Composite FK → `household_members(id, household_id)` — who paid                                                                                                             |
+| `to_member_id`           | `uuid`        | not null                                  | Composite FK → `household_members(id, household_id)` — who received it                                                                                                      |
+| `amount_minor`           | `integer`     | not null, CHECK `> 0`                     | No currency column — inherits `households.currency_code`, same reasoning as §6                                                                                              |
+| `note`                   | `text`        | nullable                                  | Free-text context ("cash, Tuesday")                                                                                                                                         |
+| `recorded_by_profile_id` | `uuid`        | nullable                                  | FK → `profiles(id)`. The **account** that entered this record — distinct from `from_member_id`/`to_member_id`, which are household members and may not have accounts at all |
+| `created_at`             | `timestamptz` | not null, default `now()`                 |                                                                                                                                                                             |
 
 - **Check constraint:** `from_member_id <> to_member_id` — no
   self-payment, mirroring the same guarantee the engine's
@@ -565,7 +571,7 @@ with an honestly-empty history rather than a populated but fake one.
 **The trade-off, named plainly:** without a session-grouping table, the
 UI loses "trip" framing ("Weekly restock — ৳2,090") in favor of a plain
 chronological item list. That's a real UX regression versus today's mock
-if shipped naively — but it's a *display* concern to solve later (e.g.,
+if shipped naively — but it's a _display_ concern to solve later (e.g.,
 grouping consecutive same-day items in the UI query, with no schema
 change) rather than a reason to add a whole table now on a guess about
 whether users will actually want explicit trip-grouping. Add
@@ -577,7 +583,7 @@ whether users will actually want explicit trip-grouping. Add
 
 **Core invariant, restated:** a user must never read or modify another
 household's data unless they're an authorized member of that household.
-Everything below is policy *intent* — the actual SQL is Migration 3
+Everything below is policy _intent_ — the actual SQL is Migration 3
 (§13), not written here.
 
 The building block every policy uses: `auth.uid()` (Supabase's current
@@ -606,8 +612,8 @@ authenticated user) checked against `household_members.profile_id`.
   Both "owner-only" and "any active member" are defensible; today's
   frontend has no such restriction at all.
 - **UPDATE own row** (e.g. color tone): the member whose `profile_id =
-  auth.uid()`.
-- **UPDATE status → archived:** owner-only for archiving *someone else*;
+auth.uid()`.
+- **UPDATE status → archived:** owner-only for archiving _someone else_;
   self-archiving (a member removing themselves) allowed on one's own row.
 - **DELETE:** not exposed via RLS to normal users at all — even where a
   hard delete would be schema-safe (§4), it should go through an
@@ -640,16 +646,16 @@ active-member RLS applies to them from then on, unchanged.
 
 ## 11. Threat / integrity review
 
-| Risk | Primary defense | Layer(s) |
-|---|---|---|
-| Guessing/enumerating household ids | Non-sequential `uuid` PKs (defense in depth) + RLS SELECT scoping | Schema + RLS |
-| Changing a `grocery_items.household_id` to move it into another household | RLS `UPDATE ... WITH CHECK` re-validates the new `household_id`; consider disallowing `UPDATE` of this column entirely via a trigger | RLS + application (+ optional trigger) |
-| A payer id belonging to another household attached to a grocery | **Composite FK** `(paid_by_member_id, household_id) REFERENCES household_members(id, household_id)` — structurally impossible, not just checked | **Schema** (primary), RLS `WITH CHECK` (redundant insurance) |
-| Same, for consumers | Same composite-FK pattern on `grocery_item_consumers`, using its denormalized `household_id` | **Schema** (primary) |
-| Duplicate consumer records (same member listed twice on one item) | Composite PK `(grocery_item_id, household_member_id)` | **Schema** — cannot happen |
-| Deleted/archived member references going stale | `ON DELETE RESTRICT` makes hard-delete-while-referenced impossible; archived rows are simply excluded from *new*-selection queries, never from historical resolution | **Schema** (integrity) + application (selection filtering) |
-| Unauthorized household membership changes (adding/removing someone else's membership) | Owner-only (or active-member, per §14's open question) INSERT/UPDATE policies | RLS |
-| Service-role key exposed to the frontend | Never referenced by any `VITE_`-prefixed env var or shipped in a client bundle; only used server-side (Edge Functions / trusted server context); all frontend calls use the anon key + RLS | **Application/deployment discipline** — RLS is irrelevant here, since the service-role key bypasses RLS by design. This is a process rule, not a database design |
+| Risk                                                                                  | Primary defense                                                                                                                                                                            | Layer(s)                                                                                                                                                         |
+| ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Guessing/enumerating household ids                                                    | Non-sequential `uuid` PKs (defense in depth) + RLS SELECT scoping                                                                                                                          | Schema + RLS                                                                                                                                                     |
+| Changing a `grocery_items.household_id` to move it into another household             | RLS `UPDATE ... WITH CHECK` re-validates the new `household_id`; consider disallowing `UPDATE` of this column entirely via a trigger                                                       | RLS + application (+ optional trigger)                                                                                                                           |
+| A payer id belonging to another household attached to a grocery                       | **Composite FK** `(paid_by_member_id, household_id) REFERENCES household_members(id, household_id)` — structurally impossible, not just checked                                            | **Schema** (primary), RLS `WITH CHECK` (redundant insurance)                                                                                                     |
+| Same, for consumers                                                                   | Same composite-FK pattern on `grocery_item_consumers`, using its denormalized `household_id`                                                                                               | **Schema** (primary)                                                                                                                                             |
+| Duplicate consumer records (same member listed twice on one item)                     | Composite PK `(grocery_item_id, household_member_id)`                                                                                                                                      | **Schema** — cannot happen                                                                                                                                       |
+| Deleted/archived member references going stale                                        | `ON DELETE RESTRICT` makes hard-delete-while-referenced impossible; archived rows are simply excluded from _new_-selection queries, never from historical resolution                       | **Schema** (integrity) + application (selection filtering)                                                                                                       |
+| Unauthorized household membership changes (adding/removing someone else's membership) | Owner-only (or active-member, per §14's open question) INSERT/UPDATE policies                                                                                                              | RLS                                                                                                                                                              |
+| Service-role key exposed to the frontend                                              | Never referenced by any `VITE_`-prefixed env var or shipped in a client bundle; only used server-side (Edge Functions / trusted server context); all frontend calls use the anon key + RLS | **Application/deployment discipline** — RLS is irrelevant here, since the service-role key bypasses RLS by design. This is a process rule, not a database design |
 
 ---
 
@@ -846,7 +852,7 @@ locally. Not applied to the `grocerymate-dev` remote project.
   `household_members` already established, rather than inventing
   different terminology for the same idea one level up. A household can
   now be wound down without deleting it, consistent with the archive
-  principle §4 already applies to members. *Not* resolved: whether a
+  principle §4 already applies to members. _Not_ resolved: whether a
   household should ever be truly hard-deletable — `status = 'archived'`
   is the only lifecycle exit implemented.
 - **`profiles.email` got its own unique index.** Belt-and-suspenders:
@@ -878,7 +884,7 @@ different enforceability:
   leave a household ownerless. That's legitimate complexity for a real
   invariant — not something to add "for free" just to check a box, per
   this phase's explicit instruction not to reach for an elaborate trigger
-  to *claim* the invariant is solved. **It is not implemented.**
+  to _claim_ the invariant is solved. **It is not implemented.**
 
   What holds the "at least one" half together until/unless that trigger
   is ever added:
@@ -1141,7 +1147,7 @@ DEFINER` functions live there:
 - `is_household_member(household_id, include_archived default false)` —
   is `auth.uid()` a member of this household (optionally including
   archived, for historical read access)?
-- `is_household_owner(household_id)` — is `auth.uid()` the *active* owner?
+- `is_household_owner(household_id)` — is `auth.uid()` the _active_ owner?
 - `household_member_id_for(household_id)` — `auth.uid()`'s own
   `household_members.id` row in this household, if active; null
   otherwise. This is what a grocery-creation policy checks a client's
@@ -1162,7 +1168,7 @@ query inside the function runs unfiltered, and only the function's own
 boolean return value feeds the caller's policy. This cannot be abused
 despite the elevated privilege — the `household_id` argument is
 caller-suppliable and that's harmless (it returns a bare boolean, never
-row data); *whose* membership is checked always comes from `auth.uid()`,
+row data); _whose_ membership is checked always comes from `auth.uid()`,
 never from an argument.
 
 Recursion was verified empirically, not just reasoned about: a standalone
@@ -1180,16 +1186,16 @@ full `arwdDxtm` (SELECT/INSERT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER)
 on every table as it's created, independent of anything Migrations 1-2
 wrote. Every table block in this migration now opens with `revoke all on
 public.<table> from authenticated;` before granting anything back, so the
-GRANTs below are authenticated's *complete* and *only* privilege — not
+GRANTs below are authenticated's _complete_ and _only_ privilege — not
 additive on top of a hidden platform default.
 
-| Table | SELECT | INSERT (columns) | UPDATE (columns) | DELETE |
-|---|---|---|---|---|
-| `profiles` | ✓ | — | `display_name` | — |
-| `households` | ✓ | — (RPC only) | `name, currency_code, status, archived_at` | — |
-| `household_members` | ✓ | `household_id, profile_id, display_name, invited_email, role, status, invited_at, joined_at` | `role, status, display_name, invited_at, joined_at, archived_at` | — |
-| `grocery_items` | ✓ | `household_id, name, category, amount_minor, quantity, paid_by_member_id, created_by_member_id, notes` | `name, category, amount_minor, quantity, paid_by_member_id, notes` | ✓ |
-| `grocery_item_consumers` | ✓ | `grocery_item_id, household_member_id, household_id` | — | ✓ |
+| Table                    | SELECT | INSERT (columns)                                                                                       | UPDATE (columns)                                                   | DELETE |
+| ------------------------ | ------ | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------ | ------ |
+| `profiles`               | ✓      | —                                                                                                      | `display_name`                                                     | —      |
+| `households`             | ✓      | — (RPC only)                                                                                           | `name, currency_code, status, archived_at`                         | —      |
+| `household_members`      | ✓      | `household_id, profile_id, display_name, invited_email, role, status, invited_at, joined_at`           | `role, status, display_name, invited_at, joined_at, archived_at`   | —      |
+| `grocery_items`          | ✓      | `household_id, name, category, amount_minor, quantity, paid_by_member_id, created_by_member_id, notes` | `name, category, amount_minor, quantity, paid_by_member_id, notes` | ✓      |
+| `grocery_item_consumers` | ✓      | `grocery_item_id, household_member_id, household_id`                                                   | —                                                                  | ✓      |
 
 `anon` is granted nothing at all on any of the five tables or on
 `create_household` — asserted with an explicit `revoke all ... from anon`
@@ -1198,7 +1204,7 @@ denied" as `anon`). No `GRANT ALL` appears anywhere. GRANT and RLS are
 deliberately layered, not redundant: GRANT is the coarse, table/column-level
 gate ("can this role touch this column at all, ever") that Postgres checks
 before RLS is even consulted; RLS is the fine-grained, per-row gate ("is
-*this specific row*, for *this specific caller*, allowed"). Neither
+_this specific row_, for _this specific caller_, allowed"). Neither
 subsumes the other — the security issue below is exactly a case where GRANT
 alone had to do a job RLS structurally cannot.
 
@@ -1213,7 +1219,7 @@ alone had to do a job RLS structurally cannot.
   `households_update_owner` (active owner only). No INSERT/DELETE policy.
 - **household_members**: `household_members_select_member` (member,
   archived included), `household_members_insert_owner` (active owner
-  only — adding to an *existing* household), `household_members_update_owner`
+  only — adding to an _existing_ household), `household_members_update_owner`
   (active owner only). No DELETE policy.
 - **grocery_items**: `grocery_items_select_member` (member, archived
   included), `grocery_items_insert_active_member` (active member, and
@@ -1233,7 +1239,7 @@ alone had to do a job RLS structurally cannot.
 No direct INSERT policy or grant exists on `households` at all. A new
 household has no members yet, so no ordinary RLS-gated INSERT policy can
 authorize creating its first (owner) row without also being loose enough
-to let anyone insert *any* household — the insecure shortcut this task
+to let anyone insert _any_ household — the insecure shortcut this task
 was explicitly designed to avoid. Instead, `public.create_household(p_name,
 p_currency_code default 'BDT', p_display_name default null)` — a
 `SECURITY DEFINER` function, `search_path = ''`, granted to `authenticated`
@@ -1301,7 +1307,7 @@ Archived members retain read access to their former household, its
 roster, and its groceries (`is_household_member(..., true)` everywhere a
 SELECT policy needs it) — historical visibility survives archival. Every
 write path (`is_household_member(..., false)` for grocery creation,
-`can_edit_grocery_item` for edits) requires *active* status, so an
+`can_edit_grocery_item` for edits) requires _active_ status, so an
 archived member can read but never write again, including on grocery rows
 they themselves created before being archived.
 
@@ -1344,7 +1350,7 @@ to a `request.jwt.claims` JSON blob). Every simulated user in every test
 ran `select set_config('request.jwt.claim.sub', '<uuid>', true); set role
 authenticated;` immediately before its statements, and `reset role;`
 immediately after — never `SET ROLE authenticated` alone, since that only
-selects which policies'/grants' `to` clause applies, not *which*
+selects which policies'/grants' `to` clause applies, not _which_
 authenticated user is making the request. `anon` was tested separately
 (no JWT claim, `set role anon;`), against a running database with real
 tables, confirming "permission denied" on every table and the RPC. The
@@ -1376,7 +1382,7 @@ authorized grocery editor could reassign `household_id` or
 `created_by_member_id` after the fact, an owner could hijack an existing
 `household_members` row by reassigning its `profile_id`, a user could
 change their own `profiles.email` directly, and — the most severe —
-*any* authenticated user could `TRUNCATE` any of the five tables outright,
+_any_ authenticated user could `TRUNCATE` any of the five tables outright,
 wiping every household's data, with RLS providing zero protection against
 it. Confirmed the root cause directly via `pg_default_acl` and
 `pg_class.relacl` (both showed the un-narrowed `authenticated=arwdDxtm`
@@ -1552,7 +1558,7 @@ exactly the instruction for this step.
 
 **A real, proven blocker was found and is deliberately not fixed here**:
 `households.created_by uuid not null references public.profiles (id) on
-delete restrict` (Migration 1) means a user who has ever created *any*
+delete restrict` (Migration 1) means a user who has ever created _any_
 household — which, through `create_household()`, is every user who has
 ever used the create-household flow — can never have their Auth account
 deleted while that household still exists, because the cascade

@@ -7,6 +7,7 @@ interview prep — if you can walk through this document from memory, you
 can explain the architecture confidently.
 
 **Where the code lives:**
+
 - `src/domain/` — the shared data shapes (`Money`, `Member`, `GroceryItem`, `Settlement`, ...). Plain types, no logic.
 - `src/engine/` — the calculation itself (`splitEvenly`, `calculateMemberBalances`, `minimizeTransactions`, `settlementEngine`).
 
@@ -19,7 +20,7 @@ can explain the architecture confidently.
 `0.1 + 0.2` in JavaScript is `0.30000000000000004`, not `0.3`. That's not a
 JavaScript bug — it's how binary floating-point numbers work, and every
 mainstream programming language has the same issue. For a calculator app
-this rounding error is invisible. For a *money* app, adding up enough
+this rounding error is invisible. For a _money_ app, adding up enough
 grocery prices this way will eventually put a household's balances off by
 a paisa (or more), and nobody can see why.
 
@@ -34,11 +35,11 @@ represents every amount as an integer count of paisa ("minor units"),
 never as a decimal number of Taka ("major units"):
 
 | Taka (major units) | Minor units (paisa) |
-|---|---|
-| ৳100 | `10000` |
-| ৳100.50 | `10050` |
-| ৳0.01 | `1` |
-| ৳999,999.99 | `99999999` |
+| ------------------ | ------------------- |
+| ৳100               | `10000`             |
+| ৳100.50            | `10050`             |
+| ৳0.01              | `1`                 |
+| ৳999,999.99        | `99999999`          |
 
 Integers don't have a floating-point rounding problem — `10050 + 1` is
 always exactly `10051`, forever. This is the same technique real payment
@@ -49,13 +50,13 @@ systems (Stripe, for example) use internally.
 ```ts
 // src/domain/Money.ts
 export interface Money {
-  readonly minorUnits: number   // integer, never negative
-  readonly currency: Currency   // which currency this amount is in
+  readonly minorUnits: number // integer, never negative
+  readonly currency: Currency // which currency this amount is in
 }
 ```
 
 `Money` is deliberately a "dumb" data shape — it stores an amount and a
-currency, and does *nothing else*. It has no `.add()`, no `.format()`, no
+currency, and does _nothing else_. It has no `.add()`, no `.format()`, no
 conversion helpers. That's on purpose, and it maps onto a rule worth
 remembering:
 
@@ -63,8 +64,8 @@ remembering:
 > domain layer. A shared data type shouldn't secretly own either.**
 
 The existing `src/utils/money.ts` (`formatTaka`, `formatAmount`) is the
-*display* layer — it turns a number into a string like `"৳100.50"` for the
-UI, and never the other way around. This engine is the *domain* layer — it
+_display_ layer — it turns a number into a string like `"৳100.50"` for the
+UI, and never the other way around. This engine is the _domain_ layer — it
 takes `Money` values in and produces more `Money`-shaped numbers out, and
 never touches a string. Neither layer does the other's job.
 
@@ -79,7 +80,7 @@ future backend:
 ```ts
 // A person in the household
 interface Member {
-  id: MemberId          // e.g. "member-1" — a branded string, not just `string`
+  id: MemberId // e.g. "member-1" — a branded string, not just `string`
   name: string
   email: string
   role: 'owner' | 'member'
@@ -90,10 +91,10 @@ interface Member {
 interface GroceryItem {
   id: GroceryItemId
   name: string
-  unitPrice: Money              // integer minor units + currency
-  quantity: number               // positive integer
-  paidByMemberId: MemberId       // who paid
-  sharedByMemberIds: MemberId[]  // who is splitting the cost
+  unitPrice: Money // integer minor units + currency
+  quantity: number // positive integer
+  paidByMemberId: MemberId // who paid
+  sharedByMemberIds: MemberId[] // who is splitting the cost
   // ...category, notes, timestamp
 }
 ```
@@ -113,20 +114,20 @@ Two design choices worth calling out:
   whole category of "which id was this again?" bugs at compile time for
   free.
 
-## 3. What should *not* live in this layer
+## 3. What should _not_ live in this layer
 
 Part of designing this cleanly is being explicit about what the financial
 domain layer is **not** responsible for. This codebase already has
 several other domain-ish folders under `src/`, each solving a genuinely
 different problem:
 
-| Folder | What it's for | Why it's separate from the settlement engine |
-|---|---|---|
-| `src/ai/` | Calling an AI provider (Claude/OpenAI/Gemini) to parse a grocery list from a prompt or receipt | Produces *candidate* `GroceryItem`-shaped data; never computes balances or transfers itself |
-| `src/ocr/` | Reading text off a photographed receipt | Text extraction only, no money math |
-| `src/receiptPipeline/` | Orchestrates OCR → AI parsing → user confirmation | A pipeline that *feeds* the engine; doesn't replace it |
-| `src/fairness/` | Turns an already-computed `SettlementResult` into a plain-language explanation ("Rahim owes ৳420 because...") | Explicitly reads the engine's output and is forbidden from recalculating anything — see its own `ARCHITECTURE.md` |
-| `src/persistence/` | Saving/loading data (currently browser storage) | Storage concern; the engine takes plain arrays in memory and has no idea where they came from or where they'll be saved |
+| Folder                 | What it's for                                                                                                 | Why it's separate from the settlement engine                                                                            |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `src/ai/`              | Calling an AI provider (Claude/OpenAI/Gemini) to parse a grocery list from a prompt or receipt                | Produces _candidate_ `GroceryItem`-shaped data; never computes balances or transfers itself                             |
+| `src/ocr/`             | Reading text off a photographed receipt                                                                       | Text extraction only, no money math                                                                                     |
+| `src/receiptPipeline/` | Orchestrates OCR → AI parsing → user confirmation                                                             | A pipeline that _feeds_ the engine; doesn't replace it                                                                  |
+| `src/fairness/`        | Turns an already-computed `SettlementResult` into a plain-language explanation ("Rahim owes ৳420 because...") | Explicitly reads the engine's output and is forbidden from recalculating anything — see its own `ARCHITECTURE.md`       |
+| `src/persistence/`     | Saving/loading data (currently browser storage)                                                               | Storage concern; the engine takes plain arrays in memory and has no idea where they came from or where they'll be saved |
 
 The through-line: **the settlement engine only ever computes a result from
 the members and groceries it's handed. It never fetches data, never
@@ -150,7 +151,7 @@ The algorithm:
    participant gets at least this much.
 2. Whatever's left over — `remainder = total - baseShare * count`, always
    between `0` and `count - 1` — can't be split any further as whole
-   minor units. It has to go to *someone*.
+   minor units. It has to go to _someone_.
 3. **The rounding rule:** sort the participant ids alphabetically. The
    first `remainder` people in that sorted order each get one extra minor
    unit.
@@ -167,7 +168,7 @@ The algorithm:
 
 ### Why sort by id, specifically
 
-The rule has to be *deterministic* — the same inputs must always produce
+The rule has to be _deterministic_ — the same inputs must always produce
 the same split, regardless of what order the caller happened to list
 people in. Sorting by id is simple, has no dependency on system time or
 random numbers, and doesn't play favorites in any way a household would
@@ -194,9 +195,9 @@ summary row per person:
 ```ts
 interface MemberSettlementSummary {
   memberId: MemberId
-  spentMinorUnits: number       // total this member paid, across all items
-  consumedMinorUnits: number    // this member's fair share of everything, across all items
-  netBalanceMinorUnits: number  // spentMinorUnits - consumedMinorUnits
+  spentMinorUnits: number // total this member paid, across all items
+  consumedMinorUnits: number // this member's fair share of everything, across all items
+  netBalanceMinorUnits: number // spentMinorUnits - consumedMinorUnits
 }
 ```
 
@@ -225,8 +226,8 @@ netBalance = spent - consumed
 ```
 
 - **Positive** → this member covered more than their fair share. The
-  household owes *them* money.
-- **Negative** → this member consumed more than they covered. *They* owe
+  household owes _them_ money.
+- **Negative** → this member consumed more than they covered. _They_ owe
   the household money.
 - **Zero** → settled up. This includes the common case of a purely
   personal item: someone buys a snack only for themselves, so their
@@ -248,7 +249,7 @@ owed ৳290" instead of just a bare number.
 Knowing everyone's net balance isn't the same as knowing who should
 actually pay whom. Five people with balances `+200, +100, -150, -100, -50`
 could be settled by many different sequences of payments — the job here
-is to pick a small, deterministic, *correct* one.
+is to pick a small, deterministic, _correct_ one.
 
 **Correctness comes first.** Before computing anything, the function
 checks that every balance sums to exactly zero (see §7 — if it doesn't,
@@ -267,7 +268,7 @@ any cost:**
 - **More than 8:** searching every combination becomes too slow, so the
   engine falls back to a simple greedy rule instead — repeatedly match
   whoever owes the most against whoever is owed the most, and repeat
-  until everyone's at zero. This always finds *a* valid, small settling
+  until everyone's at zero. This always finds _a_ valid, small settling
   order (provably never more than one transfer per remaining person), just
   not always the mathematically smallest possible count for very large
   households. That trade-off is deliberate: a working, understandable
@@ -283,8 +284,8 @@ passed in.
 
 ```ts
 interface DebtTransfer {
-  from: MemberId          // who pays
-  to: MemberId            // who receives
+  from: MemberId // who pays
+  to: MemberId // who receives
   amountMinorUnits: number // always a positive integer
 }
 ```
@@ -308,17 +309,17 @@ silently repair or reinterpret data that changes what someone owes.** If
 the input doesn't make sense, the engine throws a specific, typed error
 instead of guessing.
 
-| Situation | Outcome | Why |
-|---|---|---|
-| A grocery item's `paidByMemberId` isn't anyone in the members list (including an empty string) | `UnknownMemberError` | Guessing a payer would misattribute real money |
-| A `sharedByMemberIds` entry isn't anyone in the members list | `UnknownMemberError` | Same reason, for the consuming side |
-| `sharedByMemberIds` is empty | `EmptySharedByError` | A cost can't be divided among zero people — there's no "reasonable default" to fall back to |
-| The same member appears twice in one item's `sharedByMemberIds` | `DuplicateSharedByError` | Silently deduplicating would quietly halve what looked like a double share; silently doubling their share would be worse |
-| The same member id appears twice in the members list | `DuplicateMemberError` | Two entries claiming the same identity is a data problem the caller needs to fix, not something to merge automatically |
-| `unitPrice.minorUnits` is negative, non-integer, `NaN`, or `Infinity` | `InvalidAmountError` | Any of these would poison every downstream sum |
-| `quantity` is zero, negative, or non-integer | `InvalidAmountError` | Same reasoning |
-| An item is priced in a different currency than the settlement is being computed in | `MixedCurrencyError` | ৳100 and $100 can't be added — there is no such thing as an "amount" without a currency attached |
-| The engine's own computed balances don't sum to zero (only possible from a bug, not bad input) | `UnbalancedInputError` | An internal consistency check, not user-facing validation — if this ever fires, it means `calculateMemberBalances` itself has a bug |
+| Situation                                                                                      | Outcome                  | Why                                                                                                                                 |
+| ---------------------------------------------------------------------------------------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| A grocery item's `paidByMemberId` isn't anyone in the members list (including an empty string) | `UnknownMemberError`     | Guessing a payer would misattribute real money                                                                                      |
+| A `sharedByMemberIds` entry isn't anyone in the members list                                   | `UnknownMemberError`     | Same reason, for the consuming side                                                                                                 |
+| `sharedByMemberIds` is empty                                                                   | `EmptySharedByError`     | A cost can't be divided among zero people — there's no "reasonable default" to fall back to                                         |
+| The same member appears twice in one item's `sharedByMemberIds`                                | `DuplicateSharedByError` | Silently deduplicating would quietly halve what looked like a double share; silently doubling their share would be worse            |
+| The same member id appears twice in the members list                                           | `DuplicateMemberError`   | Two entries claiming the same identity is a data problem the caller needs to fix, not something to merge automatically              |
+| `unitPrice.minorUnits` is negative, non-integer, `NaN`, or `Infinity`                          | `InvalidAmountError`     | Any of these would poison every downstream sum                                                                                      |
+| `quantity` is zero, negative, or non-integer                                                   | `InvalidAmountError`     | Same reasoning                                                                                                                      |
+| An item is priced in a different currency than the settlement is being computed in             | `MixedCurrencyError`     | ৳100 and $100 can't be added — there is no such thing as an "amount" without a currency attached                                    |
+| The engine's own computed balances don't sum to zero (only possible from a bug, not bad input) | `UnbalancedInputError`   | An internal consistency check, not user-facing validation — if this ever fires, it means `calculateMemberBalances` itself has a bug |
 
 Every one of these is a **subclass of `SettlementEngineError`**, so a
 caller can catch just this family of errors without also swallowing
@@ -336,7 +337,7 @@ unrelated bugs.
   can't owe themselves anything.
 - **A ৳0 item.** Splits into all-zero shares. Unusual, but not wrong.
 
-The dividing line: if the *shape* of the data doesn't make financial
+The dividing line: if the _shape_ of the data doesn't make financial
 sense (an item that six people apparently paid for, a payer nobody's
 heard of), that's an error. If the data is well-formed but simply
 describes a quiet corner of ordinary life (nobody's added groceries

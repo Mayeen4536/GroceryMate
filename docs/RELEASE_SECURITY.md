@@ -11,13 +11,13 @@ Captured via `supabase db advisors --linked --type security|performance`.
 
 **Security (4 findings):**
 
-| # | Finding | Object | Disposition |
-|---|---|---|---|
-| 1 | `anon_security_definer_function_executable` | `public.rls_auto_enable()` | **Fixed** — grants revoked |
-| 2 | `authenticated_security_definer_function_executable` | `public.rls_auto_enable()` | **Fixed** — grants revoked |
-| 3 | `authenticated_security_definer_function_executable` | `public.create_household(...)` | **Accepted by design** — not changed |
-| 4 | `function_search_path_mutable` | `public.set_updated_at()` | **Fixed** — `search_path` pinned |
-| 5 | `auth_leaked_password_protection` | Auth config | **Documented** — see below; requires a plan change, not SQL |
+| #   | Finding                                              | Object                         | Disposition                                                 |
+| --- | ---------------------------------------------------- | ------------------------------ | ----------------------------------------------------------- |
+| 1   | `anon_security_definer_function_executable`          | `public.rls_auto_enable()`     | **Fixed** — grants revoked                                  |
+| 2   | `authenticated_security_definer_function_executable` | `public.rls_auto_enable()`     | **Fixed** — grants revoked                                  |
+| 3   | `authenticated_security_definer_function_executable` | `public.create_household(...)` | **Accepted by design** — not changed                        |
+| 4   | `function_search_path_mutable`                       | `public.set_updated_at()`      | **Fixed** — `search_path` pinned                            |
+| 5   | `auth_leaked_password_protection`                    | Auth config                    | **Documented** — see below; requires a plan change, not SQL |
 
 (Numbered 1–5 to match the advisor's own finding count; #1 and #2 are the
 same function flagged for two different roles.)
@@ -119,7 +119,7 @@ no changes made):
   household and its first (owner) membership row without a chicken-and-
   egg RLS problem (no ordinary INSERT policy can authorize a household's
   very first membership row without also being loose enough to authorize
-  *any* household's membership rows).
+  _any_ household's membership rows).
 - Owner derivation: `v_caller_id := auth.uid()` — read once, at the top
   of the function, from the JWT the caller actually authenticated with.
   None of the function's three parameters (`p_name`, `p_currency_code`,
@@ -152,8 +152,8 @@ project/plan-level Auth config item, not something read or set through
 ordinary API calls).
 
 **Free plan support**: **not available on Free.** Per Supabase's own
-docs (`supabase.com/docs/guides/auth/password-security`): *"Leaked
-password protection is available on the Pro Plan and above."* If
+docs (`supabase.com/docs/guides/auth/password-security`): _"Leaked
+password protection is available on the Pro Plan and above."_ If
 `grocerymate-dev` is currently on the Free plan, this cannot be turned on
 without upgrading first — that's a billing/plan decision for the project
 owner, not something this slice can or should change.
@@ -242,7 +242,7 @@ Investigated against actual query patterns in
   covering index for every real lookup/cascade-delete path that filters
   by `grocery_item_id` alone (exactly what the app's edit/delete flows
   do: `.eq('grocery_item_id', id)`). The advisor likely flags this
-  because no index matches the FK's *exact* two-column tuple
+  because no index matches the FK's _exact_ two-column tuple
   `(grocery_item_id, household_id)`, not because the real query pattern
   is actually unindexed.
 - **`grocery_item_consumers_household_member_id_fkey`** — **SAFE TO
@@ -256,8 +256,8 @@ Investigated against actual query patterns in
   frequent lookup").
 - **`grocery_items_created_by_member_id_fkey`** — **SAFE TO DEFER,
   reconfirmed.** Migration 2 deliberately did not index this column,
-  with an explicit comment: *"nothing in the current product queries
-  'everything I logged' yet."* Slice 5 added a real `itemsAdded` count
+  with an explicit comment: _"nothing in the current product queries
+  'everything I logged' yet."_ Slice 5 added a real `itemsAdded` count
   keyed by `created_by_member_id` (`MembersPage.tsx`'s
   `withRealFinancials`) — checked specifically for this audit — but it
   filters the household's already-loaded, already-fetched grocery array
@@ -281,28 +281,28 @@ Full matrix run against local Postgres with real role/JWT simulation
 uses) — two real users, two real households, created through the actual
 `create_household()` RPC, not raw inserts.
 
-| Check | Result |
-|---|---|
-| anon: SELECT profiles/households/household_members/grocery_items | PASS (permission denied on all four) |
-| anon: INSERT households | PASS (permission denied) |
-| anon: EXECUTE `rls_auto_enable()` | N/A locally (function doesn't exist here) — see note below |
-| authenticated: sees own profile only | PASS |
-| authenticated: sees own household only | PASS |
-| authenticated: no cross-household `household_members` read | PASS |
-| authenticated: no cross-household `households` read | PASS |
-| authenticated: no cross-household `grocery_items` read | PASS |
-| authenticated: cross-household UPDATE (`households`) | PASS (0 rows matched) |
-| authenticated: cross-household INSERT (`grocery_items` into another household) | PASS (RLS policy violation) |
-| authenticated: impersonate creator (own household, claim another member's id) | PASS (RLS policy violation) |
-| authenticated: mutate `grocery_items.household_id` | PASS (column grant denied) |
-| authenticated: mutate `grocery_items.created_by_member_id` | PASS (column grant denied) |
-| authenticated: mutate `profiles.id` | PASS (column grant denied) |
-| authenticated: mutate `household_members.id` | PASS (column grant denied) |
-| authenticated: TRUNCATE `grocery_items` / `households` | PASS (permission denied on both) |
-| authenticated: EXECUTE `rls_auto_enable()` | N/A locally — see note below |
-| `create_household()`: still works, still derives correct owner (both users) | PASS |
-| `updated_at`: advances on profiles/households/household_members/grocery_items | PASS |
-| Sanity — User1's legitimate own-item edit still succeeds | PASS |
+| Check                                                                          | Result                                                     |
+| ------------------------------------------------------------------------------ | ---------------------------------------------------------- |
+| anon: SELECT profiles/households/household_members/grocery_items               | PASS (permission denied on all four)                       |
+| anon: INSERT households                                                        | PASS (permission denied)                                   |
+| anon: EXECUTE `rls_auto_enable()`                                              | N/A locally (function doesn't exist here) — see note below |
+| authenticated: sees own profile only                                           | PASS                                                       |
+| authenticated: sees own household only                                         | PASS                                                       |
+| authenticated: no cross-household `household_members` read                     | PASS                                                       |
+| authenticated: no cross-household `households` read                            | PASS                                                       |
+| authenticated: no cross-household `grocery_items` read                         | PASS                                                       |
+| authenticated: cross-household UPDATE (`households`)                           | PASS (0 rows matched)                                      |
+| authenticated: cross-household INSERT (`grocery_items` into another household) | PASS (RLS policy violation)                                |
+| authenticated: impersonate creator (own household, claim another member's id)  | PASS (RLS policy violation)                                |
+| authenticated: mutate `grocery_items.household_id`                             | PASS (column grant denied)                                 |
+| authenticated: mutate `grocery_items.created_by_member_id`                     | PASS (column grant denied)                                 |
+| authenticated: mutate `profiles.id`                                            | PASS (column grant denied)                                 |
+| authenticated: mutate `household_members.id`                                   | PASS (column grant denied)                                 |
+| authenticated: TRUNCATE `grocery_items` / `households`                         | PASS (permission denied on both)                           |
+| authenticated: EXECUTE `rls_auto_enable()`                                     | N/A locally — see note below                               |
+| `create_household()`: still works, still derives correct owner (both users)    | PASS                                                       |
+| `updated_at`: advances on profiles/households/household_members/grocery_items  | PASS                                                       |
+| Sanity — User1's legitimate own-item edit still succeeds                       | PASS                                                       |
 
 **Note on `rls_auto_enable`**: since the function only exists on the
 hosted project, the anon/authenticated-cannot-execute checks for it can't
@@ -325,8 +325,8 @@ nothing left over locally.
   Documented since Migration 4 / `docs/AUTH_INTEGRATION.md`; unrelated to
   this slice's changes.
 - **Owner self-archive backend gap**: `household_members_update_owner`'s
-  RLS check is based on *who* is performing the update (the household's
-  owner), not *which row* is targeted — so an owner could technically
+  RLS check is based on _who_ is performing the update (the household's
+  owner), not _which row_ is targeted — so an owner could technically
   archive their own owner-role row directly via the API, leaving the
   household with zero active owners. The Members UI never offers
   archive/reactivate for a `role === 'owner'` row, but that's a UX

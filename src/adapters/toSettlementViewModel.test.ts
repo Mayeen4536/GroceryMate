@@ -28,8 +28,18 @@ describe('toSettlementViewModel', () => {
     const result: SettlementResult = {
       currency: BDT,
       memberBalances: [
-        { memberId: 'm-1' as MemberId, spentMinorUnits: 30000, consumedMinorUnits: 0, netBalanceMinorUnits: 30000 },
-        { memberId: 'm-2' as MemberId, spentMinorUnits: 0, consumedMinorUnits: 30000, netBalanceMinorUnits: -30000 },
+        {
+          memberId: 'm-1' as MemberId,
+          spentMinorUnits: 30000,
+          consumedMinorUnits: 0,
+          netBalanceMinorUnits: 30000,
+        },
+        {
+          memberId: 'm-2' as MemberId,
+          spentMinorUnits: 0,
+          consumedMinorUnits: 30000,
+          netBalanceMinorUnits: -30000,
+        },
       ],
       transfers: [{ from: 'm-2' as MemberId, to: 'm-1' as MemberId, amountMinorUnits: 30000 }],
     }
@@ -47,9 +57,24 @@ describe('toSettlementViewModel', () => {
     const result: SettlementResult = {
       currency: BDT,
       memberBalances: [
-        { memberId: 'a' as MemberId, spentMinorUnits: 90000, consumedMinorUnits: 60000, netBalanceMinorUnits: 30000 },
-        { memberId: 'b' as MemberId, spentMinorUnits: 60000, consumedMinorUnits: 60000, netBalanceMinorUnits: 0 },
-        { memberId: 'c' as MemberId, spentMinorUnits: 0, consumedMinorUnits: 30000, netBalanceMinorUnits: -30000 },
+        {
+          memberId: 'a' as MemberId,
+          spentMinorUnits: 90000,
+          consumedMinorUnits: 60000,
+          netBalanceMinorUnits: 30000,
+        },
+        {
+          memberId: 'b' as MemberId,
+          spentMinorUnits: 60000,
+          consumedMinorUnits: 60000,
+          netBalanceMinorUnits: 0,
+        },
+        {
+          memberId: 'c' as MemberId,
+          spentMinorUnits: 0,
+          consumedMinorUnits: 30000,
+          netBalanceMinorUnits: -30000,
+        },
       ],
       transfers: [{ from: 'c' as MemberId, to: 'a' as MemberId, amountMinorUnits: 30000 }],
     }
@@ -62,9 +87,24 @@ describe('toSettlementViewModel', () => {
     expect(viewModel.transfers).toEqual([{ id: 'c::a::30000', from: 'C', to: 'A', amount: '300' }])
 
     const financialsOf = (id: string) => viewModel.memberFinancials.find((m) => m.memberId === id)!
-    expect(financialsOf('a')).toMatchObject({ amountPaid: '900', amountConsumed: '600', netBalance: '300', status: 'owed' })
-    expect(financialsOf('b')).toMatchObject({ amountPaid: '600', amountConsumed: '600', netBalance: '0', status: 'settled' })
-    expect(financialsOf('c')).toMatchObject({ amountPaid: '0', amountConsumed: '300', netBalance: '-300', status: 'owes' })
+    expect(financialsOf('a')).toMatchObject({
+      amountPaid: '900',
+      amountConsumed: '600',
+      netBalance: '300',
+      status: 'owed',
+    })
+    expect(financialsOf('b')).toMatchObject({
+      amountPaid: '600',
+      amountConsumed: '600',
+      netBalance: '0',
+      status: 'settled',
+    })
+    expect(financialsOf('c')).toMatchObject({
+      amountPaid: '0',
+      amountConsumed: '300',
+      netBalance: '-300',
+      status: 'owes',
+    })
   })
 
   it('keeps an invited member\'s status as "invited" even though their balance is zero', () => {
@@ -86,7 +126,12 @@ describe('toSettlementViewModel', () => {
     const result: SettlementResult = {
       currency: BDT,
       memberBalances: [
-        { memberId: 'm-1' as MemberId, spentMinorUnits: 5000, consumedMinorUnits: 5000, netBalanceMinorUnits: 0 },
+        {
+          memberId: 'm-1' as MemberId,
+          spentMinorUnits: 5000,
+          consumedMinorUnits: 5000,
+          netBalanceMinorUnits: 0,
+        },
       ],
       transfers: [],
     }

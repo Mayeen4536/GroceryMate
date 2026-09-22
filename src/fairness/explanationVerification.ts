@@ -1,7 +1,8 @@
 import type { Currency } from '@/domain'
 import type { SettlementExplanationFacts } from './explanationFacts'
 
-export type ExplanationVerificationResult = { readonly ok: true } | { readonly ok: false; readonly reason: string }
+export type ExplanationVerificationResult =
+  { readonly ok: true } | { readonly ok: false; readonly reason: string }
 
 /**
  * The actual enforcement of "never let AI change financial results" —
@@ -13,7 +14,10 @@ export type ExplanationVerificationResult = { readonly ok: true } | { readonly o
  * as fatal and discards the AI's text in favor of the deterministic
  * template, which cannot fail this check by construction.
  */
-export function verifyExplanationText(text: string, facts: SettlementExplanationFacts): ExplanationVerificationResult {
+export function verifyExplanationText(
+  text: string,
+  facts: SettlementExplanationFacts,
+): ExplanationVerificationResult {
   const scale = 10 ** facts.currency.minorUnitDigits
   const expectedMajorAmount = facts.amountMinorUnits / scale
   const mentionedAmounts = extractCurrencyAmounts(text, facts.currency)

@@ -22,10 +22,7 @@ export function SettlementFlow() {
           <span className="text-xs text-muted">Bilal</span>
         </div>
         <div className="relative h-10 flex-1">
-          <span
-            aria-hidden="true"
-            className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-line"
-          />
+          <span aria-hidden="true" className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-line" />
           <FlowDots
             axis="x"
             duration={1.8}
@@ -43,8 +40,7 @@ export function SettlementFlow() {
         </div>
       </div>
       <p className="text-sm text-muted">
-        Bilal owes Aisha{' '}
-        <AnimatedNumber value={inView ? 410 : 0} className="font-semibold text-ink" />
+        Bilal owes Aisha <AnimatedNumber value={inView ? 410 : 0} className="font-semibold text-ink" />
       </p>
     </motion.div>
   )

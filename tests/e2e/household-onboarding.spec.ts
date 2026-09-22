@@ -43,7 +43,9 @@ test('double-submitting the create button does not create two households', async
   await expect(page.getByText('Double Submit Household').and(page.locator(':visible'))).toBeVisible()
 })
 
-test('successful creation enters the app and shows the real household name in the shell', async ({ page }) => {
+test('successful creation enters the app and shows the real household name in the shell', async ({
+  page,
+}) => {
   await signUpFreshUser(page, 'Shell Test')
   await page.getByLabel('Household name').fill('Shell Test Household')
   await page.getByRole('button', { name: 'Create household' }).click()

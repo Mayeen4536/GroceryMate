@@ -1,6 +1,15 @@
 import { useState } from 'react'
 import { AlertTriangle, RotateCcw, ShoppingBasket, Sparkles, Trash2, type LucideIcon } from 'lucide-react'
-import { AnimatedNumber, Avatar, Badge, Button, Drawer, MEMBER_TONES, Modal, SwatchPicker } from '@/components/ui'
+import {
+  AnimatedNumber,
+  Avatar,
+  Badge,
+  Button,
+  Drawer,
+  MEMBER_TONES,
+  Modal,
+  SwatchPicker,
+} from '@/components/ui'
 import { useHousehold } from '@/household/useHousehold'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { STATUS_META } from '@/constants/memberStatus'
@@ -51,7 +60,10 @@ function buildActivity(
       text: `${firstName(member.name)} added ${item.name}`,
       when: fullDateLabel(item.createdAt),
     }))
-  return [...added, { id: 'joined', icon: Sparkles, text: `Joined ${householdName}`, when: member.joinedLabel }]
+  return [
+    ...added,
+    { id: 'joined', icon: Sparkles, text: `Joined ${householdName}`, when: member.joinedLabel },
+  ]
 }
 
 export function MemberProfileDrawer({
@@ -141,9 +153,7 @@ export function MemberProfileDrawer({
           <div className="flex items-center gap-4">
             <Avatar name={member.name} tone={member.tone} size="lg" />
             <div className="min-w-0">
-              <p className="truncate text-lg font-semibold tracking-tight text-ink">
-                {member.name}
-              </p>
+              <p className="truncate text-lg font-semibold tracking-tight text-ink">{member.name}</p>
               <p className="truncate text-sm text-muted">{member.email}</p>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {member.role === 'owner' && <Badge tone="brand">Owner</Badge>}
@@ -171,7 +181,11 @@ export function MemberProfileDrawer({
             <div className="card-surface rounded-lg p-4 shadow-soft">
               <p className="text-xs text-muted">Total paid</p>
               <p className="mt-1 text-xl font-bold tabular-nums tracking-tight text-ink">
-                {financialsUnavailable ? '—' : <AnimatedNumber value={Number.parseFloat(member.amountPaid) || 0} />}
+                {financialsUnavailable ? (
+                  '—'
+                ) : (
+                  <AnimatedNumber value={Number.parseFloat(member.amountPaid) || 0} />
+                )}
               </p>
             </div>
             <div className="card-surface rounded-lg p-4 shadow-soft">
@@ -185,18 +199,20 @@ export function MemberProfileDrawer({
           <div className="flex flex-col gap-2">
             <span className="text-sm font-medium text-ink">Recent activity</span>
             <ul className="space-y-1.5">
-              {buildActivity(member, groceries, household?.name ?? 'this household').map(({ id, icon: Icon, text, when }) => (
-                <li
-                  key={id}
-                  className="card-surface flex items-center gap-3 rounded-lg px-3.5 py-2.5 shadow-soft"
-                >
-                  <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-sand text-ink-soft">
-                    <Icon size={15} aria-hidden="true" />
-                  </span>
-                  <span className="min-w-0 flex-1 truncate text-sm text-ink-soft">{text}</span>
-                  <span className="shrink-0 text-xs text-muted">{when}</span>
-                </li>
-              ))}
+              {buildActivity(member, groceries, household?.name ?? 'this household').map(
+                ({ id, icon: Icon, text, when }) => (
+                  <li
+                    key={id}
+                    className="card-surface flex items-center gap-3 rounded-lg px-3.5 py-2.5 shadow-soft"
+                  >
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-sand text-ink-soft">
+                      <Icon size={15} aria-hidden="true" />
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-sm text-ink-soft">{text}</span>
+                    <span className="shrink-0 text-xs text-muted">{when}</span>
+                  </li>
+                ),
+              )}
             </ul>
           </div>
         </div>

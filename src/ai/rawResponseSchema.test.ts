@@ -105,7 +105,9 @@ describe('validateGroceryParseResponse', () => {
   it('defaults quantity to 1 when missing, zero, negative, or non-numeric', () => {
     for (const badQuantity of [undefined, 0, -3, 'a lot', null]) {
       const result = validateGroceryParseResponse({
-        items: [{ itemName: 'rice', payerName: 'Mayeen', quantity: badQuantity, sharedBy: { scope: 'everyone' } }],
+        items: [
+          { itemName: 'rice', payerName: 'Mayeen', quantity: badQuantity, sharedBy: { scope: 'everyone' } },
+        ],
       })
       expect(result.validLines[0].quantity).toBe(1)
     }
@@ -125,7 +127,9 @@ describe('validateGroceryParseResponse', () => {
   it('treats a missing or invalid statedPrice as null rather than guessing a number', () => {
     for (const badPrice of [undefined, null, 'free', -5, NaN]) {
       const result = validateGroceryParseResponse({
-        items: [{ itemName: 'rice', payerName: 'Mayeen', statedPrice: badPrice, sharedBy: { scope: 'everyone' } }],
+        items: [
+          { itemName: 'rice', payerName: 'Mayeen', statedPrice: badPrice, sharedBy: { scope: 'everyone' } },
+        ],
       })
       expect(result.validLines[0].statedPrice).toBeNull()
     }
@@ -203,7 +207,15 @@ describe('validateGroceryParseResponse', () => {
     expect(keys).not.toContain('amountPerPerson')
     expect(keys).not.toContain('splitAmount')
     expect(keys.sort()).toEqual(
-      ['category', 'itemName', 'payerName', 'quantity', 'sharedBy', 'sharedByWasExplicit', 'statedPrice'].sort(),
+      [
+        'category',
+        'itemName',
+        'payerName',
+        'quantity',
+        'sharedBy',
+        'sharedByWasExplicit',
+        'statedPrice',
+      ].sort(),
     )
   })
 })

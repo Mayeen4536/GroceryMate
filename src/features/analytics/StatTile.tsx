@@ -15,7 +15,15 @@ export interface StatTileProps {
 }
 
 /** One headline number (or fact) for the KPI row at the top of Analytics. */
-export function StatTile({ icon, label, accent = 'brand', value, format, valueLabel, sublabel }: StatTileProps) {
+export function StatTile({
+  icon,
+  label,
+  accent = 'brand',
+  value,
+  format,
+  valueLabel,
+  sublabel,
+}: StatTileProps) {
   return (
     <Card accent={accent} icon={icon} title={label} padding="md">
       <p className="truncate text-2xl font-semibold tracking-tight text-ink">

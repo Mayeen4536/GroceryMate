@@ -129,7 +129,10 @@ describe('createReceiptScanningPipeline', () => {
 
   it('propagates an OCR failure without calling the cleaner or the parser', async () => {
     const ocrError = new Error('OCR provider unavailable')
-    const ocrProvider: OCRProvider = { providerName: 'fake', extractText: vi.fn().mockRejectedValue(ocrError) }
+    const ocrProvider: OCRProvider = {
+      providerName: 'fake',
+      extractText: vi.fn().mockRejectedValue(ocrError),
+    }
     const { cleaner: textCleaner, clean } = fakeTextCleaner((raw) => raw)
     const groceryParser = createGroceryParser({ provider: createFakeAIProvider(EMPTY_PARSE_RESPONSE) })
     const pipeline = createReceiptScanningPipeline({ ocrProvider, textCleaner, groceryParser })

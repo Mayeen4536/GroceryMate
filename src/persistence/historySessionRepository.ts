@@ -70,7 +70,11 @@ export function createHistorySessionRepository(deps: HistorySessionRepositoryDep
 
     save(session: HistorySession): StoredHistorySession {
       const existing = requireSession(session.id)
-      const updated: StoredHistorySession = { session, lifecycleStatus: existing.lifecycleStatus, savedAt: now() }
+      const updated: StoredHistorySession = {
+        session,
+        lifecycleStatus: existing.lifecycleStatus,
+        savedAt: now(),
+      }
       sessions.save(updated)
       return updated
     },
@@ -136,7 +140,11 @@ export function createHistorySessionRepository(deps: HistorySessionRepositoryDep
         stored.session.notes === undefined
           ? newSessionBase
           : { ...newSessionBase, notes: stored.session.notes }
-      const newStored: StoredHistorySession = { session: newSession, lifecycleStatus: 'active', savedAt: now() }
+      const newStored: StoredHistorySession = {
+        session: newSession,
+        lifecycleStatus: 'active',
+        savedAt: now(),
+      }
       sessions.save(newStored)
       return newStored
     },

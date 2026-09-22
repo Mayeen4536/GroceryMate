@@ -11,7 +11,8 @@ import { isAuthApiError } from '@supabase/supabase-js'
  */
 const MESSAGES: Record<string, string> = {
   invalid_credentials: 'That email or password is incorrect.',
-  email_not_confirmed: 'Please confirm your email before signing in — check your inbox for the confirmation link.',
+  email_not_confirmed:
+    'Please confirm your email before signing in — check your inbox for the confirmation link.',
   user_already_exists: 'An account with that email already exists. Try signing in instead.',
   email_exists: 'An account with that email already exists. Try signing in instead.',
   email_address_invalid: 'That doesn’t look like a valid email address.',

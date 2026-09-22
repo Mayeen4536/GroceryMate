@@ -27,7 +27,8 @@ const sorters: Record<SortBy, (a: Member, b: Member) => number> = {
  * same shape this hook already returned before the migration.
  */
 export function useMembers() {
-  const { members, loading, error, refresh, addMember, archiveMember, reactivateMember } = useHouseholdMembers()
+  const { members, loading, error, refresh, addMember, archiveMember, reactivateMember } =
+    useHouseholdMembers()
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState<SortBy>('name')
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -43,7 +44,9 @@ export function useMembers() {
   const displayMembers =
     Object.keys(toneOverrides).length === 0
       ? members
-      : members.map((member) => (member.id in toneOverrides ? { ...member, tone: toneOverrides[member.id] } : member))
+      : members.map((member) =>
+          member.id in toneOverrides ? { ...member, tone: toneOverrides[member.id] } : member,
+        )
 
   const profileMember = displayMembers.find((member) => member.id === profileId) ?? null
 
@@ -51,7 +54,9 @@ export function useMembers() {
   const visibleMembers = displayMembers
     .filter(
       (member) =>
-        !query || member.name.toLowerCase().includes(query) || (member.email?.toLowerCase().includes(query) ?? false),
+        !query ||
+        member.name.toLowerCase().includes(query) ||
+        (member.email?.toLowerCase().includes(query) ?? false),
     )
     .sort(sorters[sortBy])
 

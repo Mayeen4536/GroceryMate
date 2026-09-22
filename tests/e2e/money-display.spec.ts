@@ -8,7 +8,10 @@ import { enterApp } from './helpers'
 // price can never again silently render as if the item were free.
 
 test('a one-paisa grocery price displays with its decimals, not as if free', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'this is a formatting/display concern, not viewport-dependent; desktop coverage is sufficient')
+  test.skip(
+    isMobile,
+    'this is a formatting/display concern, not viewport-dependent; desktop coverage is sufficient',
+  )
   await enterApp(page)
 
   await page.getByRole('button', { name: 'Add grocery' }).click()

@@ -16,7 +16,9 @@ const AMBIGUOUS = Symbol('ambiguous-member-name')
  * resolved to either of them: `resolveMemberIdByName` throws instead of
  * guessing (see its own doc comment). Never merge the ambiguity away here.
  */
-export function buildMemberNameIndex(members: readonly UIMember[]): ReadonlyMap<string, MemberId | typeof AMBIGUOUS> {
+export function buildMemberNameIndex(
+  members: readonly UIMember[],
+): ReadonlyMap<string, MemberId | typeof AMBIGUOUS> {
   const index = new Map<string, MemberId | typeof AMBIGUOUS>()
   for (const member of members) {
     index.set(member.name, index.has(member.name) ? AMBIGUOUS : (member.id as MemberId))

@@ -23,16 +23,21 @@ const SETTLED_FACTS: SettlementExplanationFacts = { ...OWES_FACTS, direction: 's
 
 describe('verifyExplanationText', () => {
   it('accepts text that states exactly the calculated amount', () => {
-    expect(verifyExplanationText('Rahim owes ৳600 because he shared rice, chicken, and cooking oil.', OWES_FACTS)).toEqual({
+    expect(
+      verifyExplanationText('Rahim owes ৳600 because he shared rice, chicken, and cooking oil.', OWES_FACTS),
+    ).toEqual({
       ok: true,
     })
   })
 
   it('accepts the amount written with comma grouping or trailing decimals, since the value still matches', () => {
     expect(verifyExplanationText('Rahim owes ৳600.00 in total.', OWES_FACTS)).toEqual({ ok: true })
-    expect(verifyExplanationText('Rahim owes ৳6,00 nonsense grouping but same value.', { ...OWES_FACTS, amountMinorUnits: 60000 })).toEqual(
-      { ok: true },
-    )
+    expect(
+      verifyExplanationText('Rahim owes ৳6,00 nonsense grouping but same value.', {
+        ...OWES_FACTS,
+        amountMinorUnits: 60000,
+      }),
+    ).toEqual({ ok: true })
   })
 
   it('rejects text that states a different amount than the calculated one', () => {
@@ -52,7 +57,9 @@ describe('verifyExplanationText', () => {
   })
 
   it('accepts text for a settled member that states no amount', () => {
-    expect(verifyExplanationText('Rahim is all settled up with the household.', SETTLED_FACTS)).toEqual({ ok: true })
+    expect(verifyExplanationText('Rahim is all settled up with the household.', SETTLED_FACTS)).toEqual({
+      ok: true,
+    })
   })
 
   it('rejects when a second, contradicting amount is mentioned alongside the correct one', () => {

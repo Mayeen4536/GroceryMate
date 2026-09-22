@@ -18,11 +18,7 @@ export function fieldIds(id: string) {
   return { helperId: `${id}-helper`, errorId: `${id}-error` } as const
 }
 
-export function fieldDescribedBy(
-  id: string,
-  helperText?: string,
-  error?: string,
-): string | undefined {
+export function fieldDescribedBy(id: string, helperText?: string, error?: string): string | undefined {
   const { helperId, errorId } = fieldIds(id)
   if (error) return errorId
   if (helperText) return helperId

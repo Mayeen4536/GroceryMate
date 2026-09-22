@@ -15,7 +15,11 @@ const FULL_DATE_FORMAT = new Intl.DateTimeFormat('en-US', {
   day: 'numeric',
   timeZone: 'UTC',
 })
-const MONTH_YEAR_FORMAT = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+const MONTH_YEAR_FORMAT = new Intl.DateTimeFormat('en-US', {
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+})
 
 /** Sort/group key, e.g. "2026-07" — stable and locale-independent, unlike the display label. */
 export function monthKey(isoDate: string): string {

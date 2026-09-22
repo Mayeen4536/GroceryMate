@@ -83,7 +83,8 @@ export function validateGroceryParseResponse(raw: unknown): ValidatedGroceryPars
   return { validLines, skipped }
 }
 
-type LineValidationResult = { readonly ok: true; readonly line: ValidatedGroceryLine } | { readonly ok: false; readonly reason: string }
+type LineValidationResult =
+  { readonly ok: true; readonly line: ValidatedGroceryLine } | { readonly ok: false; readonly reason: string }
 
 function validateLine(rawLine: unknown): LineValidationResult {
   if (typeof rawLine !== 'object' || rawLine === null || Array.isArray(rawLine)) {
@@ -108,7 +109,15 @@ function validateLine(rawLine: unknown): LineValidationResult {
 
   return {
     ok: true,
-    line: { itemName, quantity, statedPrice, category, payerName, sharedBy, sharedByWasExplicit: wasExplicit },
+    line: {
+      itemName,
+      quantity,
+      statedPrice,
+      category,
+      payerName,
+      sharedBy,
+      sharedByWasExplicit: wasExplicit,
+    },
   }
 }
 

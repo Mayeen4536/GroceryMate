@@ -13,10 +13,15 @@ async function boxShadow(locator: Locator) {
 
 test.describe('Accessibility smoke', () => {
   test.beforeEach(({ isMobile }) => {
-    test.skip(isMobile, 'keyboard focus behavior is not meaningfully different on a touch-emulated mobile browser')
+    test.skip(
+      isMobile,
+      'keyboard focus behavior is not meaningfully different on a touch-emulated mobile browser',
+    )
   })
 
-  test('Landing\'s primary and secondary CTAs get a visibly different style on keyboard focus', async ({ page }) => {
+  test("Landing's primary and secondary CTAs get a visibly different style on keyboard focus", async ({
+    page,
+  }) => {
     await page.goto('/')
 
     const openApp = page.getByRole('button', { name: 'Open the app' })

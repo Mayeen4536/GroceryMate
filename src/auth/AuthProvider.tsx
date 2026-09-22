@@ -104,25 +104,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const retryProfile = useCallback(() => setProfileReloadToken((n) => n + 1), [])
 
-  const signUp = useCallback(async (email: string, password: string, displayName: string, redirectTo?: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { display_name: displayName },
-        // Only set when the signup started from an invite — otherwise
-        // omitted entirely, so a plain signup keeps using the project's
-        // own default Site URL, exactly as before this option existed.
-        ...(redirectTo ? { emailRedirectTo: `${window.location.origin}${redirectTo}` } : {}),
-      },
-    })
-    if (error) return { kind: 'error', message: normalizeAuthError(error) } as const
-    // Hosted Supabase requires email confirmation, so a successful signUp
-    // call here often returns no session yet — that is success, not
-    // failure, and must never be treated as a login.
-    if (!data.session) return { kind: 'confirmation-required' } as const
-    return { kind: 'signed-in' } as const
-  }, [])
+  const signUp = useCallback(
+    async (email: string, password: string, displayName: string, redirectTo?: string) => {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { display_name: displayName },
+          // Only set when the signup started from an invite — otherwise
+          // omitted entirely, so a plain signup keeps using the project's
+          // own default Site URL, exactly as before this option existed.
+          ...(redirectTo ? { emailRedirectTo: `${window.location.origin}${redirectTo}` } : {}),
+        },
+      })
+      if (error) return { kind: 'error', message: normalizeAuthError(error) } as const
+      // Hosted Supabase requires email confirmation, so a successful signUp
+      // call here often returns no session yet — that is success, not
+      // failure, and must never be treated as a login.
+      if (!data.session) return { kind: 'confirmation-required' } as const
+      return { kind: 'signed-in' } as const
+    },
+    [],
+  )
 
   const signIn = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
@@ -134,24 +137,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut()
   }, [])
 
-  const updateDisplayName = useCallback(async (next: string) => {
-    const trimmed = next.trim()
-    if (!session?.user.id || !trimmed) return { error: 'Display name can’t be empty.' }
+  const updateDisplayName = useCallback(
+    async (next: string) => {
+      const trimmed = next.trim()
+      if (!session?.user.id || !trimmed) return { error: 'Display name can’t be empty.' }
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .update({ display_name: trimmed })
-      .eq('id', session.user.id)
-      .select('id, email, display_name, created_at, updated_at')
-      .single<ProfileRow>()
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ display_name: trimmed })
+        .eq('id', session.user.id)
+        .select('id, email, display_name, created_at, updated_at')
+        .single<ProfileRow>()
 
-    if (error || !data) {
-      console.error('[auth] display name update failed', error)
-      return { error: 'Couldn’t save — please try again.' }
-    }
-    setProfile(mapProfileRow(data))
-    return {}
-  }, [session])
+      if (error || !data) {
+        console.error('[auth] display name update failed', error)
+        return { error: 'Couldn’t save — please try again.' }
+      }
+      setProfile(mapProfileRow(data))
+      return {}
+    },
+    [session],
+  )
 
   const value: AuthContextValue = {
     status,

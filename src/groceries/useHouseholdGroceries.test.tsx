@@ -23,7 +23,14 @@ function makeChain(result: unknown) {
 const mocks = vi.hoisted(() => ({
   householdValue: {
     household: { id: 'household-1', name: 'Flat 4B' } as { id: string; name: string } | null,
-    currentMembership: { id: 'member-1', householdId: 'household-1', profileId: 'user-1', displayName: 'Aisha', role: 'owner' as const, status: 'active' as const } as {
+    currentMembership: {
+      id: 'member-1',
+      householdId: 'household-1',
+      profileId: 'user-1',
+      displayName: 'Aisha',
+      role: 'owner' as const,
+      status: 'active' as const,
+    } as {
       id: string
     } | null,
   },

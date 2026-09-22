@@ -198,7 +198,7 @@ What genuinely broke, and was fixed:
 - **`src/store/groceries.ts`'s mock seed** (`paidBy: 'Aisha Khan'`, etc.)
   has no correspondence to any real household's actual roster, which for
   a fresh household starts as just its owner. `useGroceries()` now
-  starts from `[]` instead — an initial-*value* change only, not a
+  starts from `[]` instead — an initial-_value_ change only, not a
   shape/behavior/persistence change.
 - **`src/store/assistantGenerated.ts`'s mock "AI" output** had the same
   problem (`paidBy: 'Bilal Ahmed'`, etc. on some items). A mock
@@ -211,7 +211,7 @@ What genuinely broke, and was fixed:
   `useHousehold().currentMembership.id` directly (same id space as
   `useMemberOptions`, since both come from `household_members`).
 - **`toDomainMember`'s ternary** (`status === 'invited' ? invited :
-  active`) would have silently mapped the new `'archived'` UI status to
+active`) would have silently mapped the new `'archived'` UI status to
   domain `'active'`. Rewritten as an exhaustive switch so an unmapped
   future status is a compile error, not a silent fall-through.
 
@@ -268,7 +268,7 @@ Fixing this required more than wiring new specs — the fixture household
 (`tests/e2e/global-setup.ts`) starts with exactly one real member (its
 owner), and groceries are genuinely empty on every fresh page load now
 (session-local, no seed). Several existing specs assumed both a
-populated grocery list *and* a fixed four-person mock roster
+populated grocery list _and_ a fixed four-person mock roster
 (`Aisha Khan`/`Bilal Ahmed`/`Chloe Lee`/`Daniyal Raza`), neither of which
 exists anymore:
 

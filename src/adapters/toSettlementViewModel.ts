@@ -67,11 +67,17 @@ export function toSettlementViewModel(
 
   const receivers = result.memberBalances
     .filter((balance) => balance.netBalanceMinorUnits > 0)
-    .map((balance) => ({ name: nameOf(membersById, balance.memberId), amount: major(balance.netBalanceMinorUnits) }))
+    .map((balance) => ({
+      name: nameOf(membersById, balance.memberId),
+      amount: major(balance.netBalanceMinorUnits),
+    }))
 
   const owers = result.memberBalances
     .filter((balance) => balance.netBalanceMinorUnits < 0)
-    .map((balance) => ({ name: nameOf(membersById, balance.memberId), amount: major(-balance.netBalanceMinorUnits) }))
+    .map((balance) => ({
+      name: nameOf(membersById, balance.memberId),
+      amount: major(-balance.netBalanceMinorUnits),
+    }))
 
   const outstandingMinorUnits = result.memberBalances
     .filter((balance) => balance.netBalanceMinorUnits > 0)

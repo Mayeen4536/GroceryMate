@@ -244,7 +244,10 @@ describe('useGroceries', () => {
         })
       })
 
-      expect(mocks.editGrocery).toHaveBeenCalledWith('item-2', expect.objectContaining({ name: 'Rice (updated)' }))
+      expect(mocks.editGrocery).toHaveBeenCalledWith(
+        'item-2',
+        expect.objectContaining({ name: 'Rice (updated)' }),
+      )
       expect(result.current.panelOpen).toBe(false)
     })
   })
@@ -252,9 +255,7 @@ describe('useGroceries', () => {
   describe('addGenerated', () => {
     it('adds every item sequentially through the same addGrocery path, tracking the first added id', async () => {
       const { result } = renderHook(() => useGroceries())
-      mocks.addGrocery
-        .mockResolvedValueOnce({ id: 'gen-1' })
-        .mockResolvedValueOnce({ id: 'gen-2' })
+      mocks.addGrocery.mockResolvedValueOnce({ id: 'gen-1' }).mockResolvedValueOnce({ id: 'gen-2' })
 
       let addResult
       await act(async () => {

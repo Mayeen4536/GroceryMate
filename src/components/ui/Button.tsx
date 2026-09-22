@@ -26,8 +26,7 @@ const variantClasses: Record<ButtonVariant, string> = {
     'bg-linear-to-b from-brand-600 to-brand-700 text-white shadow-button-brand hover:brightness-[1.07] focus-visible:ring-brand-600',
   secondary:
     'bg-surface text-ink shadow-button hover:bg-sand/70 hover:text-brand-800 focus-visible:ring-brand-600',
-  ghost:
-    'text-ink-soft hover:bg-ink/[0.05] hover:text-ink focus-visible:ring-brand-600',
+  ghost: 'text-ink-soft hover:bg-ink/[0.05] hover:text-ink focus-visible:ring-brand-600',
   danger:
     'bg-linear-to-b from-danger-600 to-danger-700 text-white shadow-button-danger hover:brightness-[1.07] focus-visible:ring-danger-600',
 }

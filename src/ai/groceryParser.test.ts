@@ -147,7 +147,9 @@ describe('createGroceryParser — the "AI never calculates money" guarantee', ()
   it('never invents a price when none was stated in the text', async () => {
     const provider = createFakeAIProvider(
       JSON.stringify({
-        items: [{ itemName: 'milk', payerName: 'Mayeen', statedPrice: null, sharedBy: { scope: 'everyone' } }],
+        items: [
+          { itemName: 'milk', payerName: 'Mayeen', statedPrice: null, sharedBy: { scope: 'everyone' } },
+        ],
       }),
     )
     const parser = createGroceryParser({ provider })
@@ -189,7 +191,9 @@ describe('createGroceryParser — robustness', () => {
   it('strips a ```json fenced response before parsing', async () => {
     const provider = createFakeAIProvider(
       '```json\n' +
-        JSON.stringify({ items: [{ itemName: 'rice', payerName: 'Mayeen', sharedBy: { scope: 'everyone' } }] }) +
+        JSON.stringify({
+          items: [{ itemName: 'rice', payerName: 'Mayeen', sharedBy: { scope: 'everyone' } }],
+        }) +
         '\n```',
     )
     const parser = createGroceryParser({ provider })
@@ -220,7 +224,9 @@ describe('createGroceryParser — robustness', () => {
   it('lowers confidence when the payer is not one of the known household members', async () => {
     const provider = createFakeAIProvider(
       JSON.stringify({
-        items: [{ itemName: 'rice', payerName: 'SomeStranger', statedPrice: 800, sharedBy: { scope: 'everyone' } }],
+        items: [
+          { itemName: 'rice', payerName: 'SomeStranger', statedPrice: 800, sharedBy: { scope: 'everyone' } },
+        ],
       }),
     )
     const parser = createGroceryParser({ provider })

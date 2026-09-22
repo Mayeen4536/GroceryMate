@@ -19,7 +19,10 @@ test('navigates between the main application pages', async ({ page }) => {
 })
 
 test('browser Back and Forward move between GroceryMate pages', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'browser history behavior does not depend on viewport size; desktop coverage is sufficient')
+  test.skip(
+    isMobile,
+    'browser history behavior does not depend on viewport size; desktop coverage is sufficient',
+  )
   await enterApp(page)
   const nav = page.getByRole('navigation', { name: 'Main' })
 
@@ -38,7 +41,10 @@ test('browser Back and Forward move between GroceryMate pages', async ({ page, i
 test('refreshing an internal route keeps the correct page', async ({ page, isMobile }) => {
   test.skip(isMobile, 'refresh behavior does not depend on viewport size; desktop coverage is sufficient')
   await enterApp(page)
-  await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'History', exact: true }).click()
+  await page
+    .getByRole('navigation', { name: 'Main' })
+    .getByRole('button', { name: 'History', exact: true })
+    .click()
   await expect(page.getByRole('heading', { name: 'History', exact: true })).toBeVisible()
 
   await page.reload()
@@ -51,7 +57,10 @@ test('opening a valid internal route directly renders that page', async ({ page,
   await expect(page.getByRole('heading', { name: 'Settlements', exact: true })).toBeVisible()
 })
 
-test('an invalid application route redirects to a safe page instead of breaking', async ({ page, isMobile }) => {
+test('an invalid application route redirects to a safe page instead of breaking', async ({
+  page,
+  isMobile,
+}) => {
   test.skip(isMobile, 'redirect behavior does not depend on viewport size; desktop coverage is sufficient')
   await page.goto('/this-route-does-not-exist')
   await expect(page.getByRole('heading', { name: 'Groceries', exact: true })).toBeVisible()

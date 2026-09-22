@@ -81,7 +81,7 @@ describe('LocalStorageRepository', () => {
     expect(repo.getAll()).toEqual([{ id: 'a', label: 'A' }])
   })
 
-  it('clear() removes everything under this repository\'s key', () => {
+  it("clear() removes everything under this repository's key", () => {
     const { repo, store } = makeRepo()
     repo.saveMany([{ id: 'a', label: 'A' }])
     repo.clear()

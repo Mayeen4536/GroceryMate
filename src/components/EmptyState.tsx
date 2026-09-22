@@ -79,7 +79,12 @@ export function EmptyState({
                 key={slot.className}
                 aria-hidden="true"
                 animate={{ y: [0, -6, 0] }}
-                transition={{ duration: slot.duration, delay: slot.delay, repeat: Infinity, ease: 'easeInOut' }}
+                transition={{
+                  duration: slot.duration,
+                  delay: slot.delay,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
                 className={cn(
                   'absolute flex size-9 items-center justify-center rounded-lg bg-surface shadow-card ring-1 ring-ink/5',
                   slot.className,

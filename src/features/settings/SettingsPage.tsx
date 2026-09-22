@@ -193,8 +193,8 @@ export function SettingsPage({ direction = 1, onBack, groceries, members }: Sett
                 />
               </div>
               <p className="mt-4 text-xs text-muted">
-                Currency and language are saved here, but the rest of the app is illustrative
-                until they're wired through it.
+                Currency and language are saved here, but the rest of the app is illustrative until they're
+                wired through it.
               </p>
             </Card>
           </motion.div>

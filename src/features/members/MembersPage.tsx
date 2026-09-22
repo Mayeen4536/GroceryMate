@@ -196,9 +196,7 @@ export function MembersPage({
             <motion.div variants={riseChild}>
               {visibleMembers.length === 0 ? (
                 <div className="card-surface flex flex-col items-center gap-3 rounded-xl px-6 py-12 text-center shadow-soft">
-                  <p className="text-sm font-medium text-ink">
-                    No members match “{search.trim()}”
-                  </p>
+                  <p className="text-sm font-medium text-ink">No members match “{search.trim()}”</p>
                   <Button variant="secondary" size="sm" onClick={() => setSearch('')}>
                     Clear search
                   </Button>
@@ -236,12 +234,7 @@ export function MembersPage({
       </PageTransition>
 
       {dialogOpen && (
-        <AddMemberDialog
-          open={dialogOpen}
-          initialTab={dialogTab}
-          onClose={closeDialog}
-          onAdd={handleAdd}
-        />
+        <AddMemberDialog open={dialogOpen} initialTab={dialogTab} onClose={closeDialog} onAdd={handleAdd} />
       )}
 
       <MemberProfileDrawer

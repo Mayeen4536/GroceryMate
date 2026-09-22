@@ -240,8 +240,8 @@ export function DesignSystemShowcase() {
             </Badge>
             <h1 className="text-display text-ink">Design foundation</h1>
             <p className="max-w-xl text-muted">
-              Temporary showcase of every token and component in the GroceryMate design system.
-              This page gets replaced by the real app once we start building screens.
+              Temporary showcase of every token and component in the GroceryMate design system. This page gets
+              replaced by the real app once we start building screens.
             </p>
           </div>
         </div>
@@ -422,12 +422,7 @@ export function DesignSystemShowcase() {
                 helperText="Add one grocery item at a time."
               />
               <Input label="Search members" placeholder="Search…" iconLeft={Search} />
-              <Input
-                label="Price"
-                placeholder="0.00"
-                inputMode="decimal"
-                error="Price is required."
-              />
+              <Input label="Price" placeholder="0.00" inputMode="decimal" error="Price is required." />
               <Input
                 label="Household name"
                 defaultValue="Flat 4B"
@@ -476,8 +471,8 @@ export function DesignSystemShowcase() {
           <div className="grid gap-5 md:grid-cols-3">
             <Card icon={ShoppingBasket} accent="brand" title="Weekly shop" subtitle="12 items · 4 members">
               <p className="text-sm text-muted">
-                The default surface: gradient hairline, warm layered shadow, and a whisper of
-                accent in the corner.
+                The default surface: gradient hairline, warm layered shadow, and a whisper of accent in the
+                corner.
               </p>
             </Card>
             <Card
@@ -609,8 +604,8 @@ export function DesignSystemShowcase() {
             <Card padding="lg" className="space-y-4">
               <h3 className="text-base font-semibold text-ink">Overlays</h3>
               <p className="text-sm text-muted">
-                Modals scale in from the center; drawers slide from an edge. Both close on
-                Escape or backdrop click.
+                Modals scale in from the center; drawers slide from an edge. Both close on Escape or backdrop
+                click.
               </p>
               <div className="flex flex-wrap gap-3">
                 <Button variant="secondary" onClick={() => setModalOpen(true)}>
@@ -625,10 +620,7 @@ export function DesignSystemShowcase() {
             <Card padding="lg" className="space-y-4">
               <h3 className="text-base font-semibold text-ink">Animated numbers</h3>
               <div>
-                <AnimatedNumber
-                  value={total}
-                  className="text-3xl font-bold tracking-tight text-ink"
-                />
+                <AnimatedNumber value={total} className="text-3xl font-bold tracking-tight text-ink" />
                 <p className="mt-1 text-sm text-muted">spent this month</p>
               </div>
               <Button
@@ -739,15 +731,8 @@ export function DesignSystemShowcase() {
 
           <Card padding="lg" className="space-y-3">
             <h3 className="text-base font-semibold text-ink">Drag to reorder</h3>
-            <p className="text-sm text-muted">
-              Grab an item and drag it; the list makes room with a spring.
-            </p>
-            <Reorder.Group
-              axis="y"
-              values={groceryOrder}
-              onReorder={setGroceryOrder}
-              className="space-y-2"
-            >
+            <p className="text-sm text-muted">Grab an item and drag it; the list makes room with a spring.</p>
+            <Reorder.Group axis="y" values={groceryOrder} onReorder={setGroceryOrder} className="space-y-2">
               {groceryOrder.map((item) => (
                 <Reorder.Item
                   key={item}
@@ -778,8 +763,7 @@ export function DesignSystemShowcase() {
             }
           >
             <p className="text-sm text-ink-soft">
-              This removes the item from this week's list. Anyone in the household can add
-              it back later.
+              This removes the item from this week's list. Anyone in the household can add it back later.
             </p>
           </Modal>
 

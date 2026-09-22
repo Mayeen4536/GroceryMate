@@ -39,7 +39,10 @@ async function seedTwoGroceries(page: Page) {
 test('deleting a grocery removes it immediately, and Undo restores it', async ({ page }) => {
   await enterApp(page)
   await seedTwoGroceries(page)
-  const deleteButton = page.locator('main li').first().getByRole('button', { name: /^Delete /i })
+  const deleteButton = page
+    .locator('main li')
+    .first()
+    .getByRole('button', { name: /^Delete /i })
   const itemName = await nameOf(deleteButton)
 
   await deleteButton.click()
@@ -89,7 +92,10 @@ test.describe('Delete and undo details', () => {
     // mixing Playwright's fake timers with real async I/O is its own
     // source of flakiness — simpler and more reliable to just wait out the
     // real (short) window.
-    const deleteButton = page.locator('main li').first().getByRole('button', { name: /^Delete /i })
+    const deleteButton = page
+      .locator('main li')
+      .first()
+      .getByRole('button', { name: /^Delete /i })
     const itemName = await nameOf(deleteButton)
     await deleteButton.click()
     await expect(page.getByRole('button', { name: 'Undo' })).toBeVisible()
@@ -108,7 +114,10 @@ test.describe('Delete and undo details', () => {
     await enterApp(page)
     await seedTwoGroceries(page)
     const countBefore = await page.locator('main li').count()
-    const deleteButton = page.locator('main li').first().getByRole('button', { name: /^Delete /i })
+    const deleteButton = page
+      .locator('main li')
+      .first()
+      .getByRole('button', { name: /^Delete /i })
     const itemName = await nameOf(deleteButton)
     await deleteButton.click()
 

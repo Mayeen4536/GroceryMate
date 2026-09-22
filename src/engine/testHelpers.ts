@@ -54,7 +54,11 @@ export function makeGroceryItem(fixture: GroceryItemFixture): GroceryItem {
 
 /** Sums every transfer a member sends and receives, for verifying a settlement plan. */
 export function summarizeTransfers(
-  transfers: ReadonlyArray<{ readonly from: MemberId; readonly to: MemberId; readonly amountMinorUnits: number }>,
+  transfers: ReadonlyArray<{
+    readonly from: MemberId
+    readonly to: MemberId
+    readonly amountMinorUnits: number
+  }>,
 ): ReadonlyMap<MemberId, number> {
   const net = new Map<MemberId, number>()
   for (const transfer of transfers) {

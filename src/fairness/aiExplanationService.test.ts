@@ -24,12 +24,16 @@ const FACTS: SettlementExplanationFacts = {
 
 describe('createAIFairnessExplanationService — the happy path', () => {
   it('returns the AI\'s text, tagged as "ai", when it correctly states the calculated amount', async () => {
-    const provider = createFakeAIProvider('Rahim owes ৳600 because he shared rice, chicken, and cooking oil, but only paid for snacks.')
+    const provider = createFakeAIProvider(
+      'Rahim owes ৳600 because he shared rice, chicken, and cooking oil, but only paid for snacks.',
+    )
     const service = createAIFairnessExplanationService({ provider })
 
     const result = await service.explain(FACTS)
     expect(result.source).toBe('ai')
-    expect(result.text).toBe('Rahim owes ৳600 because he shared rice, chicken, and cooking oil, but only paid for snacks.')
+    expect(result.text).toBe(
+      'Rahim owes ৳600 because he shared rice, chicken, and cooking oil, but only paid for snacks.',
+    )
   })
 
   it('strips accidental surrounding quotes from the AI response', async () => {
@@ -70,7 +74,10 @@ describe('createAIFairnessExplanationService — never let AI change financial r
   })
 
   it('falls back to the template when the provider itself throws', async () => {
-    const provider: AIProvider = { providerName: 'broken', complete: vi.fn().mockRejectedValue(new Error('network down')) }
+    const provider: AIProvider = {
+      providerName: 'broken',
+      complete: vi.fn().mockRejectedValue(new Error('network down')),
+    }
     const service = createAIFairnessExplanationService({ provider })
 
     const result = await service.explain(FACTS)

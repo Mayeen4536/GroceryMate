@@ -20,11 +20,7 @@
 */
 @font-face {
   font-family: 'Inter Variable';
-  src:
-    local('Noto Sans Bengali'),
-    local('Nirmala UI'),
-    local('Kohinoor Bangla'),
-    local('Vrinda');
+  src: local('Noto Sans Bengali'), local('Nirmala UI'), local('Kohinoor Bangla'), local('Vrinda');
   unicode-range: U+09F3;
   font-weight: 100 900;
 }
@@ -41,8 +37,9 @@
 */
 @theme {
   /* Typography ------------------------------------------------------ */
-  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system,
-    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-sans:
+    'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
 
   /* Hero / display headline (text-display) */
   --text-display: 2.5rem;
@@ -144,14 +141,11 @@
   /* Shadows - layered, warm-tinted; the 0 0 0 1px layer replaces borders */
   --shadow-soft: 0 1px 2px rgb(30 26 22 / 0.05), 0 2px 6px rgb(30 26 22 / 0.04);
   --shadow-card:
-    0 0 0 1px rgb(30 26 22 / 0.04), 0 1px 2px rgb(30 26 22 / 0.04),
-    0 8px 24px -12px rgb(30 26 22 / 0.12);
+    0 0 0 1px rgb(30 26 22 / 0.04), 0 1px 2px rgb(30 26 22 / 0.04), 0 8px 24px -12px rgb(30 26 22 / 0.12);
   --shadow-lifted:
-    0 0 0 1px rgb(30 26 22 / 0.04), 0 2px 6px rgb(30 26 22 / 0.05),
-    0 20px 44px -16px rgb(30 26 22 / 0.18);
+    0 0 0 1px rgb(30 26 22 / 0.04), 0 2px 6px rgb(30 26 22 / 0.05), 0 20px 44px -16px rgb(30 26 22 / 0.18);
   --shadow-button:
-    inset 0 1px 0 rgb(255 255 255 / 0.7), 0 0 0 1px rgb(30 26 22 / 0.08),
-    0 1px 2px rgb(30 26 22 / 0.07);
+    inset 0 1px 0 rgb(255 255 255 / 0.7), 0 0 0 1px rgb(30 26 22 / 0.08), 0 1px 2px rgb(30 26 22 / 0.07);
   --shadow-button-brand:
     inset 0 1px 0 rgb(255 255 255 / 0.16), 0 1px 2px rgb(16 58 38 / 0.28),
     0 5px 16px -6px rgb(33 122 80 / 0.5);

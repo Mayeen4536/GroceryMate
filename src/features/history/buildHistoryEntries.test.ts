@@ -57,8 +57,15 @@ describe('buildHistoryEntries', () => {
   })
 
   it('resolves an archived member reference by id — a historical entry still shows a real name, not a blank', () => {
-    const archived = makeMember({ id: 'm-archived', name: 'Retired Member', status: 'archived', archivedAt: '2026-02-01T00:00:00.000Z' })
-    const groceries = [makeItem({ id: 'g-1', paidByMemberId: 'm-archived', sharedByMemberIds: ['m-archived'] })]
+    const archived = makeMember({
+      id: 'm-archived',
+      name: 'Retired Member',
+      status: 'archived',
+      archivedAt: '2026-02-01T00:00:00.000Z',
+    })
+    const groceries = [
+      makeItem({ id: 'g-1', paidByMemberId: 'm-archived', sharedByMemberIds: ['m-archived'] }),
+    ]
 
     const entries = buildHistoryEntries(groceries, [archived])
 

@@ -1,7 +1,13 @@
 import { useId, useState, type ComponentProps } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import { cn } from '@/utils/cn'
-import { Field, controlClasses, controlTone, fieldDescribedBy, type FieldOwnProps } from '@/components/ui/field'
+import {
+  Field,
+  controlClasses,
+  controlTone,
+  fieldDescribedBy,
+  type FieldOwnProps,
+} from '@/components/ui/field'
 
 export interface PasswordInputProps extends Omit<ComponentProps<'input'>, 'type'>, FieldOwnProps {}
 
@@ -10,7 +16,14 @@ export interface PasswordInputProps extends Omit<ComponentProps<'input'>, 'type'
  * composes the same field primitives directly rather than extending the
  * shared component just for this one visibility-toggle case.
  */
-export function PasswordInput({ label, helperText, error, id: idProp, className, ...rest }: PasswordInputProps) {
+export function PasswordInput({
+  label,
+  helperText,
+  error,
+  id: idProp,
+  className,
+  ...rest
+}: PasswordInputProps) {
   const generatedId = useId()
   const id = idProp ?? generatedId
   const [visible, setVisible] = useState(false)

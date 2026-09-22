@@ -11,8 +11,24 @@ const MAYEEN = 'member-mayeen' as MemberId
 const RAHIM = 'member-rahim' as MemberId
 
 const MEMBERS: readonly Member[] = [
-  { id: MAYEEN, householdId: HOUSEHOLD_ID, name: 'Mayeen', email: 'mayeen@example.com', role: 'owner', membershipStatus: 'active', joinedAt: new Date('2026-01-01') },
-  { id: RAHIM, householdId: HOUSEHOLD_ID, name: 'Rahim', email: 'rahim@example.com', role: 'member', membershipStatus: 'active', joinedAt: new Date('2026-01-01') },
+  {
+    id: MAYEEN,
+    householdId: HOUSEHOLD_ID,
+    name: 'Mayeen',
+    email: 'mayeen@example.com',
+    role: 'owner',
+    membershipStatus: 'active',
+    joinedAt: new Date('2026-01-01'),
+  },
+  {
+    id: RAHIM,
+    householdId: HOUSEHOLD_ID,
+    name: 'Rahim',
+    email: 'rahim@example.com',
+    role: 'member',
+    membershipStatus: 'active',
+    joinedAt: new Date('2026-01-01'),
+  },
 ]
 
 function item(
@@ -47,7 +63,12 @@ describe('buildFairnessExplanationFacts — the worked example', () => {
   const settlement = computeSettlement(MEMBERS, GROCERIES, CURRENCIES.BDT)
 
   it('computes Rahim owing exactly what the engine determined, from item data alone', () => {
-    const facts = buildFairnessExplanationFacts({ memberId: RAHIM, members: MEMBERS, groceries: GROCERIES, settlement })
+    const facts = buildFairnessExplanationFacts({
+      memberId: RAHIM,
+      members: MEMBERS,
+      groceries: GROCERIES,
+      settlement,
+    })
 
     expect(facts.memberName).toBe('Rahim')
     expect(facts.direction).toBe('owes')
@@ -59,7 +80,12 @@ describe('buildFairnessExplanationFacts — the worked example', () => {
   })
 
   it('resolves the opposite side as "is_owed", naming the same amount', () => {
-    const facts = buildFairnessExplanationFacts({ memberId: MAYEEN, members: MEMBERS, groceries: GROCERIES, settlement })
+    const facts = buildFairnessExplanationFacts({
+      memberId: MAYEEN,
+      members: MEMBERS,
+      groceries: GROCERIES,
+      settlement,
+    })
 
     expect(facts.direction).toBe('is_owed')
     expect(facts.amountMinorUnits).toBe(60000)
@@ -68,8 +94,15 @@ describe('buildFairnessExplanationFacts — the worked example', () => {
   })
 
   it('resolves the transfer that settles this pair, with the counterparty name filled in', () => {
-    const rahimFacts = buildFairnessExplanationFacts({ memberId: RAHIM, members: MEMBERS, groceries: GROCERIES, settlement })
-    expect(rahimFacts.transfers).toEqual([{ counterpartyMemberId: MAYEEN, counterpartyName: 'Mayeen', amountMinorUnits: 60000 }])
+    const rahimFacts = buildFairnessExplanationFacts({
+      memberId: RAHIM,
+      members: MEMBERS,
+      groceries: GROCERIES,
+      settlement,
+    })
+    expect(rahimFacts.transfers).toEqual([
+      { counterpartyMemberId: MAYEEN, counterpartyName: 'Mayeen', amountMinorUnits: 60000 },
+    ])
   })
 })
 
@@ -77,10 +110,17 @@ describe('buildFairnessExplanationFacts — direction resolution', () => {
   it('reports "settled" and an empty transfer list when net balance is exactly zero', () => {
     const settlement: SettlementResult = {
       currency: CURRENCIES.BDT,
-      memberBalances: [{ memberId: RAHIM, spentMinorUnits: 500, consumedMinorUnits: 500, netBalanceMinorUnits: 0 }],
+      memberBalances: [
+        { memberId: RAHIM, spentMinorUnits: 500, consumedMinorUnits: 500, netBalanceMinorUnits: 0 },
+      ],
       transfers: [],
     }
-    const facts = buildFairnessExplanationFacts({ memberId: RAHIM, members: MEMBERS, groceries: [], settlement })
+    const facts = buildFairnessExplanationFacts({
+      memberId: RAHIM,
+      members: MEMBERS,
+      groceries: [],
+      settlement,
+    })
     expect(facts.direction).toBe('settled')
     expect(facts.amountMinorUnits).toBe(0)
     expect(facts.transfers).toEqual([])
@@ -88,15 +128,17 @@ describe('buildFairnessExplanationFacts — direction resolution', () => {
 
   it('throws MemberNotInSettlementError for a member absent from the settlement result', () => {
     const settlement: SettlementResult = { currency: CURRENCIES.BDT, memberBalances: [], transfers: [] }
-    expect(() => buildFairnessExplanationFacts({ memberId: RAHIM, members: MEMBERS, groceries: [], settlement })).toThrow(
-      MemberNotInSettlementError,
-    )
+    expect(() =>
+      buildFairnessExplanationFacts({ memberId: RAHIM, members: MEMBERS, groceries: [], settlement }),
+    ).toThrow(MemberNotInSettlementError)
   })
 
   it('falls back to the raw id as a display name when the member record is missing', () => {
     const settlement: SettlementResult = {
       currency: CURRENCIES.BDT,
-      memberBalances: [{ memberId: RAHIM, spentMinorUnits: 0, consumedMinorUnits: 100, netBalanceMinorUnits: -100 }],
+      memberBalances: [
+        { memberId: RAHIM, spentMinorUnits: 0, consumedMinorUnits: 100, netBalanceMinorUnits: -100 },
+      ],
       transfers: [],
     }
     const facts = buildFairnessExplanationFacts({ memberId: RAHIM, members: [], groceries: [], settlement })
@@ -114,7 +156,12 @@ describe('buildFairnessExplanationFacts — direction resolution', () => {
       ],
       transfers: [{ from: RAHIM, to: MAYEEN, amountMinorUnits: 100 }],
     }
-    const karimFacts = buildFairnessExplanationFacts({ memberId: KARIM, members: MEMBERS, groceries: [], settlement })
+    const karimFacts = buildFairnessExplanationFacts({
+      memberId: KARIM,
+      members: MEMBERS,
+      groceries: [],
+      settlement,
+    })
     expect(karimFacts.transfers).toEqual([])
   })
 })

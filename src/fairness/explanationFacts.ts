@@ -54,7 +54,9 @@ export interface BuildFairnessExplanationFactsInput {
  * grocery data itself, so there is exactly one place amounts and item
  * lists are derived.
  */
-export function buildFairnessExplanationFacts(input: BuildFairnessExplanationFactsInput): SettlementExplanationFacts {
+export function buildFairnessExplanationFacts(
+  input: BuildFairnessExplanationFactsInput,
+): SettlementExplanationFacts {
   const { memberId, members, groceries, settlement } = input
 
   const balance = settlement.memberBalances.find((b) => b.memberId === memberId)

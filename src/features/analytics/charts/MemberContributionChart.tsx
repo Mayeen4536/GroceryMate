@@ -20,7 +20,9 @@ export function MemberContributionChart({ data }: { data: MemberSpend[] }) {
                 <Avatar name={member.name} tone={member.tone} size="sm" />
                 <span className="truncate text-sm text-ink">{member.name}</span>
               </span>
-              <span className="shrink-0 text-sm font-semibold text-ink tabular-nums">{formatTaka(member.total)}</span>
+              <span className="shrink-0 text-sm font-semibold text-ink tabular-nums">
+                {formatTaka(member.total)}
+              </span>
             </div>
             <div className="mt-1.5 h-2 rounded-full bg-sand">
               <motion.div

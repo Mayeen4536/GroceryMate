@@ -116,7 +116,10 @@ test.describe('Invite/Join', () => {
     await expect(page.getByRole('heading', { name: 'Groceries', exact: true })).toBeVisible()
 
     // Members page proves this is the *correct* (owner's) household, not a fabricated one.
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Members', exact: true }).click()
+    await page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('button', { name: 'Members', exact: true })
+      .click()
     const profileButton = page.getByRole('button', { name: new RegExp(`Open ${recipientName}'s profile`) })
     await expect(profileButton).toBeVisible()
 
@@ -161,7 +164,10 @@ test.describe('Invite/Join', () => {
     await expect(page.getByRole('heading', { name: 'This invite is no longer active' })).toBeVisible()
   })
 
-  test('10. An already-used invite is rejected on a second visit/accept attempt', async ({ browser, page }) => {
+  test('10. An already-used invite is rejected on a second visit/accept attempt', async ({
+    browser,
+    page,
+  }) => {
     const owner = await ownerContext(browser)
     const ownerPage = await owner.newPage()
     await ownerPage.goto('/groceries')
@@ -197,7 +203,9 @@ test.describe('Invite/Join', () => {
     await expect(page.getByRole('heading', { name: 'Create your household' })).toBeVisible({ timeout: 15000 })
     await page.getByLabel('Household name').fill(`E2E Second Household ${Date.now()}`)
     await page.getByRole('button', { name: 'Create household' }).click()
-    await expect(page.getByRole('heading', { name: 'Groceries', exact: true })).toBeVisible({ timeout: 15000 })
+    await expect(page.getByRole('heading', { name: 'Groceries', exact: true })).toBeVisible({
+      timeout: 15000,
+    })
 
     await page.goto(url)
     await page.getByRole('button', { name: /^Join /i }).click()
@@ -219,7 +227,10 @@ test.describe('Invite/Join', () => {
     await page.getByRole('button', { name: /^Join /i }).click()
     await expect(page).toHaveURL(/\/groceries$/, { timeout: 15000 })
 
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Members', exact: true }).click()
+    await page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('button', { name: 'Members', exact: true })
+      .click()
     await expect(page.getByRole('heading', { name: 'Members', exact: true })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Invite', exact: true })).not.toBeVisible()
     await expect(page.getByRole('button', { name: 'Add member' })).not.toBeVisible()
@@ -244,7 +255,10 @@ test.describe('Invite/Join', () => {
     const owner = await ownerContext(browser)
     const page = await owner.newPage()
     await page.goto('/groceries')
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Members', exact: true }).click()
+    await page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('button', { name: 'Members', exact: true })
+      .click()
     await page.getByRole('button', { name: 'Invite', exact: true }).click()
 
     const dialog = page.getByRole('dialog')
@@ -287,7 +301,10 @@ test.describe('Invite/Join', () => {
     // on its own navigation — reload so the owner's page actually sees the
     // new member before trying to select them as a sharer.
     await ownerPage.reload()
-    await ownerPage.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Groceries', exact: true }).click()
+    await ownerPage
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('button', { name: 'Groceries', exact: true })
+      .click()
 
     // Owner adds one real grocery paid by them, shared by both real, distinct
     // household_members rows — no mocks anywhere in this path.
@@ -302,8 +319,13 @@ test.describe('Invite/Join', () => {
     // Recipient refreshes and sees the real, deterministic-settlement-engine
     // result — never a fabricated or session-local number.
     await page.reload()
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Settlements', exact: true }).click()
-    await expect(page.getByRole('heading', { name: 'Settlements', exact: true })).toBeVisible({ timeout: 15000 })
+    await page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('button', { name: 'Settlements', exact: true })
+      .click()
+    await expect(page.getByRole('heading', { name: 'Settlements', exact: true })).toBeVisible({
+      timeout: 15000,
+    })
     const journeyCard = page.locator('li').filter({ has: page.getByRole('button', { name: 'Mark as paid' }) })
     await expect(journeyCard.getByText(FIXTURE_OWNER_FIRST_NAME)).toBeVisible()
     await expect(journeyCard.getByText(recipientName)).toBeVisible()

@@ -36,9 +36,7 @@ function ToolbarButton({
       className={cn(
         'relative flex size-10 items-center justify-center rounded-md transition-colors duration-200',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40',
-        active
-          ? 'bg-brand-600/10 text-brand-700'
-          : 'text-ink-soft hover:bg-ink/[0.05] hover:text-ink',
+        active ? 'bg-brand-600/10 text-brand-700' : 'text-ink-soft hover:bg-ink/[0.05] hover:text-ink',
       )}
     >
       {active && (
@@ -55,13 +53,7 @@ function ToolbarButton({
   )
 }
 
-function AttachmentChip({
-  attachment,
-  onRemove,
-}: {
-  attachment: Attachment
-  onRemove: () => void
-}) {
+function AttachmentChip({ attachment, onRemove }: { attachment: Attachment; onRemove: () => void }) {
   const Icon = ATTACHMENT_ICON[attachment.id]
   return (
     <motion.span

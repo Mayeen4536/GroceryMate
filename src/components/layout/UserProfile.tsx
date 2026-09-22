@@ -41,8 +41,8 @@ export function UserProfile({ user, tone = 'light', avatarOnly = false, onClick 
 
   return (
     <motion.button
-        whileTap={{ scale: 0.97 }}
-        transition={springSnappy}
+      whileTap={{ scale: 0.97 }}
+      transition={springSnappy}
       type="button"
       onClick={onClick}
       title="Settings"
@@ -55,17 +55,10 @@ export function UserProfile({ user, tone = 'light', avatarOnly = false, onClick 
     >
       <Avatar name={user.name} size="sm" />
       <span className="min-w-0 flex-1">
-        <span
-          className={cn(
-            'block truncate text-sm font-medium',
-            dark ? 'text-pine-text' : 'text-ink',
-          )}
-        >
+        <span className={cn('block truncate text-sm font-medium', dark ? 'text-pine-text' : 'text-ink')}>
           {user.name}
         </span>
-        <span
-          className={cn('block truncate text-xs', dark ? 'text-pine-muted' : 'text-muted')}
-        >
+        <span className={cn('block truncate text-xs', dark ? 'text-pine-muted' : 'text-muted')}>
           {user.email}
         </span>
       </span>

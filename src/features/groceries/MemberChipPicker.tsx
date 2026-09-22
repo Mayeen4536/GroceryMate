@@ -30,16 +30,19 @@ interface MemberChipPickerProps {
  * happen to share a name (a realistic case, not a hypothetical one) must
  * still toggle independently rather than both reacting to one chip.
  */
-export function MemberChipPicker({ label, members, selected, onChange, error, groupRef }: MemberChipPickerProps) {
+export function MemberChipPicker({
+  label,
+  members,
+  selected,
+  onChange,
+  error,
+  groupRef,
+}: MemberChipPickerProps) {
   const errorId = useId()
   const allSelected = selected.length === members.length
 
   const toggle = (id: string) => {
-    onChange(
-      selected.includes(id)
-        ? selected.filter((memberId) => memberId !== id)
-        : [...selected, id],
-    )
+    onChange(selected.includes(id) ? selected.filter((memberId) => memberId !== id) : [...selected, id])
   }
 
   return (

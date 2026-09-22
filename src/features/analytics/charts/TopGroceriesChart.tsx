@@ -21,7 +21,9 @@ export function TopGroceriesChart({ data }: { data: TopGroceryItem[] }) {
                   <span className="ml-1.5 text-xs text-muted">bought {item.purchaseCount}×</span>
                 )}
               </span>
-              <span className="shrink-0 text-sm font-semibold text-ink tabular-nums">{formatTaka(item.total)}</span>
+              <span className="shrink-0 text-sm font-semibold text-ink tabular-nums">
+                {formatTaka(item.total)}
+              </span>
             </div>
             <div className="mt-1.5 h-2 rounded-full bg-sand">
               <motion.div

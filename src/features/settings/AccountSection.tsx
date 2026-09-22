@@ -104,7 +104,13 @@ export function AccountSection() {
           <p className="text-sm font-medium text-ink">Sign out</p>
           <p className="mt-0.5 text-sm text-muted">End your session on this device.</p>
         </div>
-        <Button variant="secondary" iconLeft={LogOut} onClick={handleSignOut} disabled={signingOut} className="shrink-0">
+        <Button
+          variant="secondary"
+          iconLeft={LogOut}
+          onClick={handleSignOut}
+          disabled={signingOut}
+          className="shrink-0"
+        >
           {signingOut ? 'Signing out…' : 'Sign out'}
         </Button>
       </div>

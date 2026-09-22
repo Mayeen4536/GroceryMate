@@ -97,8 +97,8 @@ export function Landing({ onEnter }: { onEnter: () => void }) {
               </span>
             </motion.h1>
             <motion.p variants={riseChild} className="mt-6 max-w-md text-lg text-muted">
-              Add what you buy, tag who shares it, and GroceryMate works out exactly who owes
-              whom. No spreadsheets. No awkward reminders. Just even.
+              Add what you buy, tag who shares it, and GroceryMate works out exactly who owes whom. No
+              spreadsheets. No awkward reminders. Just even.
             </motion.p>
             <motion.div variants={riseChild} className="mt-9 flex flex-wrap items-center gap-3">
               <HeroCta onClick={onEnter} />
@@ -120,9 +120,7 @@ export function Landing({ onEnter }: { onEnter: () => void }) {
                   <Avatar key={name} name={name} size="sm" className="ring-2 ring-canvas" />
                 ))}
               </div>
-              <p className="text-sm text-muted">
-                Built for flatmates, hostels, and every shared home.
-              </p>
+              <p className="text-sm text-muted">Built for flatmates, hostels, and every shared home.</p>
             </motion.div>
           </motion.div>
 

@@ -16,7 +16,10 @@ import { enterApp, FIXTURE_OWNER_FIRST_NAME, FIXTURE_OWNER_NAME, generateAssista
 
 test.describe('Assistant generated-groceries review', () => {
   test.beforeEach(async ({ page, isMobile }) => {
-    test.skip(isMobile, 'this is form/validation logic, not viewport-dependent; desktop coverage is sufficient')
+    test.skip(
+      isMobile,
+      'this is form/validation logic, not viewport-dependent; desktop coverage is sufficient',
+    )
     await enterApp(page)
     await generateAssistantGroceries(page, 'Plan a week of groceries for 4 people')
   })

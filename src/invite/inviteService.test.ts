@@ -4,7 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 function makeRpcChain(result: unknown) {
   return {
     single: vi.fn(() => Promise.resolve(result)),
-    then: (resolve: (v: unknown) => void, reject: (e: unknown) => void) => Promise.resolve(result).then(resolve, reject),
+    then: (resolve: (v: unknown) => void, reject: (e: unknown) => void) =>
+      Promise.resolve(result).then(resolve, reject),
   }
 }
 
@@ -16,9 +17,8 @@ vi.mock('@/auth/supabaseClient', () => ({
   supabase: { rpc: mocks.rpc },
 }))
 
-const { acceptHouseholdInvite, createHouseholdInvite, resolveHouseholdInvite, revokeHouseholdInvite } = await import(
-  './inviteService'
-)
+const { acceptHouseholdInvite, createHouseholdInvite, resolveHouseholdInvite, revokeHouseholdInvite } =
+  await import('./inviteService')
 
 beforeEach(() => {
   mocks.rpc.mockReset()
@@ -27,14 +27,21 @@ beforeEach(() => {
 describe('createHouseholdInvite', () => {
   it('calls create_household_invite with the household id and maps the row to a CreatedInvite', async () => {
     mocks.rpc.mockReturnValue(
-      makeRpcChain({ data: { invite_id: 'inv-1', token: 'raw-token-abc', expires_at: '2026-09-26T00:00:00Z' }, error: null }),
+      makeRpcChain({
+        data: { invite_id: 'inv-1', token: 'raw-token-abc', expires_at: '2026-09-26T00:00:00Z' },
+        error: null,
+      }),
     )
 
     const result = await createHouseholdInvite('household-1')
 
     expect(mocks.rpc).toHaveBeenCalledWith('create_household_invite', { p_household_id: 'household-1' })
     expect(result.error).toBeUndefined()
-    expect(result.invite).toEqual({ inviteId: 'inv-1', token: 'raw-token-abc', expiresAt: '2026-09-26T00:00:00Z' })
+    expect(result.invite).toEqual({
+      inviteId: 'inv-1',
+      token: 'raw-token-abc',
+      expiresAt: '2026-09-26T00:00:00Z',
+    })
   })
 
   it('maps an owner-only rejection to a safe error message, never the raw one', async () => {
@@ -52,7 +59,9 @@ describe('createHouseholdInvite', () => {
 
 describe('resolveHouseholdInvite', () => {
   it('calls resolve_household_invite with the token and maps a valid result', async () => {
-    mocks.rpc.mockReturnValue(makeRpcChain({ data: { status: 'valid', household_name: 'Flat 4B' }, error: null }))
+    mocks.rpc.mockReturnValue(
+      makeRpcChain({ data: { status: 'valid', household_name: 'Flat 4B' }, error: null }),
+    )
 
     const result = await resolveHouseholdInvite('sometoken')
 
@@ -82,7 +91,9 @@ describe('resolveHouseholdInvite', () => {
 
 describe('acceptHouseholdInvite', () => {
   it('calls accept_household_invite with only the token and maps the resulting membership', async () => {
-    mocks.rpc.mockReturnValue(makeRpcChain({ data: { household_id: 'household-1', member_id: 'member-1' }, error: null }))
+    mocks.rpc.mockReturnValue(
+      makeRpcChain({ data: { household_id: 'household-1', member_id: 'member-1' }, error: null }),
+    )
 
     const result = await acceptHouseholdInvite('sometoken')
 
@@ -96,7 +107,9 @@ describe('acceptHouseholdInvite', () => {
 
   it('maps "already belong to a household" to the already-member code', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
-    mocks.rpc.mockReturnValue(makeRpcChain({ data: null, error: { message: 'You already belong to a household.' } }))
+    mocks.rpc.mockReturnValue(
+      makeRpcChain({ data: null, error: { message: 'You already belong to a household.' } }),
+    )
 
     const result = await acceptHouseholdInvite('sometoken')
 
@@ -126,7 +139,9 @@ describe('revokeHouseholdInvite', () => {
 
   it('maps a non-owner rejection to a safe error message', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
-    mocks.rpc.mockReturnValue(Promise.resolve({ error: { message: 'Only the household owner can revoke an invite.' } }))
+    mocks.rpc.mockReturnValue(
+      Promise.resolve({ error: { message: 'Only the household owner can revoke an invite.' } }),
+    )
 
     const result = await revokeHouseholdInvite('inv-1')
 

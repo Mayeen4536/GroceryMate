@@ -48,7 +48,7 @@ describe('markReceiptProcessed', () => {
     })
   })
 
-  it('preserves a pasted-text receipt\'s text rather than an image url', () => {
+  it("preserves a pasted-text receipt's text rather than an image url", () => {
     const updated = markReceiptProcessed(pendingPastedReceipt(), [], () => LATER)
     expect(updated.source).toBe('pasted_text')
     expect('text' in updated && updated.text).toBe('Mayeen bought rice for 800.')

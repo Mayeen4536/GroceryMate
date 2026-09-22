@@ -58,7 +58,9 @@ export interface ReceiptConfirmationServiceDeps {
   readonly now?: () => Date
 }
 
-export function createReceiptConfirmationService(deps: ReceiptConfirmationServiceDeps = {}): ReceiptConfirmationService {
+export function createReceiptConfirmationService(
+  deps: ReceiptConfirmationServiceDeps = {},
+): ReceiptConfirmationService {
   const generateId = deps.generateId ?? (() => crypto.randomUUID())
   const now = deps.now ?? (() => new Date())
 
@@ -76,7 +78,8 @@ export function createReceiptConfirmationService(deps: ReceiptConfirmationServic
         addedAt: now(),
       }
 
-      const groceryItem: GroceryItem = confirmation.notes === undefined ? base : { ...base, notes: confirmation.notes }
+      const groceryItem: GroceryItem =
+        confirmation.notes === undefined ? base : { ...base, notes: confirmation.notes }
 
       return { groceryItem, parsedItemId: confirmation.parsedItemId }
     },

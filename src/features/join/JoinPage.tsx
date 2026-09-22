@@ -164,9 +164,15 @@ export function JoinPage({ token }: { token: string }) {
 
   if (authStatus !== 'signed-in') {
     return (
-      <AuthLayout title={`You've been invited to join ${name}`} subtitle="Sign in or create an account to accept.">
+      <AuthLayout
+        title={`You've been invited to join ${name}`}
+        subtitle="Sign in or create an account to accept."
+      >
         <div className="flex flex-col gap-3">
-          <Button fullWidth onClick={() => navigate(`/sign-in?redirect=${encodeURIComponent(redirectTarget)}`)}>
+          <Button
+            fullWidth
+            onClick={() => navigate(`/sign-in?redirect=${encodeURIComponent(redirectTarget)}`)}
+          >
             Sign in to join
           </Button>
           <Button

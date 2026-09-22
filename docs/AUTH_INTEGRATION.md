@@ -10,9 +10,9 @@ local/mock implementation — see "What remains mock/local" below.
 
 Copy `.env.example` to `.env.local` (gitignored) and set:
 
-| Variable | Where to find it |
-|---|---|
-| `VITE_SUPABASE_URL` | Local: `npx supabase status` → `API_URL`. Hosted (`grocerymate-dev`): dashboard API settings. |
+| Variable                        | Where to find it                                                                                  |
+| ------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `VITE_SUPABASE_URL`             | Local: `npx supabase status` → `API_URL`. Hosted (`grocerymate-dev`): dashboard API settings.     |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Local: `npx supabase status` → `PUBLISHABLE_KEY` (or `ANON_KEY`). Hosted: dashboard API settings. |
 
 Both are safe for browser code — this is the publishable/anon key, not a

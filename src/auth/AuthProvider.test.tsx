@@ -176,7 +176,13 @@ describe('AuthProvider / useAuth', () => {
     mocks.getSession.mockResolvedValue({ data: { session: null } })
     mocks.signUp.mockResolvedValue({
       data: { session: null, user: null },
-      error: { name: 'AuthApiError', __isAuthError: true, status: 422, code: 'user_already_exists', message: 'x' },
+      error: {
+        name: 'AuthApiError',
+        __isAuthError: true,
+        status: 422,
+        code: 'user_already_exists',
+        message: 'x',
+      },
     })
     vi.spyOn(console, 'error').mockImplementation(() => {})
 

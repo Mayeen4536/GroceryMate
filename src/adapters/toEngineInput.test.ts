@@ -41,9 +41,18 @@ function makeUIGrocery(overrides: Partial<UIGroceryItem> & { id: string }): UIGr
 
 describe('toEngineInput', () => {
   it('converts UI members and groceries into engine-valid domain input', () => {
-    const members = [makeUIMember({ id: 'm-1', name: 'Aisha Khan' }), makeUIMember({ id: 'm-2', name: 'Bilal Ahmed' })]
+    const members = [
+      makeUIMember({ id: 'm-1', name: 'Aisha Khan' }),
+      makeUIMember({ id: 'm-2', name: 'Bilal Ahmed' }),
+    ]
     const groceries = [
-      makeUIGrocery({ id: 'g-1', name: 'Milk', price: '100', paidByMemberId: 'm-1', sharedByMemberIds: ['m-1', 'm-2'] }),
+      makeUIGrocery({
+        id: 'g-1',
+        name: 'Milk',
+        price: '100',
+        paidByMemberId: 'm-1',
+        sharedByMemberIds: ['m-1', 'm-2'],
+      }),
     ]
 
     const engineInput = toEngineInput(members, groceries, BDT, HOUSEHOLD_ID)
@@ -78,7 +87,12 @@ describe('toEngineInput', () => {
       }),
     ]
 
-    const { members: engineMembers, groceries: engineGroceries } = toEngineInput(members, groceries, BDT, HOUSEHOLD_ID)
+    const { members: engineMembers, groceries: engineGroceries } = toEngineInput(
+      members,
+      groceries,
+      BDT,
+      HOUSEHOLD_ID,
+    )
     const result = computeSettlement(engineMembers, engineGroceries, BDT)
 
     const balanceOf = (id: string) => result.memberBalances.find((b) => b.memberId === id)!
@@ -117,10 +131,16 @@ describe('toEngineInput', () => {
     expect(engineGroceries[0].unitPrice.minorUnits).toBe(4999)
   })
 
-  it('always feeds the engine quantity 1, regardless of the persisted item\'s own (display-only) quantity — price is already the line total, not a unit price', () => {
+  it("always feeds the engine quantity 1, regardless of the persisted item's own (display-only) quantity — price is already the line total, not a unit price", () => {
     const members = [makeUIMember({ id: 'm-1', name: 'Aisha Khan' })]
     const groceries = [
-      makeUIGrocery({ id: 'g-1', price: '100', quantity: 5, paidByMemberId: 'm-1', sharedByMemberIds: ['m-1'] }),
+      makeUIGrocery({
+        id: 'g-1',
+        price: '100',
+        quantity: 5,
+        paidByMemberId: 'm-1',
+        sharedByMemberIds: ['m-1'],
+      }),
     ]
     const { groceries: engineGroceries } = toEngineInput(members, groceries, BDT, HOUSEHOLD_ID)
     expect(engineGroceries[0].quantity).toBe(1)
@@ -137,7 +157,12 @@ describe('toEngineInput', () => {
 
   it('handles an empty grocery list against a non-empty household without error', () => {
     const members = [makeUIMember({ id: 'm-1', name: 'Aisha Khan' })]
-    const { members: engineMembers, groceries: engineGroceries } = toEngineInput(members, [], BDT, HOUSEHOLD_ID)
+    const { members: engineMembers, groceries: engineGroceries } = toEngineInput(
+      members,
+      [],
+      BDT,
+      HOUSEHOLD_ID,
+    )
     expect(engineMembers).toHaveLength(1)
     expect(engineGroceries).toHaveLength(0)
   })

@@ -22,9 +22,7 @@ function PromptRecap({ prompt, attachments }: { prompt: string; attachments: Att
         <Sparkles size={15} aria-hidden="true" />
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-sm text-ink-soft">
-          {prompt || 'Using what you attached below…'}
-        </p>
+        <p className="text-sm text-ink-soft">{prompt || 'Using what you attached below…'}</p>
         {attachments.length > 0 && (
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {attachments.map((attachment) => (
@@ -105,12 +103,8 @@ export function AssistantPage({
 
             <div className="space-y-4">
               <div>
-                <h2 className="text-xl font-semibold tracking-tight text-ink">
-                  Or try it another way
-                </h2>
-                <p className="mt-1 text-sm text-muted">
-                  Four ways to tell GroceryMate what you need.
-                </p>
+                <h2 className="text-xl font-semibold tracking-tight text-ink">Or try it another way</h2>
+                <p className="mt-1 text-sm text-muted">Four ways to tell GroceryMate what you need.</p>
               </div>
               <SuggestionGrid onSelect={handleSuggestion} />
             </div>

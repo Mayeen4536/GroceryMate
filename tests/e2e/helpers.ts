@@ -51,7 +51,9 @@ export async function enterApp(page: Page) {
  */
 export async function clearHouseholdGroceries(page: Page) {
   if (!SUPABASE_URL || !PUBLISHABLE_KEY) {
-    throw new Error('clearHouseholdGroceries: could not read VITE_SUPABASE_URL/VITE_SUPABASE_PUBLISHABLE_KEY from .env.local')
+    throw new Error(
+      'clearHouseholdGroceries: could not read VITE_SUPABASE_URL/VITE_SUPABASE_PUBLISHABLE_KEY from .env.local',
+    )
   }
   const token = await page.evaluate(() => {
     for (let i = 0; i < localStorage.length; i++) {
@@ -147,7 +149,9 @@ async function getSessionAccessToken(page: Page): Promise<string> {
  */
 export async function revokeInviteByToken(page: Page, token: string) {
   if (!SUPABASE_URL || !PUBLISHABLE_KEY) {
-    throw new Error('revokeInviteByToken: could not read VITE_SUPABASE_URL/VITE_SUPABASE_PUBLISHABLE_KEY from .env.local')
+    throw new Error(
+      'revokeInviteByToken: could not read VITE_SUPABASE_URL/VITE_SUPABASE_PUBLISHABLE_KEY from .env.local',
+    )
   }
   const accessToken = await getSessionAccessToken(page)
   const headers = {
@@ -185,7 +189,10 @@ export async function revokeInviteByToken(page: Page, token: string) {
  * run and make `getByRole('button', { name: /Open …/ })` ambiguous.
  */
 export async function addMember(page: Page, name: string) {
-  await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Members', exact: true }).click()
+  await page
+    .getByRole('navigation', { name: 'Main' })
+    .getByRole('button', { name: 'Members', exact: true })
+    .click()
   await expect(page.getByRole('heading', { name: 'Members', exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Add member' }).click()
   const dialog = page.getByRole('dialog')
@@ -203,7 +210,10 @@ export async function addMember(page: Page, name: string) {
  * owner (archive is owner-only).
  */
 export async function archiveMember(page: Page, name: string) {
-  await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Members', exact: true }).click()
+  await page
+    .getByRole('navigation', { name: 'Main' })
+    .getByRole('button', { name: 'Members', exact: true })
+    .click()
   await page.getByRole('button', { name: new RegExp(`Open ${name}'s profile`) }).click()
   const drawer = page.getByRole('dialog', { name: 'Member profile' })
   await drawer.getByRole('button', { name: 'Remove from household' }).click()
@@ -227,7 +237,10 @@ export async function archiveMember(page: Page, name: string) {
  * themselves (Escape or the dialog's own Close button).
  */
 export async function generateInviteLink(page: Page): Promise<{ url: string; token: string }> {
-  await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Members', exact: true }).click()
+  await page
+    .getByRole('navigation', { name: 'Main' })
+    .getByRole('button', { name: 'Members', exact: true })
+    .click()
   await expect(page.getByRole('heading', { name: 'Members', exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Invite', exact: true }).click()
   const input = page.getByRole('dialog').getByLabel('Invite link')
@@ -262,7 +275,10 @@ export async function signUpNewUser(page: Page, options: { name: string; email: 
  * the mobile-nav-clearance and Assistant-review specs need this same setup.
  */
 export async function generateAssistantGroceries(page: Page, prompt: string) {
-  await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Assistant', exact: true }).click()
+  await page
+    .getByRole('navigation', { name: 'Main' })
+    .getByRole('button', { name: 'Assistant', exact: true })
+    .click()
   await expect(page.getByRole('heading', { name: 'AI Assistant', exact: true })).toBeVisible()
   await page.getByLabel('Describe what your household needs').fill(prompt)
   await page.getByRole('button', { name: 'Generate' }).click()

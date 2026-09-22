@@ -1,8 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-test('loads the app, shows primary navigation, and navigates to another page', async ({
-  page,
-}) => {
+test('loads the app, shows primary navigation, and navigates to another page', async ({ page }) => {
   await page.goto('/')
 
   // The app loaded: the landing page's hero heading is the clearest signal.

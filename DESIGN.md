@@ -15,21 +15,21 @@ Tailwind utility (`bg-brand-600`). Reusable components live in
 
 ## Color
 
-| Token | Value | Use |
-| --- | --- | --- |
-| `brand-50…900` | greens around `#217a50` | Primary actions (600), hover (700), tints (50-200) |
-| `mint-50…700` | soft mint | Secondary accent: friendly highlights, "shared" states |
-| `canvas` | `#faf8f5` | App background (warm off-white) |
-| `surface` | `#ffffff` | Cards, inputs |
-| `sand` | `#f3f0ea` | Soft fills, ghost-button hover, disabled fields |
-| `line` / `line-strong` | ink at 9% / 16% | Hairline dividers / input borders |
-| `ink` / `ink-soft` / `muted` | `#2a2724` / `#57524a` / `#6f6a61` | Primary / secondary / muted text |
-| `pine-950/900/800` | deep greens from `#0b1912` | Dark chrome surfaces (sidebar, dock) |
-| `pine-text` / `pine-muted` / `pine-mint` | `#eef1e9` / `#9fac9d` / `#86dcae` | Text and active accent on pine |
-| `success-50/500/700` | greens | Positive status |
-| `warning-50/500/700` | warm ambers | Attention status |
-| `danger-50/500/600/700` | soft reds | Errors; 600 is the button fill (AA with white) |
-| `member-{coral,sky,violet,gold,rose,teal}-{soft,strong}` | pastel pairs | Avatars and member chips |
+| Token                                                    | Value                             | Use                                                    |
+| -------------------------------------------------------- | --------------------------------- | ------------------------------------------------------ |
+| `brand-50…900`                                           | greens around `#217a50`           | Primary actions (600), hover (700), tints (50-200)     |
+| `mint-50…700`                                            | soft mint                         | Secondary accent: friendly highlights, "shared" states |
+| `canvas`                                                 | `#faf8f5`                         | App background (warm off-white)                        |
+| `surface`                                                | `#ffffff`                         | Cards, inputs                                          |
+| `sand`                                                   | `#f3f0ea`                         | Soft fills, ghost-button hover, disabled fields        |
+| `line` / `line-strong`                                   | ink at 9% / 16%                   | Hairline dividers / input borders                      |
+| `ink` / `ink-soft` / `muted`                             | `#2a2724` / `#57524a` / `#6f6a61` | Primary / secondary / muted text                       |
+| `pine-950/900/800`                                       | deep greens from `#0b1912`        | Dark chrome surfaces (sidebar, dock)                   |
+| `pine-text` / `pine-muted` / `pine-mint`                 | `#eef1e9` / `#9fac9d` / `#86dcae` | Text and active accent on pine                         |
+| `success-50/500/700`                                     | greens                            | Positive status                                        |
+| `warning-50/500/700`                                     | warm ambers                       | Attention status                                       |
+| `danger-50/500/600/700`                                  | soft reds                         | Errors; 600 is the button fill (AA with white)         |
+| `member-{coral,sky,violet,gold,rose,teal}-{soft,strong}` | pastel pairs                      | Avatars and member chips                               |
 
 Rules: `brand-600` is the only primary-action color. Status colors always pair
 a `-50` background with a `-700` text tone. Never use pure black or pure gray.
@@ -56,14 +56,14 @@ Inter Variable (self-hosted via `@fontsource-variable/inter`), system-ui fallbac
 
 ## Radius
 
-| Utility | Size | Use |
-| --- | --- | --- |
-| `rounded-sm` | 8px | chips, tiny controls |
-| `rounded-md` | 12px | buttons, inputs |
-| `rounded-lg` | 16px | icon tiles, small cards |
-| `rounded-xl` | 20px | cards |
-| `rounded-2xl` | 28px | modals, hero surfaces |
-| `rounded-full` | - | badges, avatars, pills |
+| Utility        | Size | Use                     |
+| -------------- | ---- | ----------------------- |
+| `rounded-sm`   | 8px  | chips, tiny controls    |
+| `rounded-md`   | 12px | buttons, inputs         |
+| `rounded-lg`   | 16px | icon tiles, small cards |
+| `rounded-xl`   | 20px | cards                   |
+| `rounded-2xl`  | 28px | modals, hero surfaces   |
+| `rounded-full` | -    | badges, avatars, pills  |
 
 ## Shadows and card surfaces
 

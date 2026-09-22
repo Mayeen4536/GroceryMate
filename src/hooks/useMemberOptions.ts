@@ -53,7 +53,7 @@ export function buildMemberOptions(members: readonly Member[]): MemberOptions {
         return null
       }
     },
-    nameForId: (id: string | null) => (id ? nameById.get(id) ?? '' : ''),
+    nameForId: (id: string | null) => (id ? (nameById.get(id) ?? '') : ''),
   }
 }
 

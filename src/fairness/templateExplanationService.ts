@@ -42,11 +42,13 @@ function renderTemplate(facts: SettlementExplanationFacts): string {
   const paidList = describeItemList(facts.itemsPaidFor)
 
   if (facts.direction === 'owes') {
-    const paidClause = facts.itemsPaidFor.length === 0 ? "didn't pay for anything" : `only paid for ${paidList}`
+    const paidClause =
+      facts.itemsPaidFor.length === 0 ? "didn't pay for anything" : `only paid for ${paidList}`
     return `${facts.memberName} owes ${amount} because they shared ${sharedList}, but ${paidClause}.`
   }
 
-  const sharedClause = facts.itemsSharedIn.length === 0 ? "didn't share in anything" : `only shared ${sharedList}`
+  const sharedClause =
+    facts.itemsSharedIn.length === 0 ? "didn't share in anything" : `only shared ${sharedList}`
   return `${facts.memberName} is owed ${amount} because they paid for ${paidList}, but ${sharedClause}.`
 }
 

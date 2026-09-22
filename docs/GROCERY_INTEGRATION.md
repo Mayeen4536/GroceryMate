@@ -108,7 +108,7 @@ integer-minor-units value only ever exists at the persistence boundary
 
 N/A to this slice directly — grocery edit/delete permission is
 creator-or-owner (see Migration 3), not owner-only. `created_by_member_id`
-is always the *caller's own* membership id (RLS enforces this — see
+is always the _caller's own_ membership id (RLS enforces this — see
 `grocery_items_insert_active_member`'s `created_by_member_id =
 private.household_member_id_for(household_id)` check), never a
 client-supplied value and never necessarily the same as the payer.
@@ -126,11 +126,11 @@ inserts one `grocery_item_consumers` row per selected sharer.
 **Create**: one bulk `insert` of every selected sharer's consumer row,
 right after the item itself is confirmed inserted.
 
-**Edit**: a *diff*, not a blind delete-all-then-insert-all — the existing
+**Edit**: a _diff_, not a blind delete-all-then-insert-all — the existing
 consumer set is read back, then only the genuinely new ids are inserted
 and only the genuinely removed ids are deleted. Unchanged consumers are
 never touched at all, which also means a partial failure here can never
-leave the item with *zero* consumers (the failure mode a blind
+leave the item with _zero_ consumers (the failure mode a blind
 replace-everything strategy would risk).
 
 ## Partial-failure strategy
@@ -144,7 +144,7 @@ hidden:
 - **Create**: if the consumer insert fails after the item insert
   succeeded, the client immediately deletes the just-created
   `grocery_items` row rather than leaving a payer-but-no-sharers record
-  behind. If *that* rollback call itself fails (a second, independent
+  behind. If _that_ rollback call itself fails (a second, independent
   network error right after the first), an orphaned consumer-less
   `grocery_items` row can be left behind — a known, narrow residual
   window that only an RPC could close, and creating one was out of
@@ -177,7 +177,7 @@ dismissed early) — `grocery_item_consumers` rows cascade-delete with it
 automatically (Migration 2's `ON DELETE CASCADE`). If that real delete
 fails, the item simply reappears (it's still genuinely persisted) and a
 plain toast explains why, rather than silently leaving it hidden while
-still real. A page refresh *during* the undo window shows the item again
+still real. A page refresh _during_ the undo window shows the item again
 — correct and truthful, since the server was never actually asked to
 delete it yet.
 
@@ -210,9 +210,9 @@ and consumer ids — real UUIDs now, opaque strings either way as far as
 that mattered: `docs/SUPABASE_SCHEMA_DESIGN.md`'s own "Engine
 reconstruction" section (written back at Migration 2, before any
 frontend integration existed) already specifies that `amount_minor` is
-the line's *final total*, and that feeding the engine the stored
+the line's _final total_, and that feeding the engine the stored
 (decorative-only) `quantity` back in would double-count it. `toEngineInput`
-now always passes the engine `quantity: 1`, matching that — the *old*
+now always passes the engine `quantity: 1`, matching that — the _old_
 mock-era code multiplied `unitPrice × quantity`, which would have been
 wrong the moment real data arrived. Caught and fixed proactively, with a
 dedicated unit test (`toEngineInput.test.ts`) asserting a quantity-5 item
@@ -293,7 +293,7 @@ Notable fixes along the way:
   "Basmati rice (5kg)") became per-run-unique — the same "groceries now
   persist forever" reasoning applies to a fixed name colliding with a
   leftover row.
-- Mixing Playwright's fake `page.clock` with the delete finalize's *real*
+- Mixing Playwright's fake `page.clock` with the delete finalize's _real_
   network call was itself a source of flakiness; the "stays deleted"
   test now waits out the real (short) window instead.
 - A genuinely new bug, not a test artifact: `GroceryForm` had no price
@@ -301,8 +301,8 @@ Notable fixes along the way:
   "free"). Two existing specs relied on that gap; both now fill in a
   real price, and the form itself gained the validation described above.
 - `archiveMember()` (a new `helpers.ts` addition) had to stop checking
-  for "Archived" *inside* the member profile drawer — `useMembers.
-  handleRemove` already closes the drawer on a successful archive
+  for "Archived" _inside_ the member profile drawer — `useMembers.
+handleRemove` already closes the drawer on a successful archive
   (Slice 3 behavior, unchanged); the real confirmation is the member's
   own card showing the badge afterward.
 - Escape-to-close a `Dropdown` popover inside the "Add grocery" `Drawer`

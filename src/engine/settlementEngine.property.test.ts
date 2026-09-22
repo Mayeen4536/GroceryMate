@@ -42,9 +42,7 @@ function generateRandomHousehold(rng: () => number): RandomHousehold {
     // Skew toward small amounts (typical grocery prices) with an occasional large outlier,
     // so both everyday rounding and large-value precision get exercised.
     const isOutlier = rng() < 0.05
-    const unitPriceMinorUnits = isOutlier
-      ? Math.floor(rng() * 100_000_000)
-      : Math.floor(rng() * 500_00)
+    const unitPriceMinorUnits = isOutlier ? Math.floor(rng() * 100_000_000) : Math.floor(rng() * 500_00)
     return makeGroceryItem({
       id: `g${i}`,
       paidBy: payer,

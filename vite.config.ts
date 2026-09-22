@@ -18,7 +18,8 @@ export default defineConfig({
         id: '/',
         name: 'GroceryMate',
         short_name: 'GroceryMate',
-        description: 'Split groceries fairly with your household — track spending, settle up, and keep living simple.',
+        description:
+          'Split groceries fairly with your household — track spending, settle up, and keep living simple.',
         start_url: '/',
         scope: '/',
         display: 'standalone',

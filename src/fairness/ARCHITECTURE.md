@@ -12,7 +12,7 @@ in code below, not just documented:
 1. **"The explanation should always come from deterministic calculation
    data."** → `explanationFacts.ts`.
 2. **"AI should only generate natural language."** → `explanationPrompt.ts`
-   + `aiExplanationService.ts`.
+   - `aiExplanationService.ts`.
 3. **"Never let AI change financial results."** → `explanationVerification.ts`.
 
 No UI (no "Explain This Split" button, no Settlements page change) is
@@ -51,7 +51,7 @@ It derives:
   (always non-negative — direction carries the sign) from
   `MemberSettlementSummary.netBalanceMinorUnits`, which the engine already
   computed.
-- `itemsPaidFor` / `itemsSharedIn` — item *names*, filtered straight from
+- `itemsPaidFor` / `itemsSharedIn` — item _names_, filtered straight from
   the `GroceryItem[]` by `paidByMemberId` / `sharedByMemberIds`. No price
   math happens here; the amount was already computed above.
 - `transfers` — the subset of `SettlementResult.transfers` involving this
@@ -60,7 +60,7 @@ It derives:
 Neither `FairnessExplanationService` implementation ever sees a
 `GroceryItem`, a `SettlementResult`, or a `Member` — only this fact object.
 That's what makes "always from deterministic data" a property of the
-*types*, not just a rule someone has to remember to follow: there is no
+_types_, not just a rule someone has to remember to follow: there is no
 raw data left in scope by the time either implementation runs, deterministic
 or AI-backed, for it to recompute anything from.
 
@@ -108,7 +108,7 @@ model does:
   nothing correct it could say.
 
 Any failure — rejected text, or the provider call itself throwing — takes
-the *entire* AI path out of the result. `aiExplanationService.test.ts`
+the _entire_ AI path out of the result. `aiExplanationService.test.ts`
 proves this directly: an AI response with a wrong, right, or missing
 amount is fed in, and the fallback's amount (not the AI's) is what
 survives to the caller every time.

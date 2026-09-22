@@ -43,7 +43,8 @@ const MESSAGE_MATCHERS: Array<{ test: (raw: string) => boolean; code: InviteErro
     message: 'Only the household owner can do that.',
   },
   {
-    test: (raw) => raw === 'Invalid invite.' || raw.includes('Household not found') || raw.includes('Invite not found'),
+    test: (raw) =>
+      raw === 'Invalid invite.' || raw.includes('Household not found') || raw.includes('Invite not found'),
     code: 'not-found',
     message: "This invite link isn't valid.",
   },
@@ -65,7 +66,8 @@ const MESSAGE_MATCHERS: Array<{ test: (raw: string) => boolean; code: InviteErro
   {
     test: (raw) => raw.includes('previously a member of this household'),
     code: 'same-household-conflict',
-    message: 'You were previously a member of this household. Ask the household owner to reactivate your membership.',
+    message:
+      'You were previously a member of this household. Ask the household owner to reactivate your membership.',
   },
   {
     test: (raw) => raw.includes('already belong to a household'),
@@ -84,7 +86,10 @@ const MESSAGE_MATCHERS: Array<{ test: (raw: string) => boolean; code: InviteErro
 export function normalizeInviteError(error: unknown): InviteError {
   console.error('[invite]', error)
 
-  const raw = error && typeof error === 'object' && 'message' in error ? String((error as { message: unknown }).message) : ''
+  const raw =
+    error && typeof error === 'object' && 'message' in error
+      ? String((error as { message: unknown }).message)
+      : ''
   const matched = MESSAGE_MATCHERS.find((matcher) => matcher.test(raw))
   if (matched) return { code: matched.code, message: matched.message }
 

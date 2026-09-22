@@ -13,7 +13,10 @@ import { addMember, enterApp, FIXTURE_OWNER_NAME } from './helpers'
  * "owner self-archival gap"), which this spec needs to exercise.
  */
 async function openMemberProfile(page: Page, name: string) {
-  await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Members', exact: true }).click()
+  await page
+    .getByRole('navigation', { name: 'Main' })
+    .getByRole('button', { name: 'Members', exact: true })
+    .click()
   await page.getByRole('button', { name: new RegExp(`Open ${name}'s profile`) }).click()
   await expect(page.getByRole('dialog', { name: 'Member profile' })).toBeVisible()
 }
@@ -24,7 +27,9 @@ test.describe('Nested overlay Escape handling', () => {
     await enterApp(page)
   })
 
-  test('first Escape closes only the confirmation; second Escape closes the drawer beneath it', async ({ page }) => {
+  test('first Escape closes only the confirmation; second Escape closes the drawer beneath it', async ({
+    page,
+  }) => {
     const memberName = `Nested Escape Member ${Date.now()}`
     await addMember(page, memberName)
     await openMemberProfile(page, memberName)

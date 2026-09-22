@@ -98,9 +98,9 @@ export function DataSection({ onExportAll, onConfirmDelete }: DataSectionProps) 
             <AlertTriangle size={19} aria-hidden="true" />
           </span>
           <p className="text-sm leading-relaxed text-ink-soft">
-            This clears every preference on this page — currency, language, appearance, and
-            notifications — back to their defaults. It doesn't touch your groceries, members, or
-            settlement history; those live on their own pages.
+            This clears every preference on this page — currency, language, appearance, and notifications —
+            back to their defaults. It doesn't touch your groceries, members, or settlement history; those
+            live on their own pages.
           </p>
         </div>
       </Modal>

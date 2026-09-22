@@ -116,10 +116,7 @@ export function HeroMockup() {
             {mockItems.map((item) => (
               <div key={item.name} className="flex items-center gap-3 px-5 py-3">
                 <span
-                  className={cn(
-                    'flex size-9 shrink-0 items-center justify-center rounded-lg',
-                    item.tone,
-                  )}
+                  className={cn('flex size-9 shrink-0 items-center justify-center rounded-lg', item.tone)}
                 >
                   <item.icon size={17} />
                 </span>
@@ -128,9 +125,7 @@ export function HeroMockup() {
                   <p className="text-xs text-muted">paid by {item.payer.split(' ')[0]}</p>
                 </div>
                 {item.shared && <Badge tone="mint">Shared</Badge>}
-                <p className="w-10 text-right text-sm font-semibold tabular-nums text-ink">
-                  {item.amount}
-                </p>
+                <p className="w-10 text-right text-sm font-semibold tabular-nums text-ink">{item.amount}</p>
               </div>
             ))}
           </div>

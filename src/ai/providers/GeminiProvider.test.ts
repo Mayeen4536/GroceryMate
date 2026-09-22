@@ -23,8 +23,10 @@ describe('createGeminiProvider', () => {
     expect(body.contents).toEqual([{ role: 'user', parts: [{ text: 'Mayeen bought rice.' }] }])
   })
 
-  it('extracts the first candidate\'s text', async () => {
-    const fetchImpl = vi.fn().mockResolvedValue(okResponse({ candidates: [{ content: { parts: [{ text: 'hello' }] } }] }))
+  it("extracts the first candidate's text", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(okResponse({ candidates: [{ content: { parts: [{ text: 'hello' }] } }] }))
     const provider = createGeminiProvider({ apiKey: 'k', model: 'm', fetchImpl })
     expect(await provider.complete({ systemPrompt: '', userMessage: '' })).toBe('hello')
   })

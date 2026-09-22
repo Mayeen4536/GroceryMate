@@ -23,7 +23,13 @@ export interface ExportAllDataInput {
  * persisted exists yet for it — see `useSettlements`). Nothing here is
  * fabricated to fill a section; an empty section says so honestly.
  */
-export function exportAllData({ householdId, householdName, members, groceries, transfers }: ExportAllDataInput): void {
+export function exportAllData({
+  householdId,
+  householdName,
+  members,
+  groceries,
+  transfers,
+}: ExportAllDataInput): void {
   const nameOf = new Map(members.map((member) => [member.id, member.name] as const))
   const historyEntries = buildHistoryEntries(groceries, members)
 
@@ -49,7 +55,8 @@ export function exportAllData({ householdId, householdName, members, groceries, 
     '--------------------',
     ...(transfers.length > 0
       ? transfers.map(
-          (settlement) => `${settlement.from} owes ${settlement.to} ${formatTaka(Number.parseFloat(settlement.amount) || 0)}`,
+          (settlement) =>
+            `${settlement.from} owes ${settlement.to} ${formatTaka(Number.parseFloat(settlement.amount) || 0)}`,
         )
       : ['Everyone is settled up.']),
     '',
@@ -57,7 +64,8 @@ export function exportAllData({ householdId, householdName, members, groceries, 
     '---------------',
     ...(historyEntries.length > 0
       ? historyEntries.map(
-          (entry) => `${entry.dateLabel} — ${entry.name} — ${formatTaka(Number.parseFloat(entry.amount) || 0)}`,
+          (entry) =>
+            `${entry.dateLabel} — ${entry.name} — ${formatTaka(Number.parseFloat(entry.amount) || 0)}`,
         )
       : ['No history yet.']),
   ]

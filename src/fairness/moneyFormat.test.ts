@@ -15,7 +15,7 @@ describe('formatMinorUnits', () => {
     expect(formatMinorUnits(100000000, CURRENCIES.BDT)).toBe('৳1,000,000')
   })
 
-  it('uses the given currency\'s own symbol', () => {
+  it("uses the given currency's own symbol", () => {
     expect(formatMinorUnits(150000, CURRENCIES.USD)).toBe('$1,500')
   })
 

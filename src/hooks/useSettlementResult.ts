@@ -37,7 +37,10 @@ export type SettlementResultState =
  * developing against this; only `describeSettlementError`'s plain-language
  * summary ever reaches the screen.
  */
-export function useSettlementResult(members: readonly Member[], groceries: readonly GroceryItem[]): SettlementResultState {
+export function useSettlementResult(
+  members: readonly Member[],
+  groceries: readonly GroceryItem[],
+): SettlementResultState {
   // Rendered only inside <HouseholdGate>, which never renders its children
   // until `household` is loaded — see src/household/HouseholdGate.tsx.
   const { household } = useHousehold()

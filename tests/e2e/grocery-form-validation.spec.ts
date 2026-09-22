@@ -9,13 +9,16 @@ import { enterApp } from './helpers'
 
 test.describe('Grocery form validation', () => {
   test.beforeEach(async ({ page, isMobile }) => {
-    test.skip(isMobile, 'form validation logic does not depend on viewport size; desktop coverage is sufficient')
+    test.skip(
+      isMobile,
+      'form validation logic does not depend on viewport size; desktop coverage is sufficient',
+    )
     await enterApp(page)
     await page.getByRole('button', { name: 'Add grocery' }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
   })
 
-  test('submitting with an empty name shows GroceryMate\'s own error text', async ({ page }) => {
+  test("submitting with an empty name shows GroceryMate's own error text", async ({ page }) => {
     const dialog = page.getByRole('dialog')
     await dialog.getByRole('button', { name: 'Add grocery' }).click()
     await expect(dialog.getByText('Enter a name for this item.')).toBeVisible()

@@ -7,8 +7,10 @@ function okResponse(body: unknown): Response {
 }
 
 describe('createClaudeProvider', () => {
-  it('sends the system prompt and user message in Anthropic\'s Messages API shape', async () => {
-    const fetchImpl = vi.fn().mockResolvedValue(okResponse({ content: [{ type: 'text', text: '{"items": []}' }] }))
+  it("sends the system prompt and user message in Anthropic's Messages API shape", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(okResponse({ content: [{ type: 'text', text: '{"items": []}' }] }))
     const provider = createClaudeProvider({ apiKey: 'test-key', model: 'claude-test', fetchImpl })
 
     await provider.complete({ systemPrompt: 'Extract groceries.', userMessage: 'Mayeen bought rice.' })

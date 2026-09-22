@@ -21,7 +21,12 @@ interface MemberCardProps {
   financialsUnavailable?: boolean
 }
 
-export function MemberCard({ member, onOpen, highlight = false, financialsUnavailable = false }: MemberCardProps) {
+export function MemberCard({
+  member,
+  onOpen,
+  highlight = false,
+  financialsUnavailable = false,
+}: MemberCardProps) {
   const status = STATUS_META[member.status]
   const tone = MEMBER_TONES[member.tone % MEMBER_TONES.length]
   const invited = member.status === 'invited'

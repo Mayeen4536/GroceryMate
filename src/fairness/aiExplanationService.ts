@@ -21,7 +21,9 @@ export interface AIFairnessExplanationServiceDeps {
  * besides the pre-computed `SettlementExplanationFacts`, and its output
  * never feeds back into any calculation — it produces display text only.
  */
-export function createAIFairnessExplanationService(deps: AIFairnessExplanationServiceDeps): FairnessExplanationService {
+export function createAIFairnessExplanationService(
+  deps: AIFairnessExplanationServiceDeps,
+): FairnessExplanationService {
   const fallback = deps.fallback ?? createTemplateFairnessExplanationService()
 
   return {

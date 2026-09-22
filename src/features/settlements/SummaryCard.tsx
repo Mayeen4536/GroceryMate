@@ -41,10 +41,7 @@ export function SummaryCard({ pendingCount, summary }: SummaryCardProps) {
         <div>
           <p className="text-xs text-muted">Outstanding across {household?.name ?? 'your household'}</p>
           <p className="mt-1 text-3xl font-bold tabular-nums tracking-tight text-ink">
-            <AnimatedNumber
-              value={Number.parseFloat(summary.outstanding) || 0}
-              format={formatTaka}
-            />
+            <AnimatedNumber value={Number.parseFloat(summary.outstanding) || 0} format={formatTaka} />
           </p>
           <div className="mt-3">
             <Badge tone="warning">
@@ -56,9 +53,7 @@ export function SummaryCard({ pendingCount, summary }: SummaryCardProps) {
         <span aria-hidden="true" className="hidden w-px self-stretch bg-line md:block" />
 
         <div className="min-w-44">
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">
-            Should receive
-          </p>
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Should receive</p>
           <ul className="space-y-2">
             {summary.receivers.map((entry) => (
               <AmountRow key={entry.name} name={entry.name} amount={entry.amount} tone="receive" />
@@ -69,9 +64,7 @@ export function SummaryCard({ pendingCount, summary }: SummaryCardProps) {
         <span aria-hidden="true" className="hidden w-px self-stretch bg-line md:block" />
 
         <div className="min-w-44">
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">
-            Owe the house
-          </p>
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Owe the house</p>
           <ul className="space-y-2">
             {summary.owers.map((entry) => (
               <AmountRow key={entry.name} name={entry.name} amount={entry.amount} tone="owe" />

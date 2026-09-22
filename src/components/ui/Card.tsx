@@ -31,8 +31,7 @@ const variantClasses: Record<CardVariant, string> = {
     'transition-shadow duration-200 hover:shadow-panel-hover',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas',
   ),
-  highlighted:
-    'card-surface-mint shadow-panel transition-shadow duration-300 hover:shadow-panel-hover',
+  highlighted: 'card-surface-mint shadow-panel transition-shadow duration-300 hover:shadow-panel-hover',
 }
 
 const paddingClasses: Record<CardPadding, string> = {

@@ -42,7 +42,11 @@ export function HouseholdOnboardingPage() {
       footer={
         <>
           Signed in with the wrong account?{' '}
-          <button type="button" onClick={() => void signOut()} className="font-medium text-brand-700 hover:underline">
+          <button
+            type="button"
+            onClick={() => void signOut()}
+            className="font-medium text-brand-700 hover:underline"
+          >
             Sign out
           </button>
         </>

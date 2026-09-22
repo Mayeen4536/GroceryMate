@@ -59,18 +59,29 @@ function runFullPipeline(members: UIMember[], groceries: UIGroceryItem[]) {
 describe('settlement integration (UI in, UI out)', () => {
   it('a personal item — payer and sole sharer are the same person — nets to zero with no transfer', () => {
     const members = [makeUIMember('m-1', 'Aisha Khan')]
-    const groceries = [makeUIGrocery({ id: 'g-1', price: '499', paidByMemberId: 'm-1', sharedByMemberIds: ['m-1'] })]
+    const groceries = [
+      makeUIGrocery({ id: 'g-1', price: '499', paidByMemberId: 'm-1', sharedByMemberIds: ['m-1'] }),
+    ]
 
     const viewModel = runFullPipeline(members, groceries)
 
     expect(viewModel.transfers).toEqual([])
-    expect(viewModel.memberFinancials[0]).toMatchObject({ amountPaid: '499', amountConsumed: '499', netBalance: '0', status: 'settled' })
+    expect(viewModel.memberFinancials[0]).toMatchObject({
+      amountPaid: '499',
+      amountConsumed: '499',
+      netBalance: '0',
+      status: 'settled',
+    })
   })
 
   it('an uneven decimal split survives the full round trip down to the last paisa', () => {
     // ৳100.01 shared 3 ways: 3334 + 3333 + 3333 minor units (splitEvenly's own
     // documented sorted-id rule — see docs/SETTLEMENT_ENGINE.md).
-    const members = [makeUIMember('m-1', 'Aisha Khan'), makeUIMember('m-2', 'Bilal Ahmed'), makeUIMember('m-3', 'Chloe Lee')]
+    const members = [
+      makeUIMember('m-1', 'Aisha Khan'),
+      makeUIMember('m-2', 'Bilal Ahmed'),
+      makeUIMember('m-3', 'Chloe Lee'),
+    ]
     const groceries = [
       makeUIGrocery({
         id: 'g-1',
@@ -101,7 +112,12 @@ describe('settlement integration (UI in, UI out)', () => {
     const viewModel = runFullPipeline(members, groceries)
 
     const aisha = viewModel.memberFinancials.find((m) => m.memberId === 'm-1')!
-    expect(aisha).toMatchObject({ amountPaid: '2000', amountConsumed: '0', netBalance: '2000', status: 'owed' })
+    expect(aisha).toMatchObject({
+      amountPaid: '2000',
+      amountConsumed: '0',
+      netBalance: '2000',
+      status: 'owed',
+    })
     expect(viewModel.transfers).toEqual([
       { id: 'm-2::m-1::200000', from: 'Bilal Ahmed', to: 'Aisha Khan', amount: '2000' },
     ])
@@ -117,7 +133,12 @@ describe('settlement integration (UI in, UI out)', () => {
     const viewModel = runFullPipeline(members, groceries)
 
     const bilal = viewModel.memberFinancials.find((m) => m.memberId === 'm-2')!
-    expect(bilal).toMatchObject({ amountPaid: '0', amountConsumed: '500', netBalance: '-500', status: 'owes' })
+    expect(bilal).toMatchObject({
+      amountPaid: '0',
+      amountConsumed: '500',
+      netBalance: '-500',
+      status: 'owes',
+    })
   })
 
   it('an empty grocery list against a real household produces a fully settled, transfer-free view model', () => {

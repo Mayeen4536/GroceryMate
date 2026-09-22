@@ -150,13 +150,17 @@ describe('calculateMemberBalances', () => {
 
   it('throws when a grocery item was paid by someone outside the members list', () => {
     const members = [makeMember('a')]
-    const groceries = [makeGroceryItem({ id: 'g1', paidBy: 'ghost', sharedBy: ['a'], unitPriceMinorUnits: 100 })]
+    const groceries = [
+      makeGroceryItem({ id: 'g1', paidBy: 'ghost', sharedBy: ['a'], unitPriceMinorUnits: 100 }),
+    ]
     expect(() => calculateMemberBalances(members, groceries, TEST_CURRENCY)).toThrow(UnknownMemberError)
   })
 
   it('throws when a grocery item is shared with someone outside the members list', () => {
     const members = [makeMember('a')]
-    const groceries = [makeGroceryItem({ id: 'g1', paidBy: 'a', sharedBy: ['a', 'ghost'], unitPriceMinorUnits: 100 })]
+    const groceries = [
+      makeGroceryItem({ id: 'g1', paidBy: 'a', sharedBy: ['a', 'ghost'], unitPriceMinorUnits: 100 }),
+    ]
     expect(() => calculateMemberBalances(members, groceries, TEST_CURRENCY)).toThrow(UnknownMemberError)
   })
 
@@ -177,7 +181,13 @@ describe('calculateMemberBalances', () => {
   it('throws when a grocery item is priced in a different currency than the settlement', () => {
     const members = [makeMember('a')]
     const groceries = [
-      makeGroceryItem({ id: 'g1', paidBy: 'a', sharedBy: ['a'], unitPriceMinorUnits: 100, currency: CURRENCIES.USD }),
+      makeGroceryItem({
+        id: 'g1',
+        paidBy: 'a',
+        sharedBy: ['a'],
+        unitPriceMinorUnits: 100,
+        currency: CURRENCIES.USD,
+      }),
     ]
     expect(() => calculateMemberBalances(members, groceries, TEST_CURRENCY)).toThrow(MixedCurrencyError)
   })

@@ -14,12 +14,7 @@
  * decimal value at all.
  */
 
-export type MoneyInputRejectionReason =
-  | 'empty'
-  | 'negative'
-  | 'too-many-decimals'
-  | 'malformed'
-  | 'too-large'
+export type MoneyInputRejectionReason = 'empty' | 'negative' | 'too-many-decimals' | 'malformed' | 'too-large'
 
 export type ParseMoneyInputResult =
   | { readonly ok: true; readonly minorUnits: number }

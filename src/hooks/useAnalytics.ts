@@ -97,7 +97,12 @@ function buildTopGroceries(items: PricedItem[], limit: number): TopGroceryItem[]
       existing.total += item.priceValue
       existing.purchaseCount += 1
     } else {
-      byName.set(item.name, { name: item.name, category: item.category, total: item.priceValue, purchaseCount: 1 })
+      byName.set(item.name, {
+        name: item.name,
+        category: item.category,
+        total: item.priceValue,
+        purchaseCount: 1,
+      })
     }
   }
   return [...byName.values()].sort((a, b) => b.total - a.total).slice(0, limit)
@@ -128,7 +133,11 @@ function buildCategoryBreakdown(items: PricedItem[], totalSpend: number): Catego
  * roster passed in by the caller; an archived member who paid for something
  * historically still gets their own bar.
  */
-function buildMemberContribution(items: PricedItem[], members: readonly Member[], totalSpend: number): MemberSpend[] {
+function buildMemberContribution(
+  items: PricedItem[],
+  members: readonly Member[],
+  totalSpend: number,
+): MemberSpend[] {
   const totalsById = new Map<string, number>()
   for (const item of items) {
     totalsById.set(item.paidByMemberId, (totalsById.get(item.paidByMemberId) ?? 0) + item.priceValue)
@@ -167,7 +176,14 @@ function buildMemberPersonalShared(items: PricedItem[], members: readonly Member
     .map((member) => {
       const personal = personalById.get(member.id) ?? 0
       const shared = sharedById.get(member.id) ?? 0
-      return { memberId: member.id, name: member.name, tone: member.tone, personal, shared, total: personal + shared }
+      return {
+        memberId: member.id,
+        name: member.name,
+        tone: member.tone,
+        personal,
+        shared,
+        total: personal + shared,
+      }
     })
     .filter((entry) => entry.total > 0)
     .sort((a, b) => b.total - a.total)
@@ -184,7 +200,8 @@ function buildSummary(
     .reduce((sum, item) => sum + item.priceValue, 0)
   const sharedTotal = totalSpend - personalTotal
 
-  const topCategory = categoryBreakdown.length === 0 ? null : [...categoryBreakdown].sort((a, b) => b.total - a.total)[0]
+  const topCategory =
+    categoryBreakdown.length === 0 ? null : [...categoryBreakdown].sort((a, b) => b.total - a.total)[0]
   const topSpender = memberContribution.length === 0 ? null : memberContribution[0]
 
   return {
@@ -221,6 +238,13 @@ export function useAnalytics(groceries: readonly GroceryItem[], members: readonl
     const memberPersonalShared = buildMemberPersonalShared(items, members)
     const summary = buildSummary(items, categoryBreakdown, memberContribution)
 
-    return { monthlySpend, topGroceries, categoryBreakdown, memberContribution, memberPersonalShared, summary }
+    return {
+      monthlySpend,
+      topGroceries,
+      categoryBreakdown,
+      memberContribution,
+      memberPersonalShared,
+      summary,
+    }
   }, [groceries, members])
 }

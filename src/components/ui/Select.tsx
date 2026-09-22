@@ -6,15 +6,7 @@ import { Field, controlClasses, controlTone, fieldDescribedBy, type FieldOwnProp
 export interface SelectProps extends ComponentProps<'select'>, FieldOwnProps {}
 
 /** Native select with label, helper text and error state. Pass `<option>` elements as children. */
-export function Select({
-  label,
-  helperText,
-  error,
-  id: idProp,
-  className,
-  children,
-  ...rest
-}: SelectProps) {
+export function Select({ label, helperText, error, id: idProp, className, children, ...rest }: SelectProps) {
   const generatedId = useId()
   const id = idProp ?? generatedId
 

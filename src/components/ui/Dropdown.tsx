@@ -55,7 +55,12 @@ export function Dropdown({
   }, [open])
 
   const openMenu = () => {
-    setActiveIndex(Math.max(0, options.findIndex((option) => option.value === value)))
+    setActiveIndex(
+      Math.max(
+        0,
+        options.findIndex((option) => option.value === value),
+      ),
+    )
     setOpen(true)
   }
 

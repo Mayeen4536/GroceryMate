@@ -28,6 +28,10 @@ export function markReceiptProcessed(
 }
 
 /** Advances a pending `Receipt` to `failed` when OCR, cleanup, or parsing couldn't be completed. */
-export function markReceiptFailed(receipt: Receipt, reason: string, now: () => Date = () => new Date()): Receipt {
+export function markReceiptFailed(
+  receipt: Receipt,
+  reason: string,
+  now: () => Date = () => new Date(),
+): Receipt {
   return { ...identityAndContent(receipt), processingStatus: 'failed', failedAt: now(), reason }
 }

@@ -38,7 +38,9 @@ export function HistoryCard({ entry, onOpen, onExport }: HistoryCardProps) {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1.5">
             <div className="min-w-0">
-              <p className="truncate text-[0.9375rem] font-semibold tracking-[-0.01em] text-ink">{entry.name}</p>
+              <p className="truncate text-[0.9375rem] font-semibold tracking-[-0.01em] text-ink">
+                {entry.name}
+              </p>
               <p className="text-xs text-muted">{entry.dateLabel}</p>
             </div>
             <span

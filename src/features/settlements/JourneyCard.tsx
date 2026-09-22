@@ -36,10 +36,7 @@ export function JourneyCard({ settlement, onPaid }: JourneyCardProps) {
         <Person name={settlement.from} relation="pays" />
 
         <div className="relative flex h-24 w-full flex-col items-center justify-center">
-          <span
-            aria-hidden="true"
-            className="absolute inset-y-1 left-1/2 w-px -translate-x-1/2 bg-line"
-          />
+          <span aria-hidden="true" className="absolute inset-y-1 left-1/2 w-px -translate-x-1/2 bg-line" />
           <FlowDots
             axis="y"
             duration={1.8}

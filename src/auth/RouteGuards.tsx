@@ -81,6 +81,7 @@ export function GuestRoute({ children }: { children: ReactNode }) {
   const [redirect] = useState(() => searchParams.get('redirect'))
 
   if (status === 'loading') return <FullScreenSpinner />
-  if (status === 'signed-in') return <Navigate to={isSafeJoinRedirect(redirect) ? redirect : '/groceries'} replace />
+  if (status === 'signed-in')
+    return <Navigate to={isSafeJoinRedirect(redirect) ? redirect : '/groceries'} replace />
   return <>{children}</>
 }

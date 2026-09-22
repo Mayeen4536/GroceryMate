@@ -36,8 +36,6 @@ export function mapProfileRow(row: ProfileRow): Profile {
 export type AuthStatus = 'loading' | 'signed-out' | 'signed-in'
 
 export type SignUpResult =
-  | { kind: 'signed-in' }
-  | { kind: 'confirmation-required' }
-  | { kind: 'error'; message: string }
+  { kind: 'signed-in' } | { kind: 'confirmation-required' } | { kind: 'error'; message: string }
 
 export type SignInResult = { kind: 'success' } | { kind: 'error'; message: string }

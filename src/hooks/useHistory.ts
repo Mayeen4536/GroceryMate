@@ -40,7 +40,10 @@ export function useHistory(groceries: readonly GroceryItem[], members: readonly 
 
   const monthOptions = [
     { value: 'all', label: 'All months' },
-    ...[...new Set(entries.map((entry) => entry.monthLabel))].map((month) => ({ value: month, label: month })),
+    ...[...new Set(entries.map((entry) => entry.monthLabel))].map((month) => ({
+      value: month,
+      label: month,
+    })),
   ]
 
   const query = search.trim().toLowerCase()

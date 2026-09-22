@@ -44,7 +44,11 @@ describe('memberIdentity', () => {
   })
 
   it('still resolves an unambiguous name correctly even when a different name is duplicated elsewhere', () => {
-    const members = [makeUIMember('m-1', 'Sam'), makeUIMember('m-2', 'Sam'), makeUIMember('m-3', 'Aisha Khan')]
+    const members = [
+      makeUIMember('m-1', 'Sam'),
+      makeUIMember('m-2', 'Sam'),
+      makeUIMember('m-3', 'Aisha Khan'),
+    ]
     const index = buildMemberNameIndex(members)
     expect(resolveMemberIdByName(index, 'Aisha Khan', 'test')).toBe('m-3' as MemberId)
     expect(() => resolveMemberIdByName(index, 'Sam', 'test')).toThrow(AmbiguousMemberNameError)

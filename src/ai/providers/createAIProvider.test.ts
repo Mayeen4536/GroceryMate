@@ -15,8 +15,8 @@ describe('createAIProvider', () => {
   })
 
   it('throws for an unsupported vendor value', () => {
-    expect(() =>
-      createAIProvider({ vendor: 'not-a-real-vendor' as never, apiKey: 'k', model: 'm' }),
-    ).toThrow(/unsupported/i)
+    expect(() => createAIProvider({ vendor: 'not-a-real-vendor' as never, apiKey: 'k', model: 'm' })).toThrow(
+      /unsupported/i,
+    )
   })
 })

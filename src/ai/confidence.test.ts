@@ -21,9 +21,9 @@ describe('computeConfidence', () => {
   })
 
   it('stacks penalties when several signals are negative', () => {
-    expect(computeConfidence({ hasStatedPrice: false, sharedByWasExplicit: false, payerMatchesKnownMember: true })).toBe(
-      0.6,
-    )
+    expect(
+      computeConfidence({ hasStatedPrice: false, sharedByWasExplicit: false, payerMatchesKnownMember: true }),
+    ).toBe(0.6)
   })
 
   it('never goes below 0 even when every signal is negative', () => {

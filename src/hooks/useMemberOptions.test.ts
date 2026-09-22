@@ -18,7 +18,10 @@ function makeMember(overrides: Partial<Member> & { id: string; name: string }): 
 
 describe('buildMemberOptions', () => {
   it('offers every current member as a selectable option', () => {
-    const members = [makeMember({ id: 'm-1', name: 'Aisha Khan' }), makeMember({ id: 'm-2', name: 'Bilal Ahmed' })]
+    const members = [
+      makeMember({ id: 'm-1', name: 'Aisha Khan' }),
+      makeMember({ id: 'm-2', name: 'Bilal Ahmed' }),
+    ]
     const options = buildMemberOptions(members)
     expect(options.options).toEqual([
       { id: 'm-1', name: 'Aisha Khan' },
@@ -72,12 +75,15 @@ describe('buildMemberOptions', () => {
   })
 
   it('resolves a stored name back to the correct id for pre-filling an edit', () => {
-    const members = [makeMember({ id: 'm-1', name: 'Aisha Khan' }), makeMember({ id: 'm-2', name: 'Bilal Ahmed' })]
+    const members = [
+      makeMember({ id: 'm-1', name: 'Aisha Khan' }),
+      makeMember({ id: 'm-2', name: 'Bilal Ahmed' }),
+    ]
     const options = buildMemberOptions(members)
     expect(options.resolveIdForName('Bilal Ahmed')).toBe('m-2')
   })
 
-  it('resolves a removed member\'s stale name to null rather than guessing', () => {
+  it("resolves a removed member's stale name to null rather than guessing", () => {
     const options = buildMemberOptions([makeMember({ id: 'm-1', name: 'Aisha Khan' })])
     expect(options.resolveIdForName('Daniyal Raza')).toBeNull()
   })

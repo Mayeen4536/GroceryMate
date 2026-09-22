@@ -1,12 +1,5 @@
 import { motion, type Variants } from 'framer-motion'
-import {
-  ChevronDown,
-  ChevronRight,
-  HandCoins,
-  ShoppingBasket,
-  Sparkles,
-  type LucideIcon,
-} from 'lucide-react'
+import { ChevronDown, ChevronRight, HandCoins, ShoppingBasket, Sparkles, type LucideIcon } from 'lucide-react'
 import { Avatar, Badge } from '@/components/ui'
 import { cn } from '@/utils/cn'
 import { riseChild, transitionBase } from '@/animations/motion'
@@ -123,9 +116,7 @@ export function HowItWorks() {
         className="mx-auto max-w-xl text-center"
       >
         <Badge tone="mint">How it works</Badge>
-        <h2 className="mt-4 text-3xl font-bold tracking-tight text-ink">
-          From shared kitchen to settled up
-        </h2>
+        <h2 className="mt-4 text-3xl font-bold tracking-tight text-ink">From shared kitchen to settled up</h2>
         <p className="mt-3 text-muted">
           Four steps, no spreadsheets. GroceryMate keeps the math invisible and the split fair.
         </p>

@@ -15,14 +15,14 @@
 
 ## Summary
 
-| Severity | Count | Status |
-|---|---|---|
-| Critical | 0 | — |
-| High | 3 | **All 3 fixed and verified (2026-08-24)** — QA-001, QA-002, QA-003 |
-| Medium | 4 | **All 4 fixed and verified (2026-08-25)** — QA-004, QA-005, QA-006, QA-007 |
-| Low | 2 | Not in scope for this fix pass — untouched |
-| **Total defects** | **9** | |
-| UX improvement suggestions | 7 | Not in scope for either fix pass — untouched (UX-001 and UX-002 are effectively addressed as a side effect of the QA-005/QA-006 fixes below, but weren't separately re-reviewed as standalone suggestions) |
+| Severity                   | Count | Status                                                                                                                                                                                                     |
+| -------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Critical                   | 0     | —                                                                                                                                                                                                          |
+| High                       | 3     | **All 3 fixed and verified (2026-08-24)** — QA-001, QA-002, QA-003                                                                                                                                         |
+| Medium                     | 4     | **All 4 fixed and verified (2026-08-25)** — QA-004, QA-005, QA-006, QA-007                                                                                                                                 |
+| Low                        | 2     | Not in scope for this fix pass — untouched                                                                                                                                                                 |
+| **Total defects**          | **9** |                                                                                                                                                                                                            |
+| UX improvement suggestions | 7     | Not in scope for either fix pass — untouched (UX-001 and UX-002 are effectively addressed as a side effect of the QA-005/QA-006 fixes below, but weren't separately re-reviewed as standalone suggestions) |
 
 **Remaining High-severity issues: 0. Remaining Medium-severity issues: 0.**
 
@@ -41,6 +41,7 @@
 **Preconditions:** App entered past the Landing gate, at least one in-app navigation performed.
 
 **Steps to reproduce:**
+
 1. Open the app, click "Start splitting fairly."
 2. Navigate to any page (e.g. Members, then Analytics).
 3. Press the browser's Back button (or trigger `history.back()` — the same action a mobile back-gesture or hardware back button performs).
@@ -49,8 +50,8 @@
 
 **Actual:** The browser navigates away from the app entirely to `about:blank` (a fully blank white page — screenshots below). All in-app state (current page, drawer/dialog state) is lost; the user is looking at an empty page with no way back except re-typing the URL or using Forward.
 
-| Before | After pressing Back |
-|---|---|
+| Before                                                   | After pressing Back                                         |
+| -------------------------------------------------------- | ----------------------------------------------------------- |
 | ![before](qa-screenshots/qa-001-before-browser-back.png) | ![after](qa-screenshots/qa-001-browser-back-blank-page.png) |
 
 **Root cause:** `src/hooks/useAppNavigation.ts` manages `activePage` purely as React state — there is no `react-router`, no `history.pushState`, and no hash routing anywhere in `src`. The browser has no history entries for in-app pages, so Back falls through to whatever was in the tab's history before the single `/` load.
@@ -59,11 +60,11 @@
 
 **Suggested improvement:** Introduce real client-side routing (React Router, TanStack Router, or manual `history.pushState`/`popstate` wiring) so each page has a distinct history entry and Back/Forward move between them. This also unlocks deep-linking and bookmarkable/shareable URLs as a side benefit.
 
-**Fix applied:** No routing library existed in the project (confirmed by inspecting `package.json`/`node_modules`), so `react-router-dom@7` was added — the standard, most-supported option, used only via its minimal API (`BrowserRouter`, `Routes`, `Route`, `useLocation`, `useNavigate`; no data-router/loader features). Each app page now has a real path (`/groceries`, `/members`, `/settlements`, `/analytics`, `/history`, `/settings`, `/assistant`), plus `/` for Landing. `useAppNavigation.ts` was rewritten to derive `activePage`/`direction`/`priorPage` from the router's location instead of local `useState`, while keeping its exact returned shape — so `App.tsx`'s consumers (`AppShell`, `Sidebar`, `BottomNav`, `TopBar`, `SettingsPage`) needed no changes at all. `App.tsx` now renders real `<Route>` elements (with a `<Route path="*">` redirect to `/groceries` for unrecognized paths), keeping the same two-layer Framer Motion `AnimatePresence` structure (Landing↔App fade, then page↔page slide) it had before — only the *source* of `entered`/`activePage` changed, not the animation code. `main.tsx` wraps the app in `<BrowserRouter>`.
+**Fix applied:** No routing library existed in the project (confirmed by inspecting `package.json`/`node_modules`), so `react-router-dom@7` was added — the standard, most-supported option, used only via its minimal API (`BrowserRouter`, `Routes`, `Route`, `useLocation`, `useNavigate`; no data-router/loader features). Each app page now has a real path (`/groceries`, `/members`, `/settlements`, `/analytics`, `/history`, `/settings`, `/assistant`), plus `/` for Landing. `useAppNavigation.ts` was rewritten to derive `activePage`/`direction`/`priorPage` from the router's location instead of local `useState`, while keeping its exact returned shape — so `App.tsx`'s consumers (`AppShell`, `Sidebar`, `BottomNav`, `TopBar`, `SettingsPage`) needed no changes at all. `App.tsx` now renders real `<Route>` elements (with a `<Route path="*">` redirect to `/groceries` for unrecognized paths), keeping the same two-layer Framer Motion `AnimatePresence` structure (Landing↔App fade, then page↔page slide) it had before — only the _source_ of `entered`/`activePage` changed, not the animation code. `main.tsx` wraps the app in `<BrowserRouter>`.
 
-*Files changed:* `src/main.tsx`, `src/App.tsx`, `src/hooks/useAppNavigation.ts`, `package.json`/`package-lock.json` (added `react-router-dom`).
+_Files changed:_ `src/main.tsx`, `src/App.tsx`, `src/hooks/useAppNavigation.ts`, `package.json`/`package-lock.json` (added `react-router-dom`).
 
-*Verification:* Reproduction script re-run post-fix — `urlBeforeBack: "/analytics"` → Back → `urlAfterBack: "/members"` (the real previous page, `membersHeadingVisible: true`), instead of `about:blank`. Re-verified across all 4 required viewports (390×844, 430×932, 1366×768, 1440×900): mouse nav, browser Back, browser Forward, refresh-on-route, and direct-URL-open all confirmed working for every route, including `/assistant` (routable, previously untested). Invalid URLs redirect to `/groceries` instead of breaking. Zero console errors in any run. See screenshot below and the "Automated test results" section in the fix report for the full matrix.
+_Verification:_ Reproduction script re-run post-fix — `urlBeforeBack: "/analytics"` → Back → `urlAfterBack: "/members"` (the real previous page, `membersHeadingVisible: true`), instead of `about:blank`. Re-verified across all 4 required viewports (390×844, 430×932, 1366×768, 1440×900): mouse nav, browser Back, browser Forward, refresh-on-route, and direct-URL-open all confirmed working for every route, including `/assistant` (routable, previously untested). Invalid URLs redirect to `/groceries` instead of breaking. Zero console errors in any run. See screenshot below and the "Automated test results" section in the fix report for the full matrix.
 
 ![after fix - back lands on the real previous page](qa-screenshots/qa-001-after-fix-back-lands-on-members.png)
 
@@ -80,6 +81,7 @@
 **Preconditions:** At least one member exists in the household.
 
 **Steps to reproduce:**
+
 1. Go to Members, tap any member card to open the Member Profile Drawer.
 2. Tap "Remove from household" (in the drawer's footer) to open the confirmation dialog.
 
@@ -93,11 +95,11 @@
 
 **Suggested improvement:** When a `Modal` is opened while a `Drawer` is already open (or generally, any time a dialog is nested), the modal should render as a true overlay independent of viewport-width-based anchoring — e.g. always center the confirmation modal regardless of viewport, or use a different pattern for "confirm inside a drawer" (an inline confirmation state within the drawer itself, avoiding a second stacked overlay entirely).
 
-**Fix applied:** Added an optional `alwaysCentered` prop to the shared `Modal` component (`src/components/ui/Modal.tsx`), defaulting to `false` so every other `Modal` usage in the app (the "Reset preferences?" confirm, the "Add member" dialog) keeps its existing bottom-sheet-on-mobile behavior unchanged. Only the one nested call site — the "Remove from household" confirmation inside `MemberProfileDrawer.tsx` — opts in. When set, the modal's outer container always uses `items-center` instead of `items-end sm:items-center`, so it can never compete with a bottom-anchored `Drawer` for the same screen edge. Confirmation protection itself (the two-step "open profile → Remove from household → confirm" flow, the owner-specific warning copy, Cancel/confirm buttons) is untouched. The separately-tracked Escape-closes-both-dialogs behavior (Medium, QA-007) was deliberately left as-is — this fix only changes *positioning*, not the Escape key handling.
+**Fix applied:** Added an optional `alwaysCentered` prop to the shared `Modal` component (`src/components/ui/Modal.tsx`), defaulting to `false` so every other `Modal` usage in the app (the "Reset preferences?" confirm, the "Add member" dialog) keeps its existing bottom-sheet-on-mobile behavior unchanged. Only the one nested call site — the "Remove from household" confirmation inside `MemberProfileDrawer.tsx` — opts in. When set, the modal's outer container always uses `items-center` instead of `items-end sm:items-center`, so it can never compete with a bottom-anchored `Drawer` for the same screen edge. Confirmation protection itself (the two-step "open profile → Remove from household → confirm" flow, the owner-specific warning copy, Cancel/confirm buttons) is untouched. The separately-tracked Escape-closes-both-dialogs behavior (Medium, QA-007) was deliberately left as-is — this fix only changes _positioning_, not the Escape key handling.
 
-*Files changed:* `src/components/ui/Modal.tsx`, `src/features/members/MemberProfileDrawer.tsx`.
+_Files changed:_ `src/components/ui/Modal.tsx`, `src/features/members/MemberProfileDrawer.tsx`.
 
-*Verification:* Bounding-box measurement re-run post-fix on a 390×844 viewport: the confirmation modal is now perfectly centered (`centeringOffsetPx: 0`, modal vertical center exactly at the viewport's vertical center) with a 294px gap to the bottom of the screen (`isBottomAnchored: false`), versus being pinned to the bottom and overlapping the drawer by 256px before the fix. Re-checked at all 4 required viewports — centered and non-bottom-anchored at every one, including the two desktop sizes (1366×768, 1440×900), which already worked correctly and show no regression. Screenshot below confirms the drawer's content is now cleanly dimmed behind a single, unambiguous, centered dialog instead of a jagged double-bottom-sheet collision.
+_Verification:_ Bounding-box measurement re-run post-fix on a 390×844 viewport: the confirmation modal is now perfectly centered (`centeringOffsetPx: 0`, modal vertical center exactly at the viewport's vertical center) with a 294px gap to the bottom of the screen (`isBottomAnchored: false`), versus being pinned to the bottom and overlapping the drawer by 256px before the fix. Re-checked at all 4 required viewports — centered and non-bottom-anchored at every one, including the two desktop sizes (1366×768, 1440×900), which already worked correctly and show no regression. Screenshot below confirms the drawer's content is now cleanly dimmed behind a single, unambiguous, centered dialog instead of a jagged double-bottom-sheet collision.
 
 ![after fix - confirmation is now a clean, centered dialog](qa-screenshots/qa-002-after-fix-nested-modal-centered-mobile.png)
 
@@ -114,12 +116,14 @@
 **Preconditions:** None — first page any user sees.
 
 **Steps to reproduce:**
+
 1. Load the app fresh (before entering).
 2. Press Tab from the top of the page and inspect the focus ring on each stop.
 
 **Expected:** Every interactive element should get a clearly visible focus ring when tabbed to (WCAG 2.4.7 Focus Visible), consistent with the "See how it works" link, which does render one correctly.
 
 **Actual:** Verified via computed styles (not just visual inspection):
+
 - **"Start splitting fairly"** (the hero CTA, `Button variant="primary"`): its `focus-visible:ring-2` class is present in the DOM, but the computed `box-shadow` on focus shows no distinct ring layer at all — only the button's normal resting-state shadow. No visible focus indicator renders.
 - **"Open the app"** (header CTA, `Button variant="ghost"`): a ring layer is technically present but at `0.7px` spread and `~7%` opacity (`ring-brand-500/40` should be 40% opacity) — practically imperceptible.
 - **"See how it works"** (a plain `<a>`, not the shared `Button` component): renders a proper, clearly visible 2px ring at 40% opacity.
@@ -132,11 +136,11 @@
 
 **Fix applied:** In `Button.tsx`, all four variants' focus ring color changed from a translucent `ring-brand-500/40` or `/50` (and `ring-danger-500/40` for `danger`) to the design system's own existing "AA-safe" shade at full opacity — `ring-brand-600` / `ring-danger-600` — the same 600-step tokens the codebase already uses elsewhere specifically for accessible contrast (see the existing comment above `variantClasses` about button-label contrast). This computes to **~5.0:1** (brand-600) and **~4.7:1** (danger-600) against `canvas`, comfortably clearing 3:1. `box-shadow` was also removed from the button's transitioned properties, so the ring now appears immediately on focus instead of fading in. The Landing page's `HeroCta` (a bespoke component, not the shared `Button`) got the equivalent fix directly — solid `ring-brand-600`, `box-shadow` no longer transitioned — since replacing it with the generic `Button` would have meant losing its distinct gradient/lift treatment, which felt like a bigger visual change than this fix warranted. The `Button` fix alone applies app-wide, wherever the shared component is used.
 
-*Files changed:* `src/components/ui/Button.tsx`, `src/features/landing/Landing.tsx`.
+_Files changed:_ `src/components/ui/Button.tsx`, `src/features/landing/Landing.tsx`.
 
-*Note on remaining scope (resolved 2026-08-25):* The "See how it works" link was flagged here as using the same low-contrast pattern without being one of the two named CTAs, so it was left alone at the time. As part of the 2026-08-25 Medium-severity fix pass, it was folded into the same accessibility cleanup: its `focus-visible:ring-brand-500/40` became `focus-visible:ring-brand-600` (`src/features/landing/Landing.tsx`) — the same solid, ~5:1-contrast token used everywhere else, a one-class-value change with no other change to the control (it never had the box-shadow-transition timing issue the other two CTAs had, since its `transition-colors` doesn't include `box-shadow`, so only the color needed correcting). Re-verified at all 4 required viewports: renders a solid, immediate ring identical in treatment to the other two CTAs.
+_Note on remaining scope (resolved 2026-08-25):_ The "See how it works" link was flagged here as using the same low-contrast pattern without being one of the two named CTAs, so it was left alone at the time. As part of the 2026-08-25 Medium-severity fix pass, it was folded into the same accessibility cleanup: its `focus-visible:ring-brand-500/40` became `focus-visible:ring-brand-600` (`src/features/landing/Landing.tsx`) — the same solid, ~5:1-contrast token used everywhere else, a one-class-value change with no other change to the control (it never had the box-shadow-transition timing issue the other two CTAs had, since its `transition-colors` doesn't include `box-shadow`, so only the color needed correcting). Re-verified at all 4 required viewports: renders a solid, immediate ring identical in treatment to the other two CTAs.
 
-*Verification:* Re-sampled computed `box-shadow` at delay 0ms post-fix: both buttons now show a solid `rgb(33, 122, 80)` (brand-600) ring at full strength immediately, with no fade-in — confirmed stable at 0ms/300ms/600ms samples. Re-checked at all 4 required viewports: `openAppHasVisibleRing: true` and `heroCtaHasVisibleRing: true` in every case. Screenshot below shows the rendered ring.
+_Verification:_ Re-sampled computed `box-shadow` at delay 0ms post-fix: both buttons now show a solid `rgb(33, 122, 80)` (brand-600) ring at full strength immediately, with no fade-in — confirmed stable at 0ms/300ms/600ms samples. Re-checked at all 4 required viewports: `openAppHasVisibleRing: true` and `heroCtaHasVisibleRing: true` in every case. Screenshot below shows the rendered ring.
 
 ![after fix - visible solid focus ring on the hero CTA](qa-screenshots/qa-003-after-fix-hero-cta-focus-ring.png)
 
@@ -153,6 +157,7 @@
 **Preconditions:** Open the Add/Edit grocery drawer.
 
 **Steps to reproduce:**
+
 1. Open Groceries, tap "Add grocery."
 2. Leave "Grocery name" empty, click "Add grocery" (submit) without filling anything.
 
@@ -168,15 +173,15 @@
 
 **Fix applied:** Added `noValidate` to the `<form>` in `GroceryForm.tsx` — the browser's constraint validation no longer intercepts submission, so the existing `nameError`/`sharedByError` logic (already correct, just previously unreachable) now always runs and renders. The `required` attribute on the name field was deliberately **kept** (not removed) — it still conveys required-ness to assistive tech via the accessibility tree, `noValidate` only stops the browser's own blocking UI, not the field's semantics. Two small additions beyond the minimum fix, both requested explicitly: (1) focus now moves to the first invalid field on a failed submit — the name input (given an explicit `id`) or, if only "Shared by" is invalid, a new `groupRef` added to `MemberChipPicker` so its group container is focusable — replicating what native validation used to do, but reliably; (2) the shared `Field` component's error message (used by every `Input`/`Textarea`/`Select` app-wide) and `MemberChipPicker`'s own error message both gained `role="alert"` so screen readers announce the error text as soon as it appears, not only when focus happens to land on the described field. Empty price and an unselected/default payer remain **not** required — that's existing, intentional behavior (price can be filled in later, payer defaults sensibly), not something this defect asked to change; negative price entry is prevented by the existing keystroke-level input mask, unrelated to this fix and reconfirmed unchanged.
 
-*Files changed:* `src/features/groceries/GroceryForm.tsx`, `src/features/groceries/MemberChipPicker.tsx`, `src/components/ui/field.tsx`.
+_Files changed:_ `src/features/groceries/GroceryForm.tsx`, `src/features/groceries/MemberChipPicker.tsx`, `src/components/ui/field.tsx`.
 
-*Behavior before:* Submitting with an empty name showed only the browser's native "Please fill out this field." tooltip; the styled "Enter a name for this item." text never appeared.
+_Behavior before:_ Submitting with an empty name showed only the browser's native "Please fill out this field." tooltip; the styled "Enter a name for this item." text never appeared.
 
-*Behavior after:* The native tooltip no longer appears; the styled error shows immediately, `aria-invalid="true"` is set on the field, the error carries `role="alert"`, and focus moves to the name input (or the "Shared by" group, if that's the only invalid field).
+_Behavior after:_ The native tooltip no longer appears; the styled error shows immediately, `aria-invalid="true"` is set on the field, the error carries `role="alert"`, and focus moves to the name input (or the "Shared by" group, if that's the only invalid field).
 
-*Playwright verification:* Re-ran the original repro (now shows the custom error, not the native one) plus the full requested test list — empty name, empty price, negative price (masking), missing payer, no shared members, valid submission after correcting errors, and Enter-key submission — all confirmed working at all 4 required viewports (390×844, 430×932, 1366×768, 1440×900). Zero console errors.
+_Playwright verification:_ Re-ran the original repro (now shows the custom error, not the native one) plus the full requested test list — empty name, empty price, negative price (masking), missing payer, no shared members, valid submission after correcting errors, and Enter-key submission — all confirmed working at all 4 required viewports (390×844, 430×932, 1366×768, 1440×900). Zero console errors.
 
-*Regression checks:* Grocery edit flow (not just add) still saves correctly; keyboard (Enter-to-submit) still works; the Members "Add member" dialog (a different, already-correct form not wrapped in a native `<form>`) is unaffected.
+_Regression checks:_ Grocery edit flow (not just add) still saves correctly; keyboard (Enter-to-submit) still works; the Members "Add member" dialog (a different, already-correct form not wrapped in a native `<form>`) is unaffected.
 
 ---
 
@@ -191,10 +196,11 @@
 **Preconditions:** At least one grocery item exists.
 
 **Steps to reproduce:**
+
 1. Go to Groceries.
 2. Click/tap the trash icon on any item.
 
-**Expected:** Given this is a shared-expense tracker where one person's mistaken delete affects everyone else's math, and given the app *does* guard the equivalent destructive action elsewhere (removing a member requires a confirm dialog with explicit "can't be undone" copy), grocery deletion should arguably carry the same guard, or at minimum an undo affordance.
+**Expected:** Given this is a shared-expense tracker where one person's mistaken delete affects everyone else's math, and given the app _does_ guard the equivalent destructive action elsewhere (removing a member requires a confirm dialog with explicit "can't be undone" copy), grocery deletion should arguably carry the same guard, or at minimum an undo affordance.
 
 **Actual:** Clicking delete removes the item immediately and irreversibly — no confirmation dialog, no undo toast, no snackbar.
 
@@ -206,18 +212,18 @@
 
 **Fix applied:** Delete still removes the item immediately (no added dialog), but `useGroceries.ts` now keeps the deleted item recoverable for 5 seconds behind a small `pendingDeletes` queue (item + its original index + a timer, tracked in a ref so a duplicate/late "Undo" click is a synchronous, guarded no-op rather than a double-restore). A new shared `Toast` UI primitive (`src/components/ui/Toast.tsx` — no third-party toast library added, since none existed to reuse and Framer Motion/Tailwind were already sufficient) renders one row per pending delete — message, "Undo" action, dismiss button — stacked in `GroceriesPage.tsx` above both the FAB and the mobile bottom nav dock. Undo restores the exact item back to its original position (clamped if the list has since changed length). Multiple deletions in a row each get their own independent toast and timer, so undoing one doesn't affect another.
 
-*Files changed:* `src/hooks/useGroceries.ts`, `src/components/ui/Toast.tsx` (new), `src/components/ui/index.ts`, `src/features/groceries/GroceriesPage.tsx`.
+_Files changed:_ `src/hooks/useGroceries.ts`, `src/components/ui/Toast.tsx` (new), `src/components/ui/index.ts`, `src/features/groceries/GroceriesPage.tsx`.
 
-*Behavior before:* Trash icon → item gone, permanently, instantly.
+_Behavior before:_ Trash icon → item gone, permanently, instantly.
 
-*Behavior after:* Trash icon → item gone from the list immediately, a toast appears ("`<name>` deleted", with "Undo") for 5 seconds → Undo restores it to its exact prior position; letting the toast expire (or dismissing it) makes the deletion final.
+_Behavior after:_ Trash icon → item gone from the list immediately, a toast appears ("`<name>` deleted", with "Undo") for 5 seconds → Undo restores it to its exact prior position; letting the toast expire (or dismissing it) makes the deletion final.
 
-*Playwright verification:* delete, undo (restores at the original index), delete-without-undo (toast expires after 5s, deletion stays final), multiple sequential deletions (two independent toasts, both undoable independently, no cross-talk), rapid interaction (three near-simultaneous clicks on the same Undo button restore the item exactly once, not zero or multiple times), and keyboard activation (Tab to "Undo", Enter restores) — all confirmed at 1280×800 and 390×844, and the core flow re-confirmed at all 4 required viewports.
+_Playwright verification:_ delete, undo (restores at the original index), delete-without-undo (toast expires after 5s, deletion stays final), multiple sequential deletions (two independent toasts, both undoable independently, no cross-talk), rapid interaction (three near-simultaneous clicks on the same Undo button restore the item exactly once, not zero or multiple times), and keyboard activation (Tab to "Undo", Enter restores) — all confirmed at 1280×800 and 390×844, and the core flow re-confirmed at all 4 required viewports.
 
-*Regression checks:* Grocery add/edit untouched; toast positioning was iterated on after an initial visual check showed it colliding with the "Add grocery" FAB on mobile (see screenshots) — moved to sit above the FAB's row instead of sharing it, re-verified clean on both mobile and desktop afterward. Zero console errors throughout.
+_Regression checks:_ Grocery add/edit untouched; toast positioning was iterated on after an initial visual check showed it colliding with the "Add grocery" FAB on mobile (see screenshots) — moved to sit above the FAB's row instead of sharing it, re-verified clean on both mobile and desktop afterward. Zero console errors throughout.
 
-| Desktop | Mobile |
-|---|---|
+| Desktop                                                                   | Mobile                                                                          |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
 | ![undo toast desktop](qa-screenshots/med-issue2-after-fix-undo-toast.png) | ![undo toast mobile](qa-screenshots/med-issue2-after-fix-undo-toast-mobile.png) |
 
 ---
@@ -233,6 +239,7 @@
 **Preconditions:** Open the Add Member dialog.
 
 **Steps to reproduce:**
+
 1. Members → "Add member" → switch to the "Invite link" tab.
 2. Type `not-an-email` into the Email field (any non-empty string works).
 3. Click "Send invite."
@@ -249,15 +256,15 @@
 
 **Fix applied:** `AddMemberDialog.tsx`'s `handleInvite` now trims the input and checks it against a deliberately simple `/^[^\s@]+@[^\s@]+\.[^\s@]+$/` pattern (local-part@domain.tld, no whitespace — not full RFC 5322, which the task explicitly didn't ask for) before calling `onInvite`. On failure, the existing error-display wiring shows "Enter a valid email address." (or "Enter an email to invite." for empty input) and no member is created. Valid input's behavior is unchanged: trimmed, member created, success toast shown, field cleared.
 
-*Files changed:* `src/features/members/AddMemberDialog.tsx`.
+_Files changed:_ `src/features/members/AddMemberDialog.tsx`.
 
-*Behavior before:* Any non-empty string (e.g. `not-an-email`) was accepted, created a member named after the garbage string, and showed a success toast.
+_Behavior before:_ Any non-empty string (e.g. `not-an-email`) was accepted, created a member named after the garbage string, and showed a success toast.
 
-*Behavior after:* Only strings matching basic email syntax create a member; anything else shows an inline error and creates nothing.
+_Behavior after:_ Only strings matching basic email syntax create a member; anything else shows an inline error and creates nothing.
 
-*Playwright verification:* plain text, missing `@`, missing domain, leading/trailing spaces (trimmed and accepted), a valid email, an empty submit, and repeated-submit-of-invalid-input (no member created on any of three rapid clicks) and repeated-submit-of-valid-input (only one member created) — all confirmed at all 4 required viewports.
+_Playwright verification:_ plain text, missing `@`, missing domain, leading/trailing spaces (trimmed and accepted), a valid email, an empty submit, and repeated-submit-of-invalid-input (no member created on any of three rapid clicks) and repeated-submit-of-valid-input (only one member created) — all confirmed at all 4 required viewports.
 
-*Regression checks:* The "New member" tab (name-only, no email requirement) is untouched and still works; zero console errors.
+_Regression checks:_ The "New member" tab (name-only, no email requirement) is untouched and still works; zero console errors.
 
 ![invalid email error](qa-screenshots/med-issue3-after-fix-invalid-email-error.png)
 
@@ -274,6 +281,7 @@
 **Preconditions:** Member Profile Drawer open, confirmation modal open on top of it.
 
 **Steps to reproduce:**
+
 1. Members → open any member's profile drawer.
 2. Click "Remove from household" to open the confirm modal.
 3. Press Escape once.
@@ -292,15 +300,15 @@
 
 **Fix applied:** Exactly the reusable stacking approach suggested above, built into the hook every `Modal` and `Drawer` already calls (`useFocusTrap.ts`) rather than a one-off timing hack. A module-level stack of overlay ids now records open/close order; each overlay pushes its own id when it opens and removes it on close (same effect that already ran for focus-trap setup/teardown). The hook returns a stable `isTopOverlay()` check (memoized via `useCallback` so it doesn't cause the Escape-listener effect to re-subscribe every render), and both `Modal.tsx` and `Drawer.tsx`'s Escape handlers now call `onClose()` only when `isTopOverlay()` is true. Tab-key focus trapping (already correctly scoped per-panel, confirmed working in the original audit) is untouched. Backdrop click-outside is untouched — it was never the buggy part; each dialog's own backdrop already only ever closed that one dialog, and still does.
 
-*Files changed:* `src/hooks/useFocusTrap.ts`, `src/components/ui/Modal.tsx`, `src/components/ui/Drawer.tsx`.
+_Files changed:_ `src/hooks/useFocusTrap.ts`, `src/components/ui/Modal.tsx`, `src/components/ui/Drawer.tsx`.
 
-*Behavior before:* One Escape press with the confirm modal open closed both the modal and the Member Profile Drawer beneath it.
+_Behavior before:_ One Escape press with the confirm modal open closed both the modal and the Member Profile Drawer beneath it.
 
-*Behavior after:* First Escape closes only the confirm modal, leaving the drawer open; a second Escape then closes the drawer, exactly like closing it directly would.
+_Behavior after:_ First Escape closes only the confirm modal, leaving the drawer open; a second Escape then closes the drawer, exactly like closing it directly would.
 
-*Playwright verification:* Confirmed the exact required sequence — before any Escape both are open; after one Escape the confirm is closed and the drawer is **still open**; after a second Escape the drawer also closes — at both desktop (1280×800) and mobile (390×844), and re-confirmed at all 4 required viewports as part of the combined sweep.
+_Playwright verification:_ Confirmed the exact required sequence — before any Escape both are open; after one Escape the confirm is closed and the drawer is **still open**; after a second Escape the drawer also closes — at both desktop (1280×800) and mobile (390×844), and re-confirmed at all 4 required viewports as part of the combined sweep.
 
-*Regression checks:* Click-outside (backdrop click) still closes only the confirm modal when nested, and still closes the drawer normally when opened alone (no confirm on top) — both explicitly re-tested. Single, non-nested dialogs elsewhere in the app (the Add Member dialog, Settings' "Reset preferences?" confirm, the History preview drawer, a lone Add/Edit grocery drawer) all still close on the **first** Escape press, confirming the stack-awareness doesn't regress the common single-dialog case. Zero console errors.
+_Regression checks:_ Click-outside (backdrop click) still closes only the confirm modal when nested, and still closes the drawer normally when opened alone (no confirm on top) — both explicitly re-tested. Single, non-nested dialogs elsewhere in the app (the Add Member dialog, Settings' "Reset preferences?" confirm, the History preview drawer, a lone Add/Edit grocery drawer) all still close on the **first** Escape press, confirming the stack-awareness doesn't regress the common single-dialog case. Zero console errors.
 
 ---
 
@@ -385,17 +393,17 @@ These are recommendations, not bugs — nothing here is broken today.
 
 ## Scope note
 
-The Assistant page (`src/features/assistant/`) is a **fully mocked, local, deterministic flow** — `idle → thinking → generating → done`, driven entirely by fixed `setTimeout`s (no network calls, no failure branches exist in the code). Per instructions, this audit does not evaluate the *quality* of what it "generates" (it always returns the same fixed 5-item mock list, `MOCK_GENERATED_ITEMS`, regardless of prompt) — only the surrounding product behavior and UX.
+The Assistant page (`src/features/assistant/`) is a **fully mocked, local, deterministic flow** — `idle → thinking → generating → done`, driven entirely by fixed `setTimeout`s (no network calls, no failure branches exist in the code). Per instructions, this audit does not evaluate the _quality_ of what it "generates" (it always returns the same fixed 5-item mock list, `MOCK_GENERATED_ITEMS`, regardless of prompt) — only the surrounding product behavior and UX.
 
 ## Summary
 
-| Severity | Count |
-|---|---|
-| Critical | 0 |
-| High | 2 |
-| Medium | 1 |
-| Low | 3 |
-| Polish | 0 |
+| Severity               | Count |
+| ---------------------- | ----- |
+| Critical               | 0     |
+| High                   | 2     |
+| Medium                 | 1     |
+| Low                    | 3     |
+| Polish                 | 0     |
 | **Total new findings** | **6** |
 
 No Critical or Polish-only findings were identified. Severities were not inflated to pad this count — a large majority of what was tested this round (listed under "What held up well," below) worked correctly and is deliberately **not** written up as a finding.
@@ -414,13 +422,14 @@ No Critical or Polish-only findings were identified. Severities were not inflate
 **Viewport:** Confirmed at 390×844. Re-tested at 430×932 with the same interaction pattern and did **not** reproduce there — narrower/shorter phones are the affected range.
 
 **Steps to reproduce:**
+
 1. On a 390×844 viewport, open Assistant, type any prompt, click Generate, and wait for "Your groceries are ready."
 2. Scroll down just far enough that the "Add to groceries" button becomes visible (e.g. the browser's own "scroll element into view" behavior, or a user's natural scroll gesture that stops as soon as the button is on-screen) — **not** all the way to the true bottom of the page.
 3. Tap where "Add to groceries" appears to be.
 
 **Expected:** The tap adds the generated groceries to the list.
 
-**Actual:** Measured precisely (not just by eye): at this scroll position the button's bounding box (y: 798–842) overlaps the floating bottom nav dock's bounding box (y: 766–830, spanning almost the full screen width). `document.elementFromPoint()` at the button's center resolves to the **"Groceries" nav button**, not "Add to groceries." A tap there silently navigates to `/groceries` instead of adding anything — confirmed by dispatching a real coordinate-based click (not Playwright's element-locator click, which refuses to click through an obstruction and would have masked this). Scrolling all the way to the true end of the page *does* clear the dock (button lands at y: 616–660, dock at 766–830) and the button becomes genuinely clickable — so this is not a permanent blocker, but the dangerous middle ground is easy to land in with an ordinary scroll gesture.
+**Actual:** Measured precisely (not just by eye): at this scroll position the button's bounding box (y: 798–842) overlaps the floating bottom nav dock's bounding box (y: 766–830, spanning almost the full screen width). `document.elementFromPoint()` at the button's center resolves to the **"Groceries" nav button**, not "Add to groceries." A tap there silently navigates to `/groceries` instead of adding anything — confirmed by dispatching a real coordinate-based click (not Playwright's element-locator click, which refuses to click through an obstruction and would have masked this). Scrolling all the way to the true end of the page _does_ clear the dock (button lands at y: 616–660, dock at 766–830) and the button becomes genuinely clickable — so this is not a permanent blocker, but the dangerous middle ground is easy to land in with an ordinary scroll gesture.
 
 ![Add to groceries button sitting under the nav dock](qa-screenshots/round2/qa-010-mobile-button-under-dock.png)
 
@@ -428,13 +437,13 @@ No Critical or Polish-only findings were identified. Severities were not inflate
 
 **Suggested direction:** This is the same root cause as the already-tracked Low findings QA-008/QA-009 (the floating dock has no reserved, enforced clearance from page content) — but here it produces a functional failure, not just a cosmetic one. Worth prioritizing a real fix (e.g., guarantee bottom padding/scroll-margin on any page ending in a primary action button, or make the dock's occlusion zone truly inert-proof by testing "does the last actionable element's full bounding box, at every reachable scroll position, avoid the dock's box" as a repeatable check) ahead of the two purely-cosmetic Low findings it's related to.
 
-**Root cause confirmed:** `<main>`'s own bottom padding (`pb-32`, 128px) is already enough clearance at the true scroll maximum. The bug is specifically in `scrollIntoViewIfNeeded()` (and any `scrollIntoView()` call — what a keyboard Tab focus does under the hood): it scrolls only the *minimum* distance needed to bring the target's box into the viewport, which can land it exactly inside the dock's reserved footprint band without ever reaching true bottom-of-page.
+**Root cause confirmed:** `<main>`'s own bottom padding (`pb-32`, 128px) is already enough clearance at the true scroll maximum. The bug is specifically in `scrollIntoViewIfNeeded()` (and any `scrollIntoView()` call — what a keyboard Tab focus does under the hood): it scrolls only the _minimum_ distance needed to bring the target's box into the viewport, which can land it exactly inside the dock's reserved footprint band without ever reaching true bottom-of-page.
 
 **Fix applied:** Layout-level, not a one-off margin on the Assistant button. Added a `--mobile-nav-clearance: 6rem` custom property (`src/index.css`), and set `scroll-padding-bottom: var(--mobile-nav-clearance)` on `html` inside a `max-width: 1023.98px` media query — this changes what "in view" means for `scrollIntoView`/`scrollIntoViewIfNeeded`/keyboard-focus-scroll specifically, forcing them to also respect the dock's clearance, app-wide, for any current or future bottom-of-page control. `AppShell.tsx`'s `<main>` bottom padding was expressed in terms of the same variable (`pb-[calc(var(--mobile-nav-clearance)+2.5rem)]` on mobile) so the reserved zone and the dock's own footprint can never drift apart. The Groceries page's floating "Add grocery" FAB and its Undo-toast stack were also re-anchored off the same variable (previously hardcoded `bottom-24`/`bottom-40` magic numbers) so they inherit the same guarantee rather than needing a separate fix later.
 
-*Files changed:* `src/index.css`, `src/components/layout/AppShell.tsx`, `src/features/groceries/GroceriesPage.tsx`.
+_Files changed:_ `src/index.css`, `src/components/layout/AppShell.tsx`, `src/features/groceries/GroceriesPage.tsx`.
 
-*Verification:* Reproduced first with the exact repro method (390×844, `scrollIntoViewIfNeeded()` on "Add to groceries", then `document.elementFromPoint()` at the button's rendered center, then a real coordinate click) — confirmed broken before the fix (`elementAtCenter` was the nav dock), confirmed fixed after (`elementAtCenter` is "Add to groceries", a coordinate click reaches it). Re-checked at 430×932. Re-verified specifically against the taller "done" screen introduced by the QA-011 fix below, to confirm the layout-level fix generalizes rather than being coincidentally tied to the old page height. Also checked adjacent surfaces for the same class of bug: the Members drawer's "Remove from household" footer button (unaffected, drawer z-index sits above the dock), and the Analytics page (a long page can still reach its true scroll end — `scrollY === maxScroll` — without content getting stuck). Playwright regression coverage added in `tests/e2e/mobile-nav-clearance.spec.ts` (2 tests, mobile-only): both pass.
+_Verification:_ Reproduced first with the exact repro method (390×844, `scrollIntoViewIfNeeded()` on "Add to groceries", then `document.elementFromPoint()` at the button's rendered center, then a real coordinate click) — confirmed broken before the fix (`elementAtCenter` was the nav dock), confirmed fixed after (`elementAtCenter` is "Add to groceries", a coordinate click reaches it). Re-checked at 430×932. Re-verified specifically against the taller "done" screen introduced by the QA-011 fix below, to confirm the layout-level fix generalizes rather than being coincidentally tied to the old page height. Also checked adjacent surfaces for the same class of bug: the Members drawer's "Remove from household" footer button (unaffected, drawer z-index sits above the dock), and the Analytics page (a long page can still reach its true scroll end — `scrollY === maxScroll` — without content getting stuck). Playwright regression coverage added in `tests/e2e/mobile-nav-clearance.spec.ts` (2 tests, mobile-only): both pass.
 
 ---
 
@@ -448,6 +457,7 @@ No Critical or Polish-only findings were identified. Severities were not inflate
 **Viewport:** Desktop and Mobile (identical)
 
 **Steps to reproduce:**
+
 1. Generate a list via the Assistant and look at the preview on the "done" screen.
 2. Click "Add to groceries."
 3. Look at the same items now on the Groceries page.
@@ -458,17 +468,17 @@ No Critical or Polish-only findings were identified. Severities were not inflate
 
 ![Preview shows no payer/sharer before Add](qa-screenshots/round2/qa-010-011-assistant-preview-no-payer-sharer.png)
 
-**User impact:** This is exactly the category of thing Area 6 asks about directly: "Can I tell who paid? Can I tell who shared an item?" For AI-generated items, the honest answer is no — not until after they're already committed with an assumption baked in. If the assumed payer/sharers are wrong (a very plausible everyday case — maybe someone else paid, or not everyone shares), the user has to notice and manually fix every item afterward. For an app whose entire purpose is getting shared-money math right, silently guessing on "who owes whom" inputs — even correctably — undercuts trust in a way that's more damaging than an outright bug, because nothing *looks* wrong.
+**User impact:** This is exactly the category of thing Area 6 asks about directly: "Can I tell who paid? Can I tell who shared an item?" For AI-generated items, the honest answer is no — not until after they're already committed with an assumption baked in. If the assumed payer/sharers are wrong (a very plausible everyday case — maybe someone else paid, or not everyone shares), the user has to notice and manually fix every item afterward. For an app whose entire purpose is getting shared-money math right, silently guessing on "who owes whom" inputs — even correctably — undercuts trust in a way that's more damaging than an outright bug, because nothing _looks_ wrong.
 
-**Suggested direction:** Let the preview itself be editable (reuse the existing `GroceryForm`/`MemberChipPicker` payer+sharer controls inline, or a lightweight per-item picker), or at minimum default to the *last-used* payer/sharers with a visible "you can change this before adding" affordance, rather than assigning silently on click.
+**Suggested direction:** Let the preview itself be editable (reuse the existing `GroceryForm`/`MemberChipPicker` payer+sharer controls inline, or a lightweight per-item picker), or at minimum default to the _last-used_ payer/sharers with a visible "you can change this before adding" affordance, rather than assigning silently on click.
 
 **Product principle adopted:** GroceryMate must never silently invent financially meaningful information. If the Assistant doesn't know who paid or who shared, it must say so and require the user to resolve it — never quietly default to "you paid" or "everyone shares."
 
 **Fix applied:** The silent-defaulting logic was removed entirely from `useGroceries.addGenerated()` (it previously did `paidBy: item.paidBy || mockUser.name` and `sharedBy: sharedBy.length ? sharedBy : mockMembers` — both deleted; it now only re-keys IDs and inserts whatever it's given). The guarantee is enforced structurally in the review UI itself: `GeneratedGroceries.tsx` was rewritten so each generated item is editable inline (reusing the existing `Dropdown` for "Paid by" and the existing `MemberChipPicker` for "Shared by" — no new picker components were built), with a visible "Needs payer" / "Needs sharers" badge on anything unresolved. "Add to groceries" is disabled from succeeding while any item is unresolved: clicking it while incomplete keeps the user on the Assistant page, surfaces a count of how many items still need attention, and shows a `role="alert"` inline error on each unresolved field — it never partially submits. The mock data (`src/store/assistantGenerated.ts`) was changed from all-blank to a deliberate mix (both missing, payer-only known, sharers-only known, fully known) specifically so this couldn't be verified only against the all-or-nothing case. No real AI was implemented; the mocked/local generation timing and copy are unchanged.
 
-*Files changed:* `src/store/assistantGenerated.ts`, `src/features/assistant/GeneratedGroceries.tsx`, `src/features/assistant/AssistantPage.tsx`, `src/App.tsx`, `src/hooks/useGroceries.ts`.
+_Files changed:_ `src/store/assistantGenerated.ts`, `src/features/assistant/GeneratedGroceries.tsx`, `src/features/assistant/AssistantPage.tsx`, `src/App.tsx`, `src/hooks/useGroceries.ts`.
 
-*Verification:* Manually walked all required cases (known payer + known sharers → no warning shown and pre-filled correctly; missing payer only; missing sharers only; both missing; multiple items resolved independently in one session; user correcting a value before submit; successful submit only once every item is resolved; Cancel via "Try another prompt" discards cleanly with no crash) before formalizing as Playwright coverage. `tests/e2e/assistant-review.spec.ts` (5 tests, desktop) codifies these: an unresolved item is visibly flagged; a fully-resolved item shows no warning and preserves its known value; submitting while unresolved is blocked and adds nothing; resolving every item lets submit succeed using exactly the values chosen (not overwritten to a default — confirmed a partially-known item's *pre-existing* sharers survive untouched rather than being reset to "Everyone"); "Try another prompt" discards in-progress edits. All 5 pass.
+_Verification:_ Manually walked all required cases (known payer + known sharers → no warning shown and pre-filled correctly; missing payer only; missing sharers only; both missing; multiple items resolved independently in one session; user correcting a value before submit; successful submit only once every item is resolved; Cancel via "Try another prompt" discards cleanly with no crash) before formalizing as Playwright coverage. `tests/e2e/assistant-review.spec.ts` (5 tests, desktop) codifies these: an unresolved item is visibly flagged; a fully-resolved item shows no warning and preserves its known value; submitting while unresolved is blocked and adds nothing; resolving every item lets submit succeed using exactly the values chosen (not overwritten to a default — confirmed a partially-known item's _pre-existing_ sharers survive untouched rather than being reset to "Everyone"); "Try another prompt" discards in-progress edits. All 5 pass.
 
 ---
 
@@ -482,13 +492,14 @@ No Critical or Polish-only findings were identified. Severities were not inflate
 **Viewport:** Desktop and Mobile (identical — this is a formatting function, not a layout issue)
 
 **Steps to reproduce:**
+
 1. Add a grocery item with price `0.01`.
 2. Look at it in the Groceries list.
 3. Re-open it for editing.
 
 **Expected:** Either the form doesn't offer 2-decimal precision it won't honor, or the displayed amount reflects what was entered.
 
-**Actual:** The list shows the item's price as **"0"** — indistinguishable from a genuinely free item. Re-opening the edit form shows the underlying value is still correctly `"0.01"` — confirmed by direct field inspection, not just a screenshot — so **no data is lost or corrupted**; this is a display-only rounding effect from `AnimatedNumber`'s default formatter and `formatTaka()`, both of which call `Math.round(value)` before formatting. The same rounding applies everywhere an amount is shown: `1234.56` displays as `1,235`; a household member's "Paid this month" and every Settlements/Analytics total are all whole-number-rounded the same way, while the price *input* itself accepts and stores 2 decimal places.
+**Actual:** The list shows the item's price as **"0"** — indistinguishable from a genuinely free item. Re-opening the edit form shows the underlying value is still correctly `"0.01"` — confirmed by direct field inspection, not just a screenshot — so **no data is lost or corrupted**; this is a display-only rounding effect from `AnimatedNumber`'s default formatter and `formatTaka()`, both of which call `Math.round(value)` before formatting. The same rounding applies everywhere an amount is shown: `1234.56` displays as `1,235`; a household member's "Paid this month" and every Settlements/Analytics total are all whole-number-rounded the same way, while the price _input_ itself accepts and stores 2 decimal places.
 
 ![0.01 and 1234.56 both round in the list](qa-screenshots/round2/qa-012-price-rounding.png)
 
@@ -500,9 +511,9 @@ No Critical or Polish-only findings were identified. Severities were not inflate
 
 **Fix applied:** Centralized the rounding/formatting logic that was previously duplicated in two places (`AnimatedNumber`'s inline `defaultFormat`, which did `Math.round(value).toLocaleString()`, and `currency.ts`'s `formatTaka`, which had the same bug) into a single new module, `src/utils/money.ts`. `formatAmount()` rounds to cent precision (`Math.round(value * 100) / 100`, avoiding float noise like `0.1 + 0.2`) and then formats with `toLocaleString`, using `minimumFractionDigits`/`maximumFractionDigits` of 0 for whole numbers and 2 otherwise — so ৳100 stays "100", ৳100.50 shows "100.50", and ৳0.01 shows "0.01" instead of vanishing to "0". `formatTaka()` prefixes the currency symbol. `currency.ts` now just re-exports `formatTaka` from `money.ts` (kept as a thin re-export rather than updating all 23 importing files individually, so the logic is consolidated at its one real source without unrelated churn). `AnimatedNumber`'s default formatter now calls `formatAmount` instead of its own inline rounding — safe for its other use (plain item counts), since integers format identically either way. The formatter is presentation-only: it does not touch stored or calculated values, and introduces no new calculation logic, so it stays clear of the future settlement domain's arithmetic.
 
-*Files changed:* `src/utils/money.ts` (new), `src/utils/money.test.ts` (new), `src/utils/currency.ts` (rewritten as a re-export), `src/components/ui/AnimatedNumber.tsx`.
+_Files changed:_ `src/utils/money.ts` (new), `src/utils/money.test.ts` (new), `src/utils/currency.ts` (rewritten as a re-export), `src/components/ui/AnimatedNumber.tsx`.
 
-*Verification:* `src/utils/money.test.ts` adds 16 unit tests covering the required cases (0, 0.01, 0.10, 1, 1.50, 100, 100.50, 999999, a large amount with decimals, float-noise inputs, `NaN`/`Infinity` fallback to 0, non-mutation of the input, plus `formatTaka`'s `৳` prefix) — all pass. `tests/e2e/money-display.spec.ts` adds one integration check confirming the real Groceries UI (not just the unit under test) renders a ৳0.01 item with its decimals visible and no bare "0" — pass. Audited all 23 files that displayed money and confirmed each already routed through one of these two functions (no inline rounding existed anywhere else), so no per-component migration was needed beyond the two shared functions themselves.
+_Verification:_ `src/utils/money.test.ts` adds 16 unit tests covering the required cases (0, 0.01, 0.10, 1, 1.50, 100, 100.50, 999999, a large amount with decimals, float-noise inputs, `NaN`/`Infinity` fallback to 0, non-mutation of the input, plus `formatTaka`'s `৳` prefix) — all pass. `tests/e2e/money-display.spec.ts` adds one integration check confirming the real Groceries UI (not just the unit under test) renders a ৳0.01 item with its decimals visible and no bare "0" — pass. Audited all 23 files that displayed money and confirmed each already routed through one of these two functions (no inline rounding existed anywhere else), so no per-component migration was needed beyond the two shared functions themselves.
 
 ---
 
@@ -519,7 +530,7 @@ No Critical or Polish-only findings were identified. Severities were not inflate
 
 **Expected:** Heading levels descend one step at a time (H1 → H2 → H3), per the app's own convention elsewhere (confirmed clean on Groceries, Members, Settlements, History, and Assistant — all descend correctly with no skips).
 
-**Actual:** The page is `H1 "Analytics"` → `H3 "Total spent"` → `H3 "Items logged"` → `H3 "Top category"` → `H3 "Top spender"` → *then* `H2 "Monthly spending"`, `H2 "Category breakdown"`, etc. The four stat tiles render as H3 with nothing at H2 above them.
+**Actual:** The page is `H1 "Analytics"` → `H3 "Total spent"` → `H3 "Items logged"` → `H3 "Top category"` → `H3 "Top spender"` → _then_ `H2 "Monthly spending"`, `H2 "Category breakdown"`, etc. The four stat tiles render as H3 with nothing at H2 above them.
 
 **User impact:** Minor — sighted users are unaffected; a screen-reader user browsing by heading level gets a slightly confusing structure (an apparent H2 "missing" between the title and the first heading), which is the kind of thing Area 5 asks to check for at a practical, non-certification level.
 
@@ -558,6 +569,7 @@ No Critical or Polish-only findings were identified. Severities were not inflate
 **Viewport:** Desktop and Mobile (identical)
 
 **Steps to reproduce:**
+
 1. Type a prompt (or get all the way to a generated "done" list) on Assistant.
 2. Click any other nav item, then click back into Assistant.
 
@@ -596,6 +608,7 @@ No Critical or Polish-only findings were identified. Severities were not inflate
 - **Polish:** 0
 
 **By area:**
+
 - Assistant findings: QA-010, QA-011, QA-014, QA-015 (4)
 - Mobile Navigation findings: QA-010 (shared with Assistant; the two pre-existing Low findings were revisited, not re-numbered)
 - Accessibility findings: QA-013 (1)
@@ -614,13 +627,13 @@ No Critical or Polish-only findings were identified. Severities were not inflate
 
 QA-010, QA-011, and QA-012 were fixed and verified in this batch — see each finding above for root cause, fix, files changed, and verification detail. QA-013, QA-014, and QA-015 were deliberately left unfixed (explicit product decision to scope this batch to only the two High findings plus the one Medium) and remain DEFERRED, open for a future pass.
 
-| ID | Severity | Status |
-|---|---|---|
-| QA-010 | High | FIXED and VERIFIED |
-| QA-011 | High | FIXED and VERIFIED |
-| QA-012 | Medium | FIXED and VERIFIED |
-| QA-013 | Low | DEFERRED |
-| QA-014 | Low | DEFERRED |
-| QA-015 | Low | DEFERRED |
+| ID     | Severity | Status             |
+| ------ | -------- | ------------------ |
+| QA-010 | High     | FIXED and VERIFIED |
+| QA-011 | High     | FIXED and VERIFIED |
+| QA-012 | Medium   | FIXED and VERIFIED |
+| QA-013 | Low      | DEFERRED           |
+| QA-014 | Low      | DEFERRED           |
+| QA-015 | Low      | DEFERRED           |
 
 Full verification suite run after these fixes: TypeScript typecheck clean, ESLint 0 errors (5 pre-existing unrelated warnings), Vitest 246/246 passing (230 pre-existing + 16 new in `money.test.ts`), Playwright 29/29 executed tests passing (23 skipped by design — viewport-scoped tests that only apply to one of Desktop/Mobile Chrome), production build succeeds.

@@ -8,7 +8,9 @@ function okResponse(body: unknown): Response {
 
 describe('createOpenAIProvider', () => {
   it('sends the system prompt and user message in the Chat Completions shape', async () => {
-    const fetchImpl = vi.fn().mockResolvedValue(okResponse({ choices: [{ message: { content: '{"items": []}' } }] }))
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValue(okResponse({ choices: [{ message: { content: '{"items": []}' } }] }))
     const provider = createOpenAIProvider({ apiKey: 'test-key', model: 'gpt-test', fetchImpl })
 
     await provider.complete({ systemPrompt: 'Extract groceries.', userMessage: 'Mayeen bought rice.' })
@@ -24,7 +26,7 @@ describe('createOpenAIProvider', () => {
     ])
   })
 
-  it('extracts the first choice\'s message content', async () => {
+  it("extracts the first choice's message content", async () => {
     const fetchImpl = vi.fn().mockResolvedValue(okResponse({ choices: [{ message: { content: 'hello' } }] }))
     const provider = createOpenAIProvider({ apiKey: 'k', model: 'm', fetchImpl })
     expect(await provider.complete({ systemPrompt: '', userMessage: '' })).toBe('hello')
@@ -32,7 +34,12 @@ describe('createOpenAIProvider', () => {
 
   it('uses a custom baseUrl when given', async () => {
     const fetchImpl = vi.fn().mockResolvedValue(okResponse({ choices: [{ message: { content: '{}' } }] }))
-    const provider = createOpenAIProvider({ apiKey: 'k', model: 'm', baseUrl: 'https://proxy.example.com', fetchImpl })
+    const provider = createOpenAIProvider({
+      apiKey: 'k',
+      model: 'm',
+      baseUrl: 'https://proxy.example.com',
+      fetchImpl,
+    })
     await provider.complete({ systemPrompt: '', userMessage: '' })
     expect(fetchImpl.mock.calls[0][0]).toBe('https://proxy.example.com')
   })

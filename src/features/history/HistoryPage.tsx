@@ -23,7 +23,14 @@ interface HistoryPageProps {
 }
 
 /** The Grocery History experience: a searchable, filterable timeline of real, persisted groceries. */
-export function HistoryPage({ direction = 1, groceries, members, loading = false, error = null, onRetry }: HistoryPageProps) {
+export function HistoryPage({
+  direction = 1,
+  groceries,
+  members,
+  loading = false,
+  error = null,
+  onRetry,
+}: HistoryPageProps) {
   const {
     entries,
     search,
@@ -53,7 +60,12 @@ export function HistoryPage({ direction = 1, groceries, members, loading = false
                   {entries.length} {entries.length === 1 ? 'entry' : 'entries'}
                 </Badge>
                 {entries.length > 0 && (
-                  <Button variant="secondary" size="sm" iconLeft={Download} onClick={() => exportEntries(entries)}>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    iconLeft={Download}
+                    onClick={() => exportEntries(entries)}
+                  >
                     Export all
                   </Button>
                 )}
@@ -114,7 +126,12 @@ export function HistoryPage({ direction = 1, groceries, members, loading = false
                 className="sm:max-w-xs"
                 aria-label="Search history"
               />
-              <Dropdown value={monthFilter} onChange={setMonthFilter} options={monthOptions} className="w-40" />
+              <Dropdown
+                value={monthFilter}
+                onChange={setMonthFilter}
+                options={monthOptions}
+                className="w-40"
+              />
             </motion.div>
 
             <motion.div variants={riseChild}>

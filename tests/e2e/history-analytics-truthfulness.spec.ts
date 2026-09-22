@@ -1,5 +1,11 @@
 import { test, expect } from '@playwright/test'
-import { addGrocery, clearHouseholdGroceries, enterApp, FIXTURE_OWNER_FIRST_NAME, FIXTURE_OWNER_NAME } from './helpers'
+import {
+  addGrocery,
+  clearHouseholdGroceries,
+  enterApp,
+  FIXTURE_OWNER_FIRST_NAME,
+  FIXTURE_OWNER_NAME,
+} from './helpers'
 
 /**
  * Regression coverage for Frontend Slice 5 (real history + removing
@@ -14,20 +20,38 @@ import { addGrocery, clearHouseholdGroceries, enterApp, FIXTURE_OWNER_FIRST_NAME
 
 test.describe('History and Analytics reflect real, persisted groceries', () => {
   test.beforeEach(({ isMobile }) => {
-    test.skip(isMobile, 'this is a data-correctness concern, not viewport-dependent; desktop coverage is sufficient')
+    test.skip(
+      isMobile,
+      'this is a data-correctness concern, not viewport-dependent; desktop coverage is sufficient',
+    )
   })
 
-  test('History shows exactly the real groceries just added, one entry each — never a fabricated session', async ({ page }) => {
+  test('History shows exactly the real groceries just added, one entry each — never a fabricated session', async ({
+    page,
+  }) => {
     const runId = Date.now()
     const itemA = `History Milk ${runId}`
     const itemB = `History Rice ${runId}`
 
     await enterApp(page)
     await clearHouseholdGroceries(page)
-    await addGrocery(page, { name: itemA, price: '240', paidByName: FIXTURE_OWNER_NAME, sharedByNames: [FIXTURE_OWNER_FIRST_NAME] })
-    await addGrocery(page, { name: itemB, price: '900', paidByName: FIXTURE_OWNER_NAME, sharedByNames: [FIXTURE_OWNER_FIRST_NAME] })
+    await addGrocery(page, {
+      name: itemA,
+      price: '240',
+      paidByName: FIXTURE_OWNER_NAME,
+      sharedByNames: [FIXTURE_OWNER_FIRST_NAME],
+    })
+    await addGrocery(page, {
+      name: itemB,
+      price: '900',
+      paidByName: FIXTURE_OWNER_NAME,
+      sharedByNames: [FIXTURE_OWNER_FIRST_NAME],
+    })
 
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'History', exact: true }).click()
+    await page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('button', { name: 'History', exact: true })
+      .click()
     await expect(page.getByRole('heading', { name: 'History', exact: true })).toBeVisible()
 
     await expect(page.getByText('2 entries', { exact: true }).first()).toBeVisible()
@@ -46,9 +70,17 @@ test.describe('History and Analytics reflect real, persisted groceries', () => {
   test('History persists across a refresh', async ({ page }) => {
     const itemName = `History Persist Item ${Date.now()}`
     await enterApp(page)
-    await addGrocery(page, { name: itemName, price: '150', paidByName: FIXTURE_OWNER_NAME, sharedByNames: [FIXTURE_OWNER_FIRST_NAME] })
+    await addGrocery(page, {
+      name: itemName,
+      price: '150',
+      paidByName: FIXTURE_OWNER_NAME,
+      sharedByNames: [FIXTURE_OWNER_FIRST_NAME],
+    })
 
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'History', exact: true }).click()
+    await page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('button', { name: 'History', exact: true })
+      .click()
     await expect(page.locator('li').filter({ hasText: itemName })).toBeVisible()
 
     await page.reload()
@@ -60,7 +92,12 @@ test.describe('History and Analytics reflect real, persisted groceries', () => {
     const itemName = `History Edit Item ${Date.now()}`
     const renamedTo = `${itemName} (edited)`
     await enterApp(page)
-    await addGrocery(page, { name: itemName, price: '100', paidByName: FIXTURE_OWNER_NAME, sharedByNames: [FIXTURE_OWNER_FIRST_NAME] })
+    await addGrocery(page, {
+      name: itemName,
+      price: '100',
+      paidByName: FIXTURE_OWNER_NAME,
+      sharedByNames: [FIXTURE_OWNER_FIRST_NAME],
+    })
 
     const card = page.locator('main li').filter({ hasText: itemName })
     await card.getByRole('button', { name: `Edit ${itemName}` }).click()
@@ -70,30 +107,48 @@ test.describe('History and Analytics reflect real, persisted groceries', () => {
     await dialog.getByRole('button', { name: 'Save changes' }).click()
     await expect(dialog).not.toBeVisible()
 
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'History', exact: true }).click()
+    await page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('button', { name: 'History', exact: true })
+      .click()
     const historyCard = page.locator('li').filter({ hasText: renamedTo })
     await expect(historyCard).toBeVisible()
     await expect(historyCard.getByText('৳175', { exact: true })).toBeVisible()
-    await expect(page.locator('li').filter({ hasText: itemName }).filter({ hasNotText: '(edited)' })).toHaveCount(0)
+    await expect(
+      page.locator('li').filter({ hasText: itemName }).filter({ hasNotText: '(edited)' }),
+    ).toHaveCount(0)
   })
 
   test('deleting a grocery removes it from History once the delete is final', async ({ page }) => {
     const itemName = `History Delete Item ${Date.now()}`
     await enterApp(page)
-    await addGrocery(page, { name: itemName, price: '90', paidByName: FIXTURE_OWNER_NAME, sharedByNames: [FIXTURE_OWNER_FIRST_NAME] })
+    await addGrocery(page, {
+      name: itemName,
+      price: '90',
+      paidByName: FIXTURE_OWNER_NAME,
+      sharedByNames: [FIXTURE_OWNER_FIRST_NAME],
+    })
 
-    const deleteButton = page.locator('main li').filter({ hasText: itemName }).getByRole('button', { name: `Delete ${itemName}` })
+    const deleteButton = page
+      .locator('main li')
+      .filter({ hasText: itemName })
+      .getByRole('button', { name: `Delete ${itemName}` })
     await deleteButton.click()
     await expect(page.getByRole('button', { name: 'Undo' })).toBeVisible()
     // Let the undo window pass so the delete actually becomes persisted (see docs/GROCERY_INTEGRATION.md).
     await expect(page.getByRole('button', { name: 'Undo' })).not.toBeVisible({ timeout: 8000 })
 
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'History', exact: true }).click()
+    await page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('button', { name: 'History', exact: true })
+      .click()
     await expect(page.getByRole('heading', { name: 'History', exact: true })).toBeVisible()
     await expect(page.locator('li').filter({ hasText: itemName })).toHaveCount(0)
   })
 
-  test('Analytics shows an honest empty state with no real groceries, and real totals once there are some', async ({ page }) => {
+  test('Analytics shows an honest empty state with no real groceries, and real totals once there are some', async ({
+    page,
+  }) => {
     await enterApp(page)
     await clearHouseholdGroceries(page)
     // clearHouseholdGroceries deletes server-side directly (bypassing the
@@ -102,14 +157,28 @@ test.describe('History and Analytics reflect real, persisted groceries', () => {
     await page.reload()
     await expect(page.getByRole('heading', { name: 'Groceries', exact: true })).toBeVisible()
 
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Analytics', exact: true }).click()
+    await page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('button', { name: 'Analytics', exact: true })
+      .click()
     await expect(page.getByRole('heading', { name: 'Analytics', exact: true })).toBeVisible()
     await expect(page.getByText('Nothing to analyze yet.')).toBeVisible()
 
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Groceries', exact: true }).click()
-    await addGrocery(page, { name: `Analytics Item ${Date.now()}`, price: '325', paidByName: FIXTURE_OWNER_NAME, sharedByNames: [FIXTURE_OWNER_FIRST_NAME] })
+    await page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('button', { name: 'Groceries', exact: true })
+      .click()
+    await addGrocery(page, {
+      name: `Analytics Item ${Date.now()}`,
+      price: '325',
+      paidByName: FIXTURE_OWNER_NAME,
+      sharedByNames: [FIXTURE_OWNER_FIRST_NAME],
+    })
 
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Analytics', exact: true }).click()
+    await page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('button', { name: 'Analytics', exact: true })
+      .click()
     await expect(page.getByText('Nothing to analyze yet.')).toHaveCount(0)
     const totalSpentTile = page.getByRole('heading', { name: 'Total spent' }).locator('xpath=../../..')
     await expect(totalSpentTile).toBeVisible()
@@ -119,20 +188,31 @@ test.describe('History and Analytics reflect real, persisted groceries', () => {
   test('no seeded mock data ever appears in History or Analytics', async ({ page }) => {
     await enterApp(page)
 
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'History', exact: true }).click()
+    await page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('button', { name: 'History', exact: true })
+      .click()
     for (const fakeName of ['Aisha Khan', 'Bilal Ahmed', 'Chloe Lee', 'Daniyal Raza']) {
       await expect(page.getByText(fakeName)).toHaveCount(0)
     }
 
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Analytics', exact: true }).click()
+    await page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('button', { name: 'Analytics', exact: true })
+      .click()
     for (const fakeName of ['Aisha Khan', 'Bilal Ahmed', 'Chloe Lee', 'Daniyal Raza']) {
       await expect(page.getByText(fakeName)).toHaveCount(0)
     }
   })
 
-  test('the Settlements payment timeline shows an honest empty state rather than a fabricated history', async ({ page }) => {
+  test('the Settlements payment timeline shows an honest empty state rather than a fabricated history', async ({
+    page,
+  }) => {
     await enterApp(page)
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Settlements', exact: true }).click()
+    await page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('button', { name: 'Settlements', exact: true })
+      .click()
     await expect(page.getByRole('heading', { name: 'Settlements', exact: true })).toBeVisible()
 
     // Either a real "Mark as paid" event exists from a prior run in this shared

@@ -16,7 +16,13 @@ const FACTS: SettlementExplanationFacts = {
   consumedMinorUnits: 80000,
   itemsPaidFor: ['snacks'],
   itemsSharedIn: ['rice', 'chicken', 'cooking oil', 'snacks'],
-  transfers: [{ counterpartyMemberId: 'member-mayeen' as MemberId, counterpartyName: 'Mayeen', amountMinorUnits: 60000 }],
+  transfers: [
+    {
+      counterpartyMemberId: 'member-mayeen' as MemberId,
+      counterpartyName: 'Mayeen',
+      amountMinorUnits: 60000,
+    },
+  ],
 }
 
 describe('buildFairnessExplanationPrompt', () => {
@@ -43,7 +49,11 @@ describe('buildFairnessExplanationPrompt', () => {
   })
 
   it('sends a null amount for a settled member rather than "৳0"', () => {
-    const { userMessage } = buildFairnessExplanationPrompt({ ...FACTS, direction: 'settled', amountMinorUnits: 0 })
+    const { userMessage } = buildFairnessExplanationPrompt({
+      ...FACTS,
+      direction: 'settled',
+      amountMinorUnits: 0,
+    })
     expect(JSON.parse(userMessage).amount).toBeNull()
   })
 })

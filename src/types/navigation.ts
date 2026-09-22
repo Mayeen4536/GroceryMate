@@ -1,13 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
 
 export type PageId =
-  | 'assistant'
-  | 'groceries'
-  | 'members'
-  | 'settlements'
-  | 'analytics'
-  | 'history'
-  | 'settings'
+  'assistant' | 'groceries' | 'members' | 'settlements' | 'analytics' | 'history' | 'settings'
 
 export interface NavItem {
   id: PageId

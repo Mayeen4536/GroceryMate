@@ -75,9 +75,7 @@ export function PagePlaceholder({ item, direction = 1 }: { item: NavItem; direct
               </motion.span>
             </motion.div>
             <div className="space-y-1.5">
-              <p className="text-base font-semibold text-ink">
-                The {item.label} screen is on its way
-              </p>
+              <p className="text-base font-semibold text-ink">The {item.label} screen is on its way</p>
               <p className="mx-auto max-w-sm text-sm text-muted">
                 We're building GroceryMate step by step. This space is reserved for it.
               </p>

@@ -142,7 +142,13 @@ export function AddMemberDialog({ open, initialTab, onClose, onAdd }: AddMemberD
                   <Avatar name={name || '?'} tone={tone} size="lg" />
                 </motion.span>
               </AnimatePresence>
-              <Button variant="ghost" size="sm" iconLeft={Dices} onClick={shuffleTone} disabled={addSubmitting}>
+              <Button
+                variant="ghost"
+                size="sm"
+                iconLeft={Dices}
+                onClick={shuffleTone}
+                disabled={addSubmitting}
+              >
                 Shuffle look
               </Button>
             </div>
@@ -221,7 +227,9 @@ export function AddMemberDialog({ open, initialTab, onClose, onAdd }: AddMemberD
                 </Button>
               </div>
               <p className="text-sm text-muted">
-                {inviteExpiry ? `${inviteExpiry} · anyone with this link can join` : 'Anyone with this link can join'}{' '}
+                {inviteExpiry
+                  ? `${inviteExpiry} · anyone with this link can join`
+                  : 'Anyone with this link can join'}{' '}
                 {household?.name ?? 'this household'}.
               </p>
             </div>

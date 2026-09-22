@@ -96,7 +96,7 @@ fabricating a fallback.
 
 ## Analytics truthfulness
 
-`src/hooks/useAnalytics.ts` keeps its existing aggregation *shapes*
+`src/hooks/useAnalytics.ts` keeps its existing aggregation _shapes_
 (`MonthlySpend`, `TopGroceryItem`, `CategorySpend`, `MemberSpend`,
 `MemberPersonalShared`, `AnalyticsSummary`) — the charts didn't need to
 change — but every value is now derived from real `groceries`/`members`:
@@ -231,7 +231,7 @@ metadata for the deleted session model).
   out of this slice's scope and flagged here for a future slice. The
   accompanying text ("Anyone with the link can join `<household name>`.")
   was still hardcoded to the old mock household name ("Flat 4B") — found
-  during the hosted release-truth pass — and *was* fixed (real
+  during the hosted release-truth pass — and _was_ fixed (real
   `useHousehold()` name), since that part is the same narrow,
   already-established household-identity fix applied everywhere else in
   this slice. Only the link's own non-functionality remains a known gap.

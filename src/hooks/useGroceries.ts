@@ -33,7 +33,8 @@ const UNDO_WINDOW_MS = 5000
  * "delete" only ever becomes irreversible once actually persisted.
  */
 export function useGroceries() {
-  const { groceries, loading, error, refresh, addGrocery, editGrocery, deleteGrocery } = useHouseholdGroceries()
+  const { groceries, loading, error, refresh, addGrocery, editGrocery, deleteGrocery } =
+    useHouseholdGroceries()
   const [panelOpen, setPanelOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [lastAddedId, setLastAddedId] = useState<string | null>(null)

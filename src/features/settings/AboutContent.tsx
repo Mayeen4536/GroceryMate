@@ -9,8 +9,8 @@ export function AboutContent() {
         <span className="text-xs text-muted">Version 0.1.0 · Visual foundation</span>
       </div>
       <p className="text-sm leading-relaxed text-ink-soft">
-        GroceryMate helps flatmates and shared homes split groceries fairly. Add what you buy,
-        tag who shares it, and the app works out exactly who owes whom.
+        GroceryMate helps flatmates and shared homes split groceries fairly. Add what you buy, tag who shares
+        it, and the app works out exactly who owes whom.
       </p>
       <div className="card-surface rounded-lg p-4 shadow-soft">
         <p className="text-xs text-muted">Built with</p>

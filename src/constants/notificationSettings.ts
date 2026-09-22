@@ -14,6 +14,6 @@ export const NOTIFICATION_SETTINGS: NotificationSetting[] = [
   {
     key: 'digest',
     label: 'Weekly summary',
-    description: "A Sunday recap of what your household spent.",
+    description: 'A Sunday recap of what your household spent.',
   },
 ]

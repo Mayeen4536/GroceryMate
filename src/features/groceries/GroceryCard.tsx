@@ -85,9 +85,7 @@ export function GroceryCard({
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-ink">
           {item.name || 'New grocery'}
-          {item.quantity > 1 && (
-            <span className="font-normal text-muted"> × {item.quantity}</span>
-          )}
+          {item.quantity > 1 && <span className="font-normal text-muted"> × {item.quantity}</span>}
         </p>
         <p className="truncate text-xs text-muted">{subline}</p>
       </div>

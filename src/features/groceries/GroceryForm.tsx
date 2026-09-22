@@ -76,7 +76,10 @@ function QuantityStepper({ value, onChange }: { value: number; onChange: (value:
  * item's real persisted reference is untouched either way until the user
  * explicitly changes and re-submits the form).
  */
-function resolveInitialSelection(initial: GroceryItem | null, memberOptions: ReturnType<typeof useMemberOptions>) {
+function resolveInitialSelection(
+  initial: GroceryItem | null,
+  memberOptions: ReturnType<typeof useMemberOptions>,
+) {
   if (!initial) return { paidById: null, sharedByIds: [] as string[] }
   const selectableIds = new Set(memberOptions.options.map((option) => option.id))
   return {
@@ -188,9 +191,7 @@ export function GroceryForm({ initial, members, onSubmit, onCancel }: GroceryFor
       )}
 
       <motion.div layout transition={transitionFast}>
-        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">
-          Live preview
-        </p>
+        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Live preview</p>
         <GroceryCard item={draft} memberNameById={memberOptions.nameForId} preview />
       </motion.div>
 

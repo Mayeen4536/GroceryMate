@@ -51,13 +51,13 @@ These three are automated end to end, so they're one orchestrator:
 `createReceiptScanningPipeline(deps).run(input)`.
 
 - **OCR** (`src/ocr/OCRProvider.ts`) — `OCRProvider.extractText({ imageUrl })
-  → { rawText, confidence? }`. Vendor-agnostic by design, mirroring
+→ { rawText, confidence? }`. Vendor-agnostic by design, mirroring
   `ai/AIProvider.ts`: the pipeline depends only on this interface, never on
   Tesseract/Google Vision/AWS Textract/Azure specifically. Skipped
   entirely for a pasted-text receipt — there's no image to read, so the
   pasted text flows straight into cleanup.
 - **AI Cleanup** (`receiptTextCleanupService.ts`) — `ReceiptTextCleanupService.clean(rawText)
-  → { cleanedText }`. Fixes OCR noise (misread characters, broken line
+→ { cleanedText }`. Fixes OCR noise (misread characters, broken line
   structure) before parsing sees it. Kept as its own stage rather than
   folded into extraction, because "fix the text" and "extract structure
   from the text" are different concerns with different failure modes —
@@ -73,7 +73,7 @@ These three are automated end to end, so they're one orchestrator:
 
 A member reviews each `AIParsedItem` candidate, corrects anything the AI
 guessed wrong, and — critically — resolves `parsedPayerName` /
-`parsedSharedBy`'s *names* into real `MemberId`s (name-to-member matching
+`parsedSharedBy`'s _names_ into real `MemberId`s (name-to-member matching
 is a UI concern: a dropdown of the household's actual members, not fuzzy
 string matching in this layer). `ReceiptConfirmationService.confirm(...)`
 then does the mechanical, deterministic part: assembling those confirmed
@@ -93,14 +93,14 @@ signature is untouched.
 
 ## What's real vs. stubbed, and why
 
-| Piece | Status | Why |
-|---|---|---|
-| `ReceiptUploadService` | Real | Pure entity construction, no backend needed. |
-| `OCRProvider` | Interface + `NotImplementedOCRProvider` stub for every vendor | Genuinely needs a vendor choice/dependency not yet made — no honest fallback exists (you can't approximate reading an image). |
-| `ReceiptTextCleanupService` | Interface + passthrough default | A real version would reuse `AIProvider` with a cleanup-specific prompt, same pattern as `groceryParser.ts`. Left unbuilt since this task is architecture-only; "don't clean" is a safe, honest default in the meantime — the pipeline still runs end to end on whatever text it gets. |
-| Grocery parsing | Real (reused from `@/ai`, unchanged) | Already built and tested; connecting to it is wiring, not new implementation. |
-| `ReceiptConfirmationService` | Real | Deterministic assembly, no external dependency to defer. |
-| Settlement engine | Real (unchanged) | Out of scope for this task; the pipeline only documents the connection. |
+| Piece                        | Status                                                        | Why                                                                                                                                                                                                                                                                                   |
+| ---------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ReceiptUploadService`       | Real                                                          | Pure entity construction, no backend needed.                                                                                                                                                                                                                                          |
+| `OCRProvider`                | Interface + `NotImplementedOCRProvider` stub for every vendor | Genuinely needs a vendor choice/dependency not yet made — no honest fallback exists (you can't approximate reading an image).                                                                                                                                                         |
+| `ReceiptTextCleanupService`  | Interface + passthrough default                               | A real version would reuse `AIProvider` with a cleanup-specific prompt, same pattern as `groceryParser.ts`. Left unbuilt since this task is architecture-only; "don't clean" is a safe, honest default in the meantime — the pipeline still runs end to end on whatever text it gets. |
+| Grocery parsing              | Real (reused from `@/ai`, unchanged)                          | Already built and tested; connecting to it is wiring, not new implementation.                                                                                                                                                                                                         |
+| `ReceiptConfirmationService` | Real                                                          | Deterministic assembly, no external dependency to defer.                                                                                                                                                                                                                              |
+| Settlement engine            | Real (unchanged)                                              | Out of scope for this task; the pipeline only documents the connection.                                                                                                                                                                                                               |
 
 ## Multi-provider support
 

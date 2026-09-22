@@ -23,8 +23,20 @@ describe('computeSettlement', () => {
     it('splits a group grocery run fairly and settles it in the minimum number of payments', () => {
       const members = [makeMember('aisha'), makeMember('bilal'), makeMember('chloe')]
       const groceries = [
-        makeGroceryItem({ id: 'g1', name: 'Milk', paidBy: 'aisha', sharedBy: ['aisha', 'bilal', 'chloe'], unitPriceMinorUnits: 24000 }),
-        makeGroceryItem({ id: 'g2', name: 'Rice', paidBy: 'aisha', sharedBy: ['aisha', 'bilal', 'chloe'], unitPriceMinorUnits: 145000 }),
+        makeGroceryItem({
+          id: 'g1',
+          name: 'Milk',
+          paidBy: 'aisha',
+          sharedBy: ['aisha', 'bilal', 'chloe'],
+          unitPriceMinorUnits: 24000,
+        }),
+        makeGroceryItem({
+          id: 'g2',
+          name: 'Rice',
+          paidBy: 'aisha',
+          sharedBy: ['aisha', 'bilal', 'chloe'],
+          unitPriceMinorUnits: 145000,
+        }),
       ]
 
       const result = computeSettlement(members, groceries, TEST_CURRENCY)
@@ -40,7 +52,12 @@ describe('computeSettlement', () => {
       const members = [makeMember('aisha'), makeMember('bilal')]
       const groceries = [
         // A shared item that would otherwise settle perfectly...
-        makeGroceryItem({ id: 'g1', paidBy: 'aisha', sharedBy: ['aisha', 'bilal'], unitPriceMinorUnits: 200 }),
+        makeGroceryItem({
+          id: 'g1',
+          paidBy: 'aisha',
+          sharedBy: ['aisha', 'bilal'],
+          unitPriceMinorUnits: 200,
+        }),
         // ...plus a personal snack bilal buys only for himself.
         makeGroceryItem({ id: 'g2', paidBy: 'bilal', sharedBy: ['bilal'], unitPriceMinorUnits: 350 }),
       ]
@@ -72,10 +89,30 @@ describe('computeSettlement', () => {
     it('nets out correctly when several members take turns paying', () => {
       const members = [makeMember('aisha'), makeMember('bilal'), makeMember('chloe'), makeMember('daniyal')]
       const groceries = [
-        makeGroceryItem({ id: 'g1', paidBy: 'aisha', sharedBy: ['aisha', 'bilal', 'chloe', 'daniyal'], unitPriceMinorUnits: 40000 }),
-        makeGroceryItem({ id: 'g2', paidBy: 'bilal', sharedBy: ['aisha', 'bilal', 'chloe', 'daniyal'], unitPriceMinorUnits: 20000 }),
-        makeGroceryItem({ id: 'g3', paidBy: 'chloe', sharedBy: ['aisha', 'bilal', 'chloe', 'daniyal'], unitPriceMinorUnits: 8000 }),
-        makeGroceryItem({ id: 'g4', paidBy: 'daniyal', sharedBy: ['aisha', 'bilal'], unitPriceMinorUnits: 6000 }),
+        makeGroceryItem({
+          id: 'g1',
+          paidBy: 'aisha',
+          sharedBy: ['aisha', 'bilal', 'chloe', 'daniyal'],
+          unitPriceMinorUnits: 40000,
+        }),
+        makeGroceryItem({
+          id: 'g2',
+          paidBy: 'bilal',
+          sharedBy: ['aisha', 'bilal', 'chloe', 'daniyal'],
+          unitPriceMinorUnits: 20000,
+        }),
+        makeGroceryItem({
+          id: 'g3',
+          paidBy: 'chloe',
+          sharedBy: ['aisha', 'bilal', 'chloe', 'daniyal'],
+          unitPriceMinorUnits: 8000,
+        }),
+        makeGroceryItem({
+          id: 'g4',
+          paidBy: 'daniyal',
+          sharedBy: ['aisha', 'bilal'],
+          unitPriceMinorUnits: 6000,
+        }),
       ]
 
       const result = computeSettlement(members, groceries, TEST_CURRENCY)
@@ -91,7 +128,12 @@ describe('computeSettlement', () => {
       const members = [makeMember('aisha'), makeMember('bilal'), makeMember('chloe')]
       // ৳49.99 (4999 minor units) split three ways: 1667 + 1666 + 1666.
       const groceries = [
-        makeGroceryItem({ id: 'g1', paidBy: 'aisha', sharedBy: ['aisha', 'bilal', 'chloe'], unitPriceMinorUnits: 4999 }),
+        makeGroceryItem({
+          id: 'g1',
+          paidBy: 'aisha',
+          sharedBy: ['aisha', 'bilal', 'chloe'],
+          unitPriceMinorUnits: 4999,
+        }),
       ]
 
       const result = computeSettlement(members, groceries, TEST_CURRENCY)
@@ -126,7 +168,9 @@ describe('computeSettlement', () => {
   describe('large households', () => {
     it('settles a 50-member household with many shared items, exactly and within the transaction bound', () => {
       const memberCount = 50
-      const members = Array.from({ length: memberCount }, (_, i) => makeMember(`member-${String(i).padStart(3, '0')}`))
+      const members = Array.from({ length: memberCount }, (_, i) =>
+        makeMember(`member-${String(i).padStart(3, '0')}`),
+      )
       const memberIds = members.map((m) => m.id)
 
       const groceries = Array.from({ length: 120 }, (_, i) => {
@@ -156,12 +200,16 @@ describe('computeSettlement', () => {
       const result = computeSettlement(members, [], TEST_CURRENCY)
 
       expect(result.transfers).toEqual([])
-      expect(result.memberBalances.every((b) => b.spentMinorUnits === 0 && b.consumedMinorUnits === 0)).toBe(true)
+      expect(result.memberBalances.every((b) => b.spentMinorUnits === 0 && b.consumedMinorUnits === 0)).toBe(
+        true,
+      )
     })
 
     it('handles a single-member household with no possible debt', () => {
       const members = [makeMember('aisha')]
-      const groceries = [makeGroceryItem({ id: 'g1', paidBy: 'aisha', sharedBy: ['aisha'], unitPriceMinorUnits: 5000 })]
+      const groceries = [
+        makeGroceryItem({ id: 'g1', paidBy: 'aisha', sharedBy: ['aisha'], unitPriceMinorUnits: 5000 }),
+      ]
 
       const result = computeSettlement(members, groceries, TEST_CURRENCY)
 
@@ -174,8 +222,18 @@ describe('computeSettlement', () => {
     it('produces identical results when members and groceries are supplied in a different order', () => {
       const members = [makeMember('aisha'), makeMember('bilal'), makeMember('chloe')]
       const groceries = [
-        makeGroceryItem({ id: 'g1', paidBy: 'aisha', sharedBy: ['aisha', 'bilal', 'chloe'], unitPriceMinorUnits: 300 }),
-        makeGroceryItem({ id: 'g2', paidBy: 'bilal', sharedBy: ['bilal', 'chloe'], unitPriceMinorUnits: 150 }),
+        makeGroceryItem({
+          id: 'g1',
+          paidBy: 'aisha',
+          sharedBy: ['aisha', 'bilal', 'chloe'],
+          unitPriceMinorUnits: 300,
+        }),
+        makeGroceryItem({
+          id: 'g2',
+          paidBy: 'bilal',
+          sharedBy: ['bilal', 'chloe'],
+          unitPriceMinorUnits: 150,
+        }),
       ]
 
       const forward = computeSettlement(members, groceries, TEST_CURRENCY)
@@ -187,8 +245,18 @@ describe('computeSettlement', () => {
     it('is stable across repeated calls with the same input (no hidden randomness or shared state)', () => {
       const members = [makeMember('aisha'), makeMember('bilal'), makeMember('chloe'), makeMember('daniyal')]
       const groceries = [
-        makeGroceryItem({ id: 'g1', paidBy: 'aisha', sharedBy: ['aisha', 'bilal', 'chloe', 'daniyal'], unitPriceMinorUnits: 999 }),
-        makeGroceryItem({ id: 'g2', paidBy: 'daniyal', sharedBy: ['bilal', 'chloe'], unitPriceMinorUnits: 501 }),
+        makeGroceryItem({
+          id: 'g1',
+          paidBy: 'aisha',
+          sharedBy: ['aisha', 'bilal', 'chloe', 'daniyal'],
+          unitPriceMinorUnits: 999,
+        }),
+        makeGroceryItem({
+          id: 'g2',
+          paidBy: 'daniyal',
+          sharedBy: ['bilal', 'chloe'],
+          unitPriceMinorUnits: 501,
+        }),
       ]
 
       const results = Array.from({ length: 5 }, () => computeSettlement(members, groceries, TEST_CURRENCY))
@@ -200,7 +268,13 @@ describe('computeSettlement', () => {
     it('rejects a grocery item priced in a currency other than the household settlement currency', () => {
       const members = [makeMember('aisha')]
       const groceries = [
-        makeGroceryItem({ id: 'g1', paidBy: 'aisha', sharedBy: ['aisha'], unitPriceMinorUnits: 100, currency: CURRENCIES.USD }),
+        makeGroceryItem({
+          id: 'g1',
+          paidBy: 'aisha',
+          sharedBy: ['aisha'],
+          unitPriceMinorUnits: 100,
+          currency: CURRENCIES.USD,
+        }),
       ]
       expect(() => computeSettlement(members, groceries, TEST_CURRENCY)).toThrow(MixedCurrencyError)
     })
@@ -223,7 +297,9 @@ describe('computeSettlement', () => {
       // unit to "aisha" (alphabetically first) — so aisha ends up owing bilal exactly ৳0.01,
       // not ৳0 and not ৳0.02. The 1 minor unit is real money and must produce a real transfer.
       const members = [makeMember('aisha'), makeMember('bilal')]
-      const groceries = [makeGroceryItem({ id: 'g1', paidBy: 'bilal', sharedBy: ['aisha', 'bilal'], unitPriceMinorUnits: 1 })]
+      const groceries = [
+        makeGroceryItem({ id: 'g1', paidBy: 'bilal', sharedBy: ['aisha', 'bilal'], unitPriceMinorUnits: 1 }),
+      ]
 
       const result = computeSettlement(members, groceries, TEST_CURRENCY)
 
@@ -257,7 +333,9 @@ describe('computeSettlement', () => {
     it('lets a payer who consumed none of what they bought end up owed the full amount', () => {
       // aisha buys a birthday gift entirely for bilal; she shares none of it herself.
       const members = [makeMember('aisha'), makeMember('bilal')]
-      const groceries = [makeGroceryItem({ id: 'g1', paidBy: 'aisha', sharedBy: ['bilal'], unitPriceMinorUnits: 2000 })]
+      const groceries = [
+        makeGroceryItem({ id: 'g1', paidBy: 'aisha', sharedBy: ['bilal'], unitPriceMinorUnits: 2000 }),
+      ]
 
       const result = computeSettlement(members, groceries, TEST_CURRENCY)
 
@@ -273,8 +351,18 @@ describe('computeSettlement', () => {
       // bilal shares in every item but never pays for one himself.
       const members = [makeMember('aisha'), makeMember('bilal')]
       const groceries = [
-        makeGroceryItem({ id: 'g1', paidBy: 'aisha', sharedBy: ['aisha', 'bilal'], unitPriceMinorUnits: 400 }),
-        makeGroceryItem({ id: 'g2', paidBy: 'aisha', sharedBy: ['aisha', 'bilal'], unitPriceMinorUnits: 600 }),
+        makeGroceryItem({
+          id: 'g1',
+          paidBy: 'aisha',
+          sharedBy: ['aisha', 'bilal'],
+          unitPriceMinorUnits: 400,
+        }),
+        makeGroceryItem({
+          id: 'g2',
+          paidBy: 'aisha',
+          sharedBy: ['aisha', 'bilal'],
+          unitPriceMinorUnits: 600,
+        }),
       ]
 
       const result = computeSettlement(members, groceries, TEST_CURRENCY)
@@ -290,9 +378,24 @@ describe('computeSettlement', () => {
     it('routes every transfer to a single member when that member paid for every item in the household', () => {
       const members = [makeMember('aisha'), makeMember('bilal'), makeMember('chloe'), makeMember('daniyal')]
       const groceries = [
-        makeGroceryItem({ id: 'g1', paidBy: 'aisha', sharedBy: ['aisha', 'bilal'], unitPriceMinorUnits: 200 }),
-        makeGroceryItem({ id: 'g2', paidBy: 'aisha', sharedBy: ['aisha', 'chloe', 'daniyal'], unitPriceMinorUnits: 300 }),
-        makeGroceryItem({ id: 'g3', paidBy: 'aisha', sharedBy: ['bilal', 'chloe', 'daniyal'], unitPriceMinorUnits: 90 }),
+        makeGroceryItem({
+          id: 'g1',
+          paidBy: 'aisha',
+          sharedBy: ['aisha', 'bilal'],
+          unitPriceMinorUnits: 200,
+        }),
+        makeGroceryItem({
+          id: 'g2',
+          paidBy: 'aisha',
+          sharedBy: ['aisha', 'chloe', 'daniyal'],
+          unitPriceMinorUnits: 300,
+        }),
+        makeGroceryItem({
+          id: 'g3',
+          paidBy: 'aisha',
+          sharedBy: ['bilal', 'chloe', 'daniyal'],
+          unitPriceMinorUnits: 90,
+        }),
       ]
 
       const result = computeSettlement(members, groceries, TEST_CURRENCY)

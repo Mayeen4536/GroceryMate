@@ -28,12 +28,7 @@ export function Input({
           id={id}
           aria-invalid={error ? true : undefined}
           aria-describedby={fieldDescribedBy(id, helperText, error)}
-          className={cn(
-            controlClasses.base,
-            controlTone(error),
-            'peer h-11 px-3.5',
-            IconLeft && 'pl-10',
-          )}
+          className={cn(controlClasses.base, controlTone(error), 'peer h-11 px-3.5', IconLeft && 'pl-10')}
           {...rest}
         />
         {IconLeft && (

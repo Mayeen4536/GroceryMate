@@ -4,9 +4,9 @@ import { normalizeAuthError } from './errors'
 
 describe('normalizeAuthError', () => {
   it('maps known error codes to friendly copy', () => {
-    expect(normalizeAuthError(new AuthApiError('Invalid login credentials', 400, 'invalid_credentials'))).toBe(
-      'That email or password is incorrect.',
-    )
+    expect(
+      normalizeAuthError(new AuthApiError('Invalid login credentials', 400, 'invalid_credentials')),
+    ).toBe('That email or password is incorrect.')
     expect(normalizeAuthError(new AuthApiError('User already registered', 422, 'user_already_exists'))).toBe(
       'An account with that email already exists. Try signing in instead.',
     )

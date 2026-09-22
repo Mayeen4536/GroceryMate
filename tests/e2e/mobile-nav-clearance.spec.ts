@@ -16,7 +16,9 @@ test.describe('Mobile bottom-nav clearance', () => {
     test.skip(!isMobile, 'the floating dock this protects against only exists on mobile')
   })
 
-  test('scrolling the Assistant\'s primary action into view does not leave it under the nav dock', async ({ page }) => {
+  test("scrolling the Assistant's primary action into view does not leave it under the nav dock", async ({
+    page,
+  }) => {
     await enterApp(page)
     await generateAssistantGroceries(page, 'Plan a week of groceries for 4 people')
 
@@ -45,9 +47,14 @@ test.describe('Mobile bottom-nav clearance', () => {
     await expect(page).toHaveURL(/\/assistant$/)
   })
 
-  test('a tall page (Analytics) can be scrolled to its true end without content getting stuck under the dock', async ({ page }) => {
+  test('a tall page (Analytics) can be scrolled to its true end without content getting stuck under the dock', async ({
+    page,
+  }) => {
     await enterApp(page)
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Analytics', exact: true }).click()
+    await page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('button', { name: 'Analytics', exact: true })
+      .click()
     await expect(page.getByRole('heading', { name: 'Analytics', exact: true })).toBeVisible()
 
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight))

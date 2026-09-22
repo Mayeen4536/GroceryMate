@@ -16,7 +16,10 @@ function summary(memberId: string, netBalanceMinorUnits: number): MemberSettleme
 }
 
 /** Every debtor's outflow must equal their debt, and every creditor's inflow their credit. */
-function expectTransfersToFullySettle(balances: readonly MemberSettlementSummary[], transfers: ReturnType<typeof minimizeTransactions>) {
+function expectTransfersToFullySettle(
+  balances: readonly MemberSettlementSummary[],
+  transfers: ReturnType<typeof minimizeTransactions>,
+) {
   const net = summarizeTransfers(transfers)
   for (const balance of balances) {
     expect(net.get(balance.memberId) ?? 0).toBe(balance.netBalanceMinorUnits)

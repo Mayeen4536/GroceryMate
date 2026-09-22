@@ -27,7 +27,10 @@ interface GeneratedGroceriesProps {
  * let a stale reference reach the real grocery list, where the settlement
  * engine would only refuse it later.
  */
-export function isFullyResolved(item: GroceryItem, memberOptions: ReturnType<typeof useMemberOptions>): boolean {
+export function isFullyResolved(
+  item: GroceryItem,
+  memberOptions: ReturnType<typeof useMemberOptions>,
+): boolean {
   const validIds = new Set(memberOptions.options.map((option) => option.id))
   const hasPayer = item.paidByMemberId !== '' && validIds.has(item.paidByMemberId)
   // Every id must be valid, not just one of them: a mix of one valid and
@@ -65,7 +68,8 @@ function GeneratedItemReview({
   // longer resolves), not just an empty one — matches `isFullyResolved`'s
   // stricter "every id must be valid" rule below, so the badge and the
   // submit gate never disagree about whether this item is really done.
-  const needsSharers = item.sharedByMemberIds.length === 0 || sharedByIds.length !== item.sharedByMemberIds.length
+  const needsSharers =
+    item.sharedByMemberIds.length === 0 || sharedByIds.length !== item.sharedByMemberIds.length
 
   return (
     <motion.li variants={riseChild} className="card-surface space-y-4 rounded-lg p-4 shadow-soft">
@@ -127,7 +131,10 @@ export function GeneratedGroceries({ items, members, onAddGroceries, onReset }: 
   const [submitError, setSubmitError] = useState<string>()
   const memberOptions = useMemberOptions(members)
 
-  const updateDraft = (id: string, patch: Partial<Pick<GroceryItem, 'paidByMemberId' | 'sharedByMemberIds'>>) => {
+  const updateDraft = (
+    id: string,
+    patch: Partial<Pick<GroceryItem, 'paidByMemberId' | 'sharedByMemberIds'>>,
+  ) => {
     setDrafts((current) => current.map((draft) => (draft.id === id ? { ...draft, ...patch } : draft)))
   }
 
@@ -157,9 +164,7 @@ export function GeneratedGroceries({ items, members, onAddGroceries, onReset }: 
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold tracking-tight text-ink">
-            Your groceries are ready
-          </h2>
+          <h2 className="text-lg font-semibold tracking-tight text-ink">Your groceries are ready</h2>
           <p className="mt-1 text-sm text-muted">
             {unresolvedCount > 0
               ? `Review who paid and who's sharing — GroceryMate never guesses this part.`
@@ -177,12 +182,7 @@ export function GeneratedGroceries({ items, members, onAddGroceries, onReset }: 
         </p>
       )}
 
-      <motion.ul
-        variants={staggerChildren}
-        initial="hidden"
-        animate="visible"
-        className="space-y-2.5"
-      >
+      <motion.ul variants={staggerChildren} initial="hidden" animate="visible" className="space-y-2.5">
         {drafts.map((item) => (
           <GeneratedItemReview
             key={item.id}

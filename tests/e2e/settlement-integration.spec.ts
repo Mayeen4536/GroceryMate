@@ -27,7 +27,10 @@ import { addGrocery, addMember, clearHouseholdGroceries, enterApp } from './help
 
 test.describe('Settlement reflects the real engine end to end', () => {
   test.beforeEach(({ isMobile }) => {
-    test.skip(isMobile, 'this is a calculation-correctness concern, not viewport-dependent; desktop coverage is sufficient')
+    test.skip(
+      isMobile,
+      'this is a calculation-correctness concern, not viewport-dependent; desktop coverage is sufficient',
+    )
   })
 
   test('a manually-verifiable 3-person scenario produces the exact expected settlement', async ({ page }) => {
@@ -58,14 +61,30 @@ test.describe('Settlement reflects the real engine end to end', () => {
     // Rice: ৳900, paid by Aisha, shared by Aisha/Bilal/Chloe (deselect the
     // fixture owner, who's part of the "everyone" default the sharing
     // picker starts with but isn't part of this scenario).
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Groceries', exact: true }).click()
-    await addGrocery(page, { name: 'Rice', price: '900', paidByName: aisha, sharedByNames: [aisha, bilal, chloe] })
+    await page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('button', { name: 'Groceries', exact: true })
+      .click()
+    await addGrocery(page, {
+      name: 'Rice',
+      price: '900',
+      paidByName: aisha,
+      sharedByNames: [aisha, bilal, chloe],
+    })
 
     // Chicken: ৳600, paid by Bilal, shared by Aisha/Bilal only.
-    await addGrocery(page, { name: 'Chicken', price: '600', paidByName: bilal, sharedByNames: [aisha, bilal] })
+    await addGrocery(page, {
+      name: 'Chicken',
+      price: '600',
+      paidByName: bilal,
+      sharedByNames: [aisha, bilal],
+    })
 
     // Members page: each of the three members shows their real, derived numbers.
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Members', exact: true }).click()
+    await page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('button', { name: 'Members', exact: true })
+      .click()
     await expect(page.getByRole('heading', { name: 'Members', exact: true })).toBeVisible()
 
     const aishaCard = page.getByRole('button', { name: new RegExp(`Open ${aisha}'s profile`) })
@@ -81,7 +100,10 @@ test.describe('Settlement reflects the real engine end to end', () => {
     await expect(chloeCard.getByText('0', { exact: true })).toBeVisible()
 
     // Settlements page: the summary and the single settling transfer both match exactly.
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Settlements', exact: true }).click()
+    await page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('button', { name: 'Settlements', exact: true })
+      .click()
     await expect(page.getByRole('heading', { name: 'Settlements', exact: true })).toBeVisible()
 
     await expect(page.getByText('Outstanding across E2E Fixture Household')).toBeVisible()

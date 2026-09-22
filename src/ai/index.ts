@@ -23,9 +23,4 @@ export type { ConfidenceSignals } from './confidence'
 export { createGroceryParser } from './groceryParser'
 export type { GroceryParseInput, GroceryParseResult, GroceryParser, GroceryParserDeps } from './groceryParser'
 
-export {
-  GroceryParserError,
-  AIProviderError,
-  AIResponseFormatError,
-  AIResponseSchemaError,
-} from './errors'
+export { GroceryParserError, AIProviderError, AIResponseFormatError, AIResponseSchemaError } from './errors'

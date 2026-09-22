@@ -5,7 +5,9 @@ import { test, expect } from '@playwright/test'
 // these specifically test the signed-out experience.
 test.use({ storageState: { cookies: [], origins: [] } })
 
-test('an unauthenticated visitor hitting a protected route directly is redirected to sign in', async ({ page }) => {
+test('an unauthenticated visitor hitting a protected route directly is redirected to sign in', async ({
+  page,
+}) => {
   await page.goto('/groceries')
   await expect(page).toHaveURL(/\/sign-in$/)
   await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible()

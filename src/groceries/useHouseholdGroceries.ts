@@ -4,7 +4,12 @@ import { supabase } from '@/auth/supabaseClient'
 import { useHousehold } from '@/household/useHousehold'
 import type { CategoryId, GroceryItem } from '@/types/grocery'
 import { normalizeGroceryError } from './errors'
-import { groupConsumersByGroceryItem, mapGroceryItemRow, type GroceryConsumerRow, type GroceryItemRow } from './types'
+import {
+  groupConsumersByGroceryItem,
+  mapGroceryItemRow,
+  type GroceryConsumerRow,
+  type GroceryItemRow,
+} from './types'
 
 const ITEM_SELECT_COLUMNS =
   'id, household_id, name, category, amount_minor, quantity, paid_by_member_id, created_by_member_id, notes, created_at, updated_at'
@@ -170,7 +175,10 @@ export function useHouseholdGroceries() {
         // docs/GROCERY_INTEGRATION.md's "partial-write strategy".
         const { error: rollbackError } = await supabase.from('grocery_items').delete().eq('id', itemRow.id)
         if (rollbackError) {
-          console.error('[groceries] rollback delete failed after a consumer-insert failure — an orphaned grocery_items row may remain:', rollbackError)
+          console.error(
+            '[groceries] rollback delete failed after a consumer-insert failure — an orphaned grocery_items row may remain:',
+            rollbackError,
+          )
         }
         return { error: normalizeGroceryError(consumerError) }
       }
@@ -226,7 +234,11 @@ export function useHouseholdGroceries() {
 
       if (toAdd.length > 0) {
         const { error: insertError } = await supabase.from('grocery_item_consumers').insert(
-          toAdd.map((memberId) => ({ grocery_item_id: id, household_member_id: memberId, household_id: householdId })),
+          toAdd.map((memberId) => ({
+            grocery_item_id: id,
+            household_member_id: memberId,
+            household_id: householdId,
+          })),
         )
         // The item's own fields are already saved at this point — a
         // consumer-diff failure is reported as an edit failure (never a
@@ -251,7 +263,12 @@ export function useHouseholdGroceries() {
 
   const deleteGrocery = useCallback(
     async (id: string): Promise<GroceryWriteResult> => {
-      const { data, error } = await supabase.from('grocery_items').delete().eq('id', id).select('id').maybeSingle()
+      const { data, error } = await supabase
+        .from('grocery_items')
+        .delete()
+        .eq('id', id)
+        .select('id')
+        .maybeSingle()
       if (error) return { error: normalizeGroceryError(error) }
       if (!data) return { error: 'You don’t have permission to delete this item.' }
       // grocery_item_consumers rows cascade-delete with it (Migration 2's

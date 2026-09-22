@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { GroceryHistoryEntry } from '@/types/history'
 
 const downloadTextFile = vi.fn()
-vi.mock('@/services/downloadTextFile', () => ({ downloadTextFile: (...args: unknown[]) => downloadTextFile(...args) }))
+vi.mock('@/services/downloadTextFile', () => ({
+  downloadTextFile: (...args: unknown[]) => downloadTextFile(...args),
+}))
 
 const { exportEntry, exportEntries } = await import('./historyExportService')
 

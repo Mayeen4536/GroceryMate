@@ -25,26 +25,26 @@ export function Brand({ withTagline = false, tone = 'light', markOnly = false }:
         <Leaf size={18} aria-hidden="true" />
       </span>
       {markOnly ? null : (
-      <div className="min-w-0">
-        <p
-          className={cn(
-            'text-[0.9375rem] font-bold leading-tight tracking-tight',
-            dark ? 'text-pine-text' : 'text-ink',
-          )}
-        >
-          GroceryMate
-        </p>
-        {withTagline && (
+        <div className="min-w-0">
           <p
             className={cn(
-              'truncate text-[0.6875rem] leading-tight',
-              dark ? 'text-pine-muted' : 'text-muted',
+              'text-[0.9375rem] font-bold leading-tight tracking-tight',
+              dark ? 'text-pine-text' : 'text-ink',
             )}
           >
-            Split groceries fairly.
+            GroceryMate
           </p>
-        )}
-      </div>
+          {withTagline && (
+            <p
+              className={cn(
+                'truncate text-[0.6875rem] leading-tight',
+                dark ? 'text-pine-muted' : 'text-muted',
+              )}
+            >
+              Split groceries fairly.
+            </p>
+          )}
+        </div>
       )}
     </div>
   )

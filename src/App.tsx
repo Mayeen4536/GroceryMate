@@ -20,13 +20,27 @@ import { easeSoft } from '@/animations/motion'
 // Code-split every destination past the landing page: a first visit only
 // needs Landing + whichever one page it lands on, not all seven feature
 // pages plus the internal design-system showcase in a single bundle.
-const AnalyticsPage = lazy(() => import('@/features/analytics/AnalyticsPage').then((m) => ({ default: m.AnalyticsPage })))
-const AssistantPage = lazy(() => import('@/features/assistant/AssistantPage').then((m) => ({ default: m.AssistantPage })))
-const GroceriesPage = lazy(() => import('@/features/groceries/GroceriesPage').then((m) => ({ default: m.GroceriesPage })))
-const MembersPage = lazy(() => import('@/features/members/MembersPage').then((m) => ({ default: m.MembersPage })))
-const SettlementsPage = lazy(() => import('@/features/settlements/SettlementsPage').then((m) => ({ default: m.SettlementsPage })))
-const HistoryPage = lazy(() => import('@/features/history/HistoryPage').then((m) => ({ default: m.HistoryPage })))
-const SettingsPage = lazy(() => import('@/features/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })))
+const AnalyticsPage = lazy(() =>
+  import('@/features/analytics/AnalyticsPage').then((m) => ({ default: m.AnalyticsPage })),
+)
+const AssistantPage = lazy(() =>
+  import('@/features/assistant/AssistantPage').then((m) => ({ default: m.AssistantPage })),
+)
+const GroceriesPage = lazy(() =>
+  import('@/features/groceries/GroceriesPage').then((m) => ({ default: m.GroceriesPage })),
+)
+const MembersPage = lazy(() =>
+  import('@/features/members/MembersPage').then((m) => ({ default: m.MembersPage })),
+)
+const SettlementsPage = lazy(() =>
+  import('@/features/settlements/SettlementsPage').then((m) => ({ default: m.SettlementsPage })),
+)
+const HistoryPage = lazy(() =>
+  import('@/features/history/HistoryPage').then((m) => ({ default: m.HistoryPage })),
+)
+const SettingsPage = lazy(() =>
+  import('@/features/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })),
+)
 const DesignSystemShowcase = lazy(() =>
   import('@/showcase/DesignSystemShowcase').then((m) => ({ default: m.DesignSystemShowcase })),
 )
@@ -77,12 +91,19 @@ function AppRoutes({
             <Route
               path="/groceries"
               element={
-                <GroceriesPage key="groceries" direction={direction} members={members.members} {...groceries} />
+                <GroceriesPage
+                  key="groceries"
+                  direction={direction}
+                  members={members.members}
+                  {...groceries}
+                />
               }
             />
             <Route
               path="/members"
-              element={<MembersPage key="members" direction={direction} groceries={groceries.items} {...members} />}
+              element={
+                <MembersPage key="members" direction={direction} groceries={groceries.items} {...members} />
+              }
             />
             <Route
               path="/settlements"

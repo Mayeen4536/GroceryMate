@@ -16,6 +16,8 @@ describe('createOCRProvider', () => {
 
   it('every vendor rejects with OCRProviderNotImplementedError until a real adapter exists', async () => {
     const provider = createOCRProvider({ vendor: 'google-vision' })
-    await expect(provider.extractText({ imageUrl: 'blob:test' })).rejects.toThrow(OCRProviderNotImplementedError)
+    await expect(provider.extractText({ imageUrl: 'blob:test' })).rejects.toThrow(
+      OCRProviderNotImplementedError,
+    )
   })
 })

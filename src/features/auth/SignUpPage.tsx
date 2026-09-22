@@ -34,8 +34,8 @@ function ConfirmationRequired({ email, signInHref }: { email: string; signInHref
           <MailCheck size={22} aria-hidden="true" />
         </span>
         <p className="mt-4 text-sm text-ink-soft">
-          We’ve sent a confirmation link to <span className="font-medium text-ink">{email}</span>. Open it
-          to activate your account, then come back and sign in.
+          We’ve sent a confirmation link to <span className="font-medium text-ink">{email}</span>. Open it to
+          activate your account, then come back and sign in.
         </p>
       </div>
     </AuthLayout>

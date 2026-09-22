@@ -4,7 +4,9 @@ import type { Member } from '@/types/member'
 import type { Settlement } from '@/types/settlement'
 
 const downloadTextFile = vi.fn()
-vi.mock('@/services/downloadTextFile', () => ({ downloadTextFile: (...args: unknown[]) => downloadTextFile(...args) }))
+vi.mock('@/services/downloadTextFile', () => ({
+  downloadTextFile: (...args: unknown[]) => downloadTextFile(...args),
+}))
 
 const { exportAllData } = await import('./settingsExportService')
 
@@ -58,7 +60,13 @@ describe('exportAllData', () => {
   })
 
   it('honestly reports empty sections instead of fabricating placeholder rows', () => {
-    exportAllData({ householdId: 'h-1', householdName: 'Empty Household', members: [], groceries: [], transfers: [] })
+    exportAllData({
+      householdId: 'h-1',
+      householdName: 'Empty Household',
+      members: [],
+      groceries: [],
+      transfers: [],
+    })
 
     const [, content] = downloadTextFile.mock.calls[0]
     expect(content).toContain('No members yet.')

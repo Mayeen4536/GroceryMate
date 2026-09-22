@@ -46,14 +46,18 @@ interface AcceptInviteRow {
  * moves a token and a household id/name around.
  */
 export async function createHouseholdInvite(householdId: string): Promise<CreateInviteResult> {
-  const { data, error } = await supabase.rpc('create_household_invite', { p_household_id: householdId }).single<CreateInviteRow>()
+  const { data, error } = await supabase
+    .rpc('create_household_invite', { p_household_id: householdId })
+    .single<CreateInviteRow>()
   if (error || !data) return { error: normalizeInviteError(error).message }
   return { invite: { inviteId: data.invite_id, token: data.token, expiresAt: data.expires_at } }
 }
 
 /** Safe to call while signed out — this is the one RPC `anon` is allowed to execute. */
 export async function resolveHouseholdInvite(token: string): Promise<ResolveInviteOutcome> {
-  const { data, error } = await supabase.rpc('resolve_household_invite', { p_token: token }).single<ResolveInviteRow>()
+  const { data, error } = await supabase
+    .rpc('resolve_household_invite', { p_token: token })
+    .single<ResolveInviteRow>()
   if (error || !data) return { error: normalizeInviteError(error).message }
   return { result: { status: data.status, householdName: data.household_name } }
 }
@@ -65,7 +69,9 @@ export async function resolveHouseholdInvite(token: string): Promise<ResolveInvi
  * caller's session.
  */
 export async function acceptHouseholdInvite(token: string): Promise<AcceptInviteResult> {
-  const { data, error } = await supabase.rpc('accept_household_invite', { p_token: token }).single<AcceptInviteRow>()
+  const { data, error } = await supabase
+    .rpc('accept_household_invite', { p_token: token })
+    .single<AcceptInviteRow>()
   if (error || !data) {
     const normalized = normalizeInviteError(error)
     return { error: normalized.message, code: normalized.code }

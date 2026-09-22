@@ -114,7 +114,7 @@ function dfs(balances: WorkingBalance[]): DebtTransfer[] | null {
     if (j === i) continue
     const other = balances[j]
     if (other.amount === 0) continue
-    const sameSign = (first.amount < 0) === (other.amount < 0)
+    const sameSign = first.amount < 0 === other.amount < 0
     if (sameSign) continue // can only settle a debt against a credit, not two of the same
 
     const debtor = first.amount < 0 ? first : other

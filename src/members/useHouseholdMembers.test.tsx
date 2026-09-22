@@ -19,7 +19,9 @@ function makeChain(result: unknown) {
 }
 
 const mocks = vi.hoisted(() => ({
-  householdValue: { household: { id: 'household-1', name: 'Flat 4B' } as { id: string; name: string } | null },
+  householdValue: {
+    household: { id: 'household-1', name: 'Flat 4B' } as { id: string; name: string } | null,
+  },
   selectResult: { data: [] as unknown[] | null, error: null as unknown },
   insertResult: { data: null as unknown, error: null as unknown },
   updateResult: { data: null as unknown, error: null as unknown },

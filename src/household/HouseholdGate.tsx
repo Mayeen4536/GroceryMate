@@ -21,7 +21,11 @@ function FullScreenSpinner() {
 function SignOutFooter() {
   const { signOut } = useAuth()
   return (
-    <button type="button" onClick={() => void signOut()} className="font-medium text-brand-700 hover:underline">
+    <button
+      type="button"
+      onClick={() => void signOut()}
+      className="font-medium text-brand-700 hover:underline"
+    >
       Sign out
     </button>
   )
@@ -39,8 +43,8 @@ function ArchivedHouseholdScreen({ name }: { name: string }) {
           <Archive size={22} aria-hidden="true" />
         </span>
         <p className="text-sm text-ink-soft">
-          You can no longer make changes here, and this MVP doesn't yet support creating another
-          household from this state.
+          You can no longer make changes here, and this MVP doesn't yet support creating another household
+          from this state.
         </p>
       </div>
     </AuthLayout>
@@ -59,8 +63,8 @@ function UnsupportedHouseholdScreen() {
           <TriangleAlert size={22} aria-hidden="true" />
         </span>
         <p className="text-sm text-ink-soft">
-          GroceryMate doesn't have a household switcher yet, so it can't guess which one to show.
-          This is a known limitation — see docs/HOUSEHOLD_INTEGRATION.md.
+          GroceryMate doesn't have a household switcher yet, so it can't guess which one to show. This is a
+          known limitation — see docs/HOUSEHOLD_INTEGRATION.md.
         </p>
       </div>
     </AuthLayout>
@@ -91,6 +95,7 @@ export function HouseholdGate({ children }: { children: ReactNode }) {
   if (status === 'needs-setup') return <HouseholdOnboardingPage />
   if (status === 'archived') return <ArchivedHouseholdScreen name={household?.name ?? 'Household'} />
   if (status === 'unsupported') return <UnsupportedHouseholdScreen />
-  if (status === 'error') return <HouseholdLoadError message={error ?? 'Please try again.'} onRetry={refresh} />
+  if (status === 'error')
+    return <HouseholdLoadError message={error ?? 'Please try again.'} onRetry={refresh} />
   return <>{children}</>
 }

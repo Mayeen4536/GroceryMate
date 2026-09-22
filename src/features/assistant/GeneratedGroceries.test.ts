@@ -44,7 +44,10 @@ function makeItem(overrides: Partial<GroceryItem> & { id: string }): GroceryItem
   }
 }
 
-const CURRENT_MEMBERS = [makeMember({ id: 'm-1', name: 'Aisha Khan' }), makeMember({ id: 'm-2', name: 'Bilal Ahmed' })]
+const CURRENT_MEMBERS = [
+  makeMember({ id: 'm-1', name: 'Aisha Khan' }),
+  makeMember({ id: 'm-2', name: 'Bilal Ahmed' }),
+]
 
 describe('isFullyResolved', () => {
   it('is resolved when payer and sharers all match current, selectable members', () => {

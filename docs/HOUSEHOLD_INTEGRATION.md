@@ -35,7 +35,7 @@ there's no redirect loop to avoid in the first place.
 
 After the profile is available, `household_members` is queried filtered
 by `.eq('profile_id', <the authenticated user's own id>)` — **never**
-unfiltered (an unfiltered `select` would return the *entire roster* of
+unfiltered (an unfiltered `select` would return the _entire roster_ of
 every household the caller belongs to, since Migration 3's RLS policy
 grants read access to the whole roster, not just one's own row) and
 **never** by an id sourced from routing or `localStorage`. This is what
@@ -47,13 +47,13 @@ direct database testing.
 The schema allows a profile to belong to multiple households; this MVP's
 UI has no switcher. Classification, in order:
 
-| Active rows | Archived rows | Result |
-|---|---|---|
-| 0 | 0 | `needs-setup` — onboarding shown |
-| 1 | any | `ready` — that membership's household loads |
-| 0 | 1 | `archived` — read-only screen, **not** onboarding |
-| >1 | — | `unsupported` — explicit "not yet supported" screen |
-| 0 or 1 | >1 | `unsupported` — same reasoning |
+| Active rows | Archived rows | Result                                              |
+| ----------- | ------------- | --------------------------------------------------- |
+| 0           | 0             | `needs-setup` — onboarding shown                    |
+| 1           | any           | `ready` — that membership's household loads         |
+| 0           | 1             | `archived` — read-only screen, **not** onboarding   |
+| >1          | —             | `unsupported` — explicit "not yet supported" screen |
+| 0 or 1      | >1            | `unsupported` — same reasoning                      |
 
 No row is ever picked arbitrarily. This is a deliberate, documented MVP
 limitation — a real household switcher is future work, not something to

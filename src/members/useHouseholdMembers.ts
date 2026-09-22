@@ -5,7 +5,8 @@ import type { Member } from '@/types/member'
 import { normalizeMemberError } from './errors'
 import { mapHouseholdMemberRow, type HouseholdMemberRow } from './types'
 
-const SELECT_COLUMNS = 'id, household_id, profile_id, display_name, invited_email, role, status, created_at, archived_at'
+const SELECT_COLUMNS =
+  'id, household_id, profile_id, display_name, invited_email, role, status, created_at, archived_at'
 
 export interface MemberWriteResult {
   error?: string

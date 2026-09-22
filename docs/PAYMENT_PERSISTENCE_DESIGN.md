@@ -5,7 +5,7 @@ or applied.** It supersedes §8 ("Payments / Mark Paid") of
 `docs/SUPABASE_SCHEMA_DESIGN.md` — that section's table sketch is close
 but predates the real engine/RLS; the differences and why are called out
 below. It also supersedes `src/domain/Payment.ts`/`Settlement.ts`, which
-model a *different*, unbuilt architecture (persisted "Settlement" debt
+model a _different_, unbuilt architecture (persisted "Settlement" debt
 rows resolved 1:1 by a payment) that doesn't match how the real engine
 works today (settlements are always recomputed fresh, never stored).
 
@@ -53,29 +53,29 @@ never had to touch the engine at all.
 ## STEP 2 — What "Mark as paid" must mean
 
 **A payment is an immutable, independent ledger event — never a mutation
-of a suggested transfer.** The engine's `DebtTransfer[]` is a *suggestion*
+of a suggested transfer.** The engine's `DebtTransfer[]` is a _suggestion_
 recomputed fresh every time (already true today — see the `toSettlementViewModel.ts`
 comment explaining why a transfer's id includes its amount: "if the same
 two people's balance changes to a genuinely different amount, this must
 read as a new, undismissed transfer"). Persisting "transfer #3 got paid"
 would freeze a snapshot of a value that was never meant to be stable.
 
-Instead: record the real event (`A → B, ৳200`), and recompute *everyone's*
+Instead: record the real event (`A → B, ৳200`), and recompute _everyone's_
 net position — grocery obligations adjusted by every recorded payment —
 then re-run the same minimization to get a fresh suggestion. A →
 B ৳500 owed, A pays B ৳200, doesn't "resolve transfer #3"; it changes A's
-net balance from -500 to -300 and B's from +500 to +300, and the *next*
+net balance from -500 to -300 and B's from +500 to +300, and the _next_
 computed suggestion (still A → B, now ৳300) reflects that a new payment
 would need to be ৳300, not the original ৳500 minus something tracked
 per-transfer.
 
 This is also the only design that survives a 3+-member household. Once
 there are 3+ non-zero balances, `minimizeTransactions`'s pairing (who is
-suggested to pay whom) can shift when *any* member's balance changes, even
+suggested to pay whom) can shift when _any_ member's balance changes, even
 if a specific pair's own balances didn't move relative to each other. A
 payment recorded against "the current suggested transfer" would silently
 break the moment the suggested pairing changes shape. A payment recorded
-against *balances* (a stable, well-defined per-member quantity) has no
+against _balances_ (a stable, well-defined per-member quantity) has no
 such fragility — see STEP 4 for why this also makes the older
 schema-design doc's transfer-level reconciliation formula (§8) not quite
 right for households above 2 members.
@@ -96,23 +96,24 @@ note                   text            optional — free-text context
 reversal_of_payment_id uuid            optional — self-FK, only present on a correction row
 ```
 
-| Column | Why it exists | Required? | Who controls it | Mutable? | FK / delete behavior |
-|---|---|---|---|---|---|
-| `id` | Stable row identity, referenced by `reversal_of_payment_id` and used as the timeline's React key. | Required | Server (`gen_random_uuid()`) | No — never changes after insert | PK |
-| `household_id` | Scopes the row for RLS and for the "load this household's payments" query, same role as on every other table. | Required | Server, derived — never trusted from client input; see STEP 6 | No | FK → `households(id)` **ON DELETE CASCADE** (matches `grocery_items`; households are never hard-deleted by app code, this is defense-in-depth only) |
-| `from_member_id` | Who paid — the real financial fact. | Required | Client-supplied, but constrained (see STEP 6/7) | No | Composite FK → `household_members(id, household_id)`, default NO ACTION (a member row can never be hard-deleted while referenced, same guarantee `grocery_items.paid_by_member_id` already has) |
-| `to_member_id` | Who received it. | Required | Client-supplied, constrained | No | Same composite FK pattern as `from_member_id` |
-| `amount_minor` | The amount. Integer minor units, no currency column — inherits `households.currency_code`, identical reasoning to `grocery_items.amount_minor`. | Required | Client-supplied | No | CHECK `> 0` |
-| `created_by_member_id` | Anti-impersonation anchor: the real, server-verified household-member identity of whoever actually submitted this row — **never** trusted from client input; always derived server-side from `auth.uid()` via the same `private.household_member_id_for(household_id)` helper `grocery_items_insert_active_member` already uses. Named to match `grocery_items.created_by_member_id` exactly, not the older schema-design doc's `recorded_by_profile_id` — see rationale below. | Required | Server-verified via RLS `WITH CHECK`, never the raw client value | No | Composite FK → `household_members(id, household_id)` |
-| `created_at` | When it was recorded; drives the timeline's chronological order. | Required | Server (`default now()`) | No | — |
-| `note` | Free-text context ("cash, handed over Tuesday"). Genuinely useful for a financial record a household might need to explain later, and every comparable free-text field elsewhere (`grocery_items.notes`) already exists for the same reason. | Optional | Client-supplied | No | — |
-| `reversal_of_payment_id` | Points at the original payment a correction is reversing — see STEP 5. Nullable: only reversal rows use it. | Optional | Client-supplied, but only meaningful in combination with amount/parties being the exact inverse — validated at the application layer, not a DB constraint (a DB CHECK can't easily express "this row's amount/direction is the arithmetic inverse of another row" without a trigger, and a trigger here would be solving a problem the UI already fully controls at write time) | No | Self-FK → `payments(id)`, default NO ACTION |
+| Column                   | Why it exists                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Required? | Who controls it                                                                                                                                                                                                                                                                                                                                                                 | Mutable?                        | FK / delete behavior                                                                                                                                                                            |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                     | Stable row identity, referenced by `reversal_of_payment_id` and used as the timeline's React key.                                                                                                                                                                                                                                                                                                                                                                               | Required  | Server (`gen_random_uuid()`)                                                                                                                                                                                                                                                                                                                                                    | No — never changes after insert | PK                                                                                                                                                                                              |
+| `household_id`           | Scopes the row for RLS and for the "load this household's payments" query, same role as on every other table.                                                                                                                                                                                                                                                                                                                                                                   | Required  | Server, derived — never trusted from client input; see STEP 6                                                                                                                                                                                                                                                                                                                   | No                              | FK → `households(id)` **ON DELETE CASCADE** (matches `grocery_items`; households are never hard-deleted by app code, this is defense-in-depth only)                                             |
+| `from_member_id`         | Who paid — the real financial fact.                                                                                                                                                                                                                                                                                                                                                                                                                                             | Required  | Client-supplied, but constrained (see STEP 6/7)                                                                                                                                                                                                                                                                                                                                 | No                              | Composite FK → `household_members(id, household_id)`, default NO ACTION (a member row can never be hard-deleted while referenced, same guarantee `grocery_items.paid_by_member_id` already has) |
+| `to_member_id`           | Who received it.                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Required  | Client-supplied, constrained                                                                                                                                                                                                                                                                                                                                                    | No                              | Same composite FK pattern as `from_member_id`                                                                                                                                                   |
+| `amount_minor`           | The amount. Integer minor units, no currency column — inherits `households.currency_code`, identical reasoning to `grocery_items.amount_minor`.                                                                                                                                                                                                                                                                                                                                 | Required  | Client-supplied                                                                                                                                                                                                                                                                                                                                                                 | No                              | CHECK `> 0`                                                                                                                                                                                     |
+| `created_by_member_id`   | Anti-impersonation anchor: the real, server-verified household-member identity of whoever actually submitted this row — **never** trusted from client input; always derived server-side from `auth.uid()` via the same `private.household_member_id_for(household_id)` helper `grocery_items_insert_active_member` already uses. Named to match `grocery_items.created_by_member_id` exactly, not the older schema-design doc's `recorded_by_profile_id` — see rationale below. | Required  | Server-verified via RLS `WITH CHECK`, never the raw client value                                                                                                                                                                                                                                                                                                                | No                              | Composite FK → `household_members(id, household_id)`                                                                                                                                            |
+| `created_at`             | When it was recorded; drives the timeline's chronological order.                                                                                                                                                                                                                                                                                                                                                                                                                | Required  | Server (`default now()`)                                                                                                                                                                                                                                                                                                                                                        | No                              | —                                                                                                                                                                                               |
+| `note`                   | Free-text context ("cash, handed over Tuesday"). Genuinely useful for a financial record a household might need to explain later, and every comparable free-text field elsewhere (`grocery_items.notes`) already exists for the same reason.                                                                                                                                                                                                                                    | Optional  | Client-supplied                                                                                                                                                                                                                                                                                                                                                                 | No                              | —                                                                                                                                                                                               |
+| `reversal_of_payment_id` | Points at the original payment a correction is reversing — see STEP 5. Nullable: only reversal rows use it.                                                                                                                                                                                                                                                                                                                                                                     | Optional  | Client-supplied, but only meaningful in combination with amount/parties being the exact inverse — validated at the application layer, not a DB constraint (a DB CHECK can't easily express "this row's amount/direction is the arithmetic inverse of another row" without a trigger, and a trigger here would be solving a problem the UI already fully controls at write time) | No                              | Self-FK → `payments(id)`, default NO ACTION                                                                                                                                                     |
 
 **Rejected fields:**
+
 - **`status`** — not needed. A payment either exists or it doesn't (STEP 5); there is no "pending" state for a `Mark as paid` action a user just performed themselves in real time. `docs/SUPABASE_SCHEMA_DESIGN.md` §8 already reached the same conclusion.
 - **`currency`/`currency_code`** — not needed, same reasoning as every other money column in this schema: one currency per household, already on `households.currency_code`.
 - **`updated_at`** — not needed. Payments are never updated (STEP 5); a trigger/column that can never fire is dead weight, the same reasoning `grocery_item_consumers` (a pure insert/delete relation, no `updated_at`) already established.
-- **`client_dedupe_key`** — evaluated in STEP 11, recommended as a *real* column, listed separately there rather than folded in here since it's an idempotency mechanism, not a financial fact about the payment itself.
+- **`client_dedupe_key`** — evaluated in STEP 11, recommended as a _real_ column, listed separately there rather than folded in here since it's an idempotency mechanism, not a financial fact about the payment itself.
 
 **Deviation from `docs/SUPABASE_SCHEMA_DESIGN.md` §8:** that section proposed `recorded_by_profile_id uuid null references profiles(id)`. This slice's design uses `created_by_member_id uuid not null references household_members` instead, for two reasons: (1) it matches the established, working `grocery_items.created_by_member_id` pattern exactly — same column name, same composite-FK shape, same derivation via `private.household_member_id_for()` — rather than introducing a second, inconsistent "who did this" pattern; (2) the caller of any authenticated write already necessarily has an active `household_members` row (RLS requires it), so a `household_members` reference is sufficient on its own and doesn't need a separate `profiles` lookup to answer "was this the same real person as an active member" — `household_members` already answers that.
 
@@ -140,7 +141,7 @@ to change.
 
 **Overpayment falls out for free, with no special-casing.** If A actually
 owed B ৳500 and pays ৳700: `adjustedNet(A) = -500 + 700 = +200`. A is now
-correctly shown as *owed* ৳200 by the household — which is financially
+correctly shown as _owed_ ৳200 by the household — which is financially
 correct (A put in more than their fair share) — and the next settlement
 computation will suggest someone pays A back. `docs/SUPABASE_SCHEMA_DESIGN.md`
 §8's transfer-level formula ("clamped so it never goes negative... without
@@ -171,7 +172,7 @@ export function computeSettlement(
   members: readonly Member[],
   groceries: readonly GroceryItem[],
   currency: Currency,
-  payments: readonly PaymentEvent[] = [],   // new, optional, backward-compatible
+  payments: readonly PaymentEvent[] = [], // new, optional, backward-compatible
 ): SettlementResult {
   const groceryBalances = calculateMemberBalances(members, groceries, currency)
   const memberBalances = applyPayments(groceryBalances, payments)
@@ -277,7 +278,7 @@ something on the household's behalf":
 - **Can `from_member_id`/`to_member_id` reference an archived member?**
   Yes — a household needs to be able to record "Dana (who has since left)
   finally paid back what she owed," same as `grocery_items.paid_by_member_id`
-  already allows referencing an archived member. Only the *caller*
+  already allows referencing an archived member. Only the _caller_
   (`created_by_member_id`) must be active; the parties to the payment
   itself may be archived.
 - **Who may read historical payments?** Any member, active or archived —
@@ -313,7 +314,7 @@ foreign key (created_by_member_id, household_id) references household_members (i
 ```
 
 Each composite FK forces the referenced member to genuinely belong to
-*this* row's own `household_id` — not just to belong to *some* household
+_this_ row's own `household_id` — not just to belong to _some_ household
 that happens to have a member with that id (the exact class of attack
 `grocery_item_consumers`'s own composite FKs already close, per Migration
 2's design notes). A caller cannot construct a payment naming a Household
@@ -334,13 +335,13 @@ and `to` are never the same member).
 
 ## STEP 8 — Account/member lifecycle
 
-| Scenario | Behavior |
-|---|---|
-| Payer (`from_member_id`) becomes archived, after the payment exists | Row is untouched — no ON DELETE/trigger fires on archive (archiving only changes `household_members.status`, never removes the row). The payment stays fully attributed and readable, its financial effect on balances unchanged. |
-| Recipient (`to_member_id`) becomes archived | Same — untouched, still attributed, still counted. |
-| Auth account (`auth.users`/`profiles`) is deleted but the `household_members` row remains (a non-account/no-longer-account member) | No effect on the payment — `from_member_id`/`to_member_id`/`created_by_member_id` all reference `household_members(id)`, never `profiles(id)` directly, so a payment never depends on the payer's/recorder's Auth account still existing. This is *why* `created_by_member_id` (not `recorded_by_profile_id`) is the right column — see STEP 3's deviation rationale. |
-| Display name changes | No effect — the payment stores ids, never a name; display always resolves the current `household_members.display_name` at render time, identical to every other id→name resolution in this app (`buildMemberNameResolver`, Slice 5). |
-| Household becomes archived | Existing payments remain readable (archived households aren't deleted, matching the existing `households.status` lifecycle); whether *new* payments can still be recorded against an archived household should follow whatever rule already governs archived-household writes for groceries — not something new to invent here. |
+| Scenario                                                                                                                           | Behavior                                                                                                                                                                                                                                                                                                                                                              |
+| ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Payer (`from_member_id`) becomes archived, after the payment exists                                                                | Row is untouched — no ON DELETE/trigger fires on archive (archiving only changes `household_members.status`, never removes the row). The payment stays fully attributed and readable, its financial effect on balances unchanged.                                                                                                                                     |
+| Recipient (`to_member_id`) becomes archived                                                                                        | Same — untouched, still attributed, still counted.                                                                                                                                                                                                                                                                                                                    |
+| Auth account (`auth.users`/`profiles`) is deleted but the `household_members` row remains (a non-account/no-longer-account member) | No effect on the payment — `from_member_id`/`to_member_id`/`created_by_member_id` all reference `household_members(id)`, never `profiles(id)` directly, so a payment never depends on the payer's/recorder's Auth account still existing. This is _why_ `created_by_member_id` (not `recorded_by_profile_id`) is the right column — see STEP 3's deviation rationale. |
+| Display name changes                                                                                                               | No effect — the payment stores ids, never a name; display always resolves the current `household_members.display_name` at render time, identical to every other id→name resolution in this app (`buildMemberNameResolver`, Slice 5).                                                                                                                                  |
+| Household becomes archived                                                                                                         | Existing payments remain readable (archived households aren't deleted, matching the existing `households.status` lifecycle); whether _new_ payments can still be recorded against an archived household should follow whatever rule already governs archived-household writes for groceries — not something new to invent here.                                       |
 
 **Net effect:** a historical payment is always fully interpretable, by
 design, for the same reason `grocery_items` already is — every reference
@@ -349,16 +350,16 @@ flip, not deletion) everywhere in this schema.
 
 ## STEP 9 — Settlement recalculation: which screens change
 
-| Screen / value | Incorporates payments? | Why |
-|---|---|---|
-| Settlements page: `transfers` (JourneyCards) | **Yes** | Directly the output of the extended `computeSettlement` |
-| Settlements page: `summary.outstanding`/receivers/owers | **Yes** | Derived from the same `memberBalances` |
-| Settlements page: "Everyone's square" (`allSettled`) | **Yes, automatically** | Already `transfers.length === 0`, unchanged code — becomes correct for free once `transfers` reflects payments |
-| Members page: `status` (owed/owes/settled badge) | **Yes** | Derived from `netBalanceMinorUnits`, which now includes payments |
-| Members page: `amountPaid` ("Total paid") | **No** | Maps from `spentMinorUnits` — grocery spending only, untouched by `applyPayments` |
-| History page | **No** | Stays exactly `grocery_items`-derived (Slice 5); a payment is not a grocery and must never appear as one |
-| Analytics (total spend, category totals, payer contribution, personal/shared split) | **No** | All derived from `spentMinorUnits`/`consumedMinorUnits`/raw grocery amounts — a payment is debt settlement, not spending, and must never inflate any spend total |
-| Settlements payment timeline | **Yes — this is the whole point of Slice 7** | Real `payments` rows replace the "No recorded payments yet." empty state (STEP 10) |
+| Screen / value                                                                      | Incorporates payments?                       | Why                                                                                                                                                              |
+| ----------------------------------------------------------------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Settlements page: `transfers` (JourneyCards)                                        | **Yes**                                      | Directly the output of the extended `computeSettlement`                                                                                                          |
+| Settlements page: `summary.outstanding`/receivers/owers                             | **Yes**                                      | Derived from the same `memberBalances`                                                                                                                           |
+| Settlements page: "Everyone's square" (`allSettled`)                                | **Yes, automatically**                       | Already `transfers.length === 0`, unchanged code — becomes correct for free once `transfers` reflects payments                                                   |
+| Members page: `status` (owed/owes/settled badge)                                    | **Yes**                                      | Derived from `netBalanceMinorUnits`, which now includes payments                                                                                                 |
+| Members page: `amountPaid` ("Total paid")                                           | **No**                                       | Maps from `spentMinorUnits` — grocery spending only, untouched by `applyPayments`                                                                                |
+| History page                                                                        | **No**                                       | Stays exactly `grocery_items`-derived (Slice 5); a payment is not a grocery and must never appear as one                                                         |
+| Analytics (total spend, category totals, payer contribution, personal/shared split) | **No**                                       | All derived from `spentMinorUnits`/`consumedMinorUnits`/raw grocery amounts — a payment is debt settlement, not spending, and must never inflate any spend total |
+| Settlements payment timeline                                                        | **Yes — this is the whole point of Slice 7** | Real `payments` rows replace the "No recorded payments yet." empty state (STEP 10)                                                                               |
 
 The one-line rule for implementation: **`applyPayments` only ever writes
 `netBalanceMinorUnits`.** Every screen's correct/incorrect behavior above
@@ -373,15 +374,15 @@ Slice 5's `buildHistoryEntries`:
 
 ```ts
 function buildPaymentTimeline(payments: readonly Payment[], members: readonly Member[]): TimelineEvent[] {
-  const nameOf = buildMemberNameResolver(members)   // reused as-is from Slice 5
+  const nameOf = buildMemberNameResolver(members) // reused as-is from Slice 5
   return payments
     .slice()
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))  // newest first, matching every other real feed
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt)) // newest first, matching every other real feed
     .map((p) => ({
       id: p.id,
       kind: 'payment',
       title: `${firstName(nameOf(p.fromMemberId))} paid ${firstName(nameOf(p.toMemberId))} ${formatTaka(minorToMajor(p.amountMinor))}`,
-      when: fullDateLabel(p.createdAt),   // reused as-is from src/utils/date.ts (Slice 5)
+      when: fullDateLabel(p.createdAt), // reused as-is from src/utils/date.ts (Slice 5)
     }))
 }
 ```
@@ -415,7 +416,7 @@ distributed-idempotency framework.
     where client_dedupe_key is not null;
   ```
 
-  A genuine retry of the *same* logical submission reuses the *same*
+  A genuine retry of the _same_ logical submission reuses the _same_
   key (the client only generates a new one when the user starts a new,
   separate "mark as paid" action), so Postgres itself rejects the second
   insert with a unique-violation the client can recognize and treat as
@@ -539,7 +540,7 @@ no I/O:**
 - Payments in opposite directions between the same pair (A→B 200 and
   B→A 50) — net exactly as if a single A→B 150 payment had occurred.
 - Three-member settlement with a payment between a pair the engine's own
-  minimized-transfer suggestion did *not* originally include — proves the
+  minimized-transfer suggestion did _not_ originally include — proves the
   balance-level design (STEP 4) handles a payment between any two
   members, not just ones already "suggested" to pay each other.
 - One-paisa payment (`amount_minor = 1`) — no rounding drift, matching the
@@ -557,7 +558,7 @@ already established in Slices 6/6.1):**
 - Duplicate submission with the same `client_dedupe_key` — second insert
   rejected by the unique index, first insert unaffected.
 - Cross-household attempt — a payment naming a real member of a
-  *different* household is rejected by the composite FK, independent of
+  _different_ household is rejected by the composite FK, independent of
   RLS.
 - Member impersonation — an insert with `created_by_member_id` set to
   someone other than the caller's own resolved membership id is rejected
@@ -587,12 +588,12 @@ conventions from Slices 4/5):**
 ## STEP 15 — Release/business relevance
 
 This closes the single biggest remaining credibility gap in GroceryMate
-as a real product: today, the app can correctly *calculate* who owes
+as a real product: today, the app can correctly _calculate_ who owes
 whom, but has no memory that a debt was ever actually resolved — every
 session, refresh, or day later, a paid-off debt reappears exactly as it
 was, which is precisely the kind of thing that makes a bill-splitting
 tool feel untrustworthy to real users (the core value proposition of an
-app like this *is* "remember what's settled"). Real payment persistence
+app like this _is_ "remember what's settled"). Real payment persistence
 is what turns GroceryMate from "a calculator" into "a ledger" — the
 actual product category it's meant to be in.
 
@@ -627,10 +628,11 @@ inherits `households.currency_code`, identical convention to every other
 money column in this schema.
 
 **Payment financial semantics:** `adjustedNet(member) = groceryNet(member)
-+ Σ(payments received) − Σ(payments sent)`, computed at the engine layer
+
+- Σ(payments received) − Σ(payments sent)`, computed at the engine layer
 (new `applyPayments`, extending `computeSettlement`) — never in the UI.
 Grocery history and `spentMinorUnits`/`consumedMinorUnits` are never
-touched by a payment.
+  touched by a payment.
 
 **Correction/reversal strategy:** Option B — payments are immutable
 (no UPDATE/DELETE grant, ever); a correction is a new, exact-inverse
@@ -638,7 +640,7 @@ reversal row referencing the original via `reversal_of_payment_id`. One
 UX pattern ("Undo this payment") covers accidental/wrong-amount/wrong-
 recipient corrections.
 
-**Authorization strategy:** any *active* household member may record a
+**Authorization strategy:** any _active_ household member may record a
 payment between any two members (active or archived) of their own
 household — the same trust model `grocery_items_insert_active_member`
 already applies; `created_by_member_id` is always server-derived from
@@ -719,7 +721,8 @@ for anyone), and Playwright tests (refresh persistence, timeline
 truthfulness, account-deletion history preservation).
 
 **Open design questions:**
-1. Should recording a payment between two *other* members (caller is
+
+1. Should recording a payment between two _other_ members (caller is
    party to neither) be as open as grocery-logging is today, or should
    payments — being more "final" than a grocery line — require the
    caller to be a party to the transaction, or be owner-only? This

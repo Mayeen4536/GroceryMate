@@ -12,7 +12,10 @@ import { addGrocery, addMember, archiveMember, enterApp, FIXTURE_OWNER_FIRST_NAM
 
 test.describe('Grocery persistence', () => {
   test.beforeEach(({ isMobile }) => {
-    test.skip(isMobile, 'this is a persistence/data-correctness concern, not viewport-dependent; desktop coverage is sufficient')
+    test.skip(
+      isMobile,
+      'this is a persistence/data-correctness concern, not viewport-dependent; desktop coverage is sufficient',
+    )
   })
 
   test('adding a grocery survives a refresh', async ({ page }) => {
@@ -59,13 +62,18 @@ test.describe('Grocery persistence', () => {
     await expect(editedCard.getByText('125', { exact: true })).toBeVisible()
   })
 
-  test('a different member can be the payer than whoever is signed in, and the signed-in owner can still edit it', async ({ page }) => {
+  test('a different member can be the payer than whoever is signed in, and the signed-in owner can still edit it', async ({
+    page,
+  }) => {
     const payerName = `PersistencePayer${Date.now()}`
     const itemName = `Different Payer Item ${Date.now()}`
     await enterApp(page)
     await addMember(page, payerName)
 
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Groceries', exact: true }).click()
+    await page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('button', { name: 'Groceries', exact: true })
+      .click()
     await addGrocery(page, {
       name: itemName,
       price: '200',
@@ -88,7 +96,10 @@ test.describe('Grocery persistence', () => {
     await enterApp(page)
     await addMember(page, consumerName)
 
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Groceries', exact: true }).click()
+    await page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('button', { name: 'Groceries', exact: true })
+      .click()
     await addGrocery(page, {
       name: itemName,
       price: '400',
@@ -110,7 +121,10 @@ test.describe('Grocery persistence', () => {
     await enterApp(page)
     await addMember(page, archivedName)
 
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Groceries', exact: true }).click()
+    await page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('button', { name: 'Groceries', exact: true })
+      .click()
     await addGrocery(page, {
       name: itemName,
       price: '150',
@@ -123,7 +137,10 @@ test.describe('Grocery persistence', () => {
     await archiveMember(page, archivedName)
 
     // Back on Groceries: the historical item still names the archived member correctly.
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('button', { name: 'Groceries', exact: true }).click()
+    await page
+      .getByRole('navigation', { name: 'Main' })
+      .getByRole('button', { name: 'Groceries', exact: true })
+      .click()
     await expect(card.getByText(`Paid by ${archivedName}`)).toBeVisible()
     await expect(card.getByText('Unknown member')).not.toBeVisible()
 
@@ -143,6 +160,8 @@ test.describe('Grocery persistence', () => {
     // Survives a refresh too — this isn't just an in-memory artifact of the archive action.
     await page.reload()
     await expect(page.getByRole('heading', { name: 'Groceries', exact: true })).toBeVisible()
-    await expect(page.locator('main li').filter({ hasText: itemName }).getByText(`Paid by ${archivedName}`)).toBeVisible()
+    await expect(
+      page.locator('main li').filter({ hasText: itemName }).getByText(`Paid by ${archivedName}`),
+    ).toBeVisible()
   })
 })
