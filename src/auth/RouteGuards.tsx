@@ -17,6 +17,25 @@ function FullScreenSpinner() {
   )
 }
 
+function SessionLoadError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="flex min-h-screen items-center justify-center px-4">
+      <div className="w-full max-w-sm text-center">
+        <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-danger-50 text-danger-600">
+          <AlertTriangle size={22} aria-hidden="true" />
+        </span>
+        <h1 className="mt-4 text-lg font-semibold text-ink">We couldn’t check your sign-in status</h1>
+        <p className="mt-1.5 text-sm text-muted">{message}</p>
+        <div className="mt-5 flex justify-center">
+          <Button variant="primary" onClick={onRetry}>
+            Try again
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function ProfileLoadError({ onRetry, onSignOut }: { onRetry: () => void; onSignOut: () => void }) {
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
@@ -50,8 +69,17 @@ function ProfileLoadError({ onRetry, onSignOut }: { onRetry: () => void; onSignO
  * actually render.
  */
 export function ProtectedRoute({ children }: { children: ReactNode }) {
-  const { status, profile, profileLoading, profileError, retryProfile, signOut } = useAuth()
+  const { status, sessionError, retrySession, profile, profileLoading, profileError, retryProfile, signOut } =
+    useAuth()
 
+  if (status === 'error') {
+    return (
+      <SessionLoadError
+        message={sessionError ?? 'Something went wrong. Please try again.'}
+        onRetry={retrySession}
+      />
+    )
+  }
   if (status === 'loading') return <FullScreenSpinner />
   if (status === 'signed-out') return <Navigate to="/sign-in" replace />
   if (profileError) return <ProfileLoadError onRetry={retryProfile} onSignOut={signOut} />

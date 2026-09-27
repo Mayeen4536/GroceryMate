@@ -172,6 +172,33 @@ describe('AuthProvider / useAuth', () => {
     expect(result.current.status).toBe('signed-out')
   })
 
+  it('surfaces a session error instead of hanging in loading when the initial getSession call rejects', async () => {
+    mocks.getSession.mockRejectedValue(new Error('network error'))
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await waitFor(() => expect(result.current.status).toBe('error'))
+    expect(result.current.sessionError).not.toBeNull()
+    expect(result.current.session).toBeNull()
+  })
+
+  it('retrySession re-attempts getSession and recovers once it succeeds', async () => {
+    mocks.getSession.mockRejectedValueOnce(new Error('network error'))
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+    await waitFor(() => expect(result.current.status).toBe('error'))
+
+    mocks.getSession.mockResolvedValueOnce({ data: { session: null } })
+    act(() => {
+      result.current.retrySession()
+    })
+
+    await waitFor(() => expect(result.current.status).toBe('signed-out'))
+    expect(result.current.sessionError).toBeNull()
+  })
+
   it('signUp returns a normalized error message on failure', async () => {
     mocks.getSession.mockResolvedValue({ data: { session: null } })
     mocks.signUp.mockResolvedValue({

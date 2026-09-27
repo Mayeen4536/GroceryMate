@@ -1,51 +1,27 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
-import { Check, Send } from 'lucide-react'
+import { Send } from 'lucide-react'
 import { Button, Textarea } from '@/components/ui'
-import { transitionBase } from '@/animations/motion'
 
-/** Feedback composer. Nothing is sent anywhere; submitting just shows a local thank-you. */
+/** Contact address for private-beta feedback — temporary until a product decision picks a permanent one. */
+const FEEDBACK_EMAIL = 'hello.onehourai@gmail.com'
+
+/**
+ * Feedback composer. There is no feedback backend: submitting opens the
+ * user's own email app, addressed to us, with their note prefilled — it
+ * never claims GroceryMate itself received or sent anything.
+ */
 export function FeedbackForm() {
   const [message, setMessage] = useState('')
-  const [submitted, setSubmitted] = useState(false)
-
-  if (submitted) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={transitionBase}
-        className="flex flex-col items-center gap-3 py-10 text-center"
-      >
-        <span className="flex size-14 items-center justify-center rounded-full bg-mint-100 text-brand-700">
-          <Check size={24} aria-hidden="true" />
-        </span>
-        <div className="space-y-1">
-          <p className="text-base font-semibold text-ink">Thanks for the note.</p>
-          <p className="mx-auto max-w-xs text-sm text-muted">
-            This preview doesn't send feedback anywhere yet, but it's noted for this session.
-          </p>
-        </div>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => {
-            setMessage('')
-            setSubmitted(false)
-          }}
-        >
-          Write another note
-        </Button>
-      </motion.div>
-    )
-  }
 
   return (
     <form
       onSubmit={(event) => {
         event.preventDefault()
-        if (!message.trim()) return
-        setSubmitted(true)
+        const trimmed = message.trim()
+        if (!trimmed) return
+        const subject = encodeURIComponent('GroceryMate Beta Feedback')
+        const body = encodeURIComponent(trimmed)
+        window.location.href = `mailto:${FEEDBACK_EMAIL}?subject=${subject}&body=${body}`
       }}
       className="flex flex-col gap-4 pb-4"
     >
@@ -60,8 +36,12 @@ export function FeedbackForm() {
         value={message}
         onChange={(event) => setMessage(event.target.value)}
       />
+      <p className="text-xs text-muted">
+        This opens your email app with a message addressed to {FEEDBACK_EMAIL} — nothing is sent
+        automatically.
+      </p>
       <Button type="submit" iconLeft={Send} disabled={!message.trim()}>
-        Send feedback
+        Open email to send feedback
       </Button>
     </form>
   )

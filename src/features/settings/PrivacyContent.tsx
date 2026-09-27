@@ -2,20 +2,28 @@ import { ShieldCheck } from 'lucide-react'
 
 const POINTS = [
   {
-    title: 'Nothing leaves this device',
-    body: 'This preview keeps every grocery, member, and settlement in memory on your device. Nothing is sent to a server.',
+    title: 'GroceryMate uses accounts',
+    body: 'You sign in with an email and password. Your household, member, and grocery data is stored in our hosted backend (Supabase), not just on this device.',
   },
   {
-    title: 'No accounts, no tracking',
-    body: 'There is no sign-in, analytics, or third-party sharing in this build.',
+    title: 'Your data is used to run the app',
+    body: 'We use what you enter to show your groceries, members, and settlements, and to keep them in sync across sign-ins.',
   },
   {
-    title: 'Data resets on refresh',
-    body: 'Since nothing is saved yet, reloading the app starts fresh from the sample household.',
+    title: 'We don’t sell your data',
+    body: 'GroceryMate does not currently sell your data to third parties.',
+  },
+  {
+    title: 'This is a private beta',
+    body: 'Please avoid entering sensitive information you wouldn’t want stored — things like full card numbers or government IDs.',
+  },
+  {
+    title: 'Questions about your data?',
+    body: 'For privacy or data-related questions, contact hello.onehourai@gmail.com.',
   },
 ]
 
-/** Static privacy summary. Honest about the current no-backend, no-persistence state. */
+/** Static privacy summary. Honest about the current hosted-backend, accounts-based state. */
 export function PrivacyContent() {
   return (
     <div className="flex flex-col gap-5 pb-4">

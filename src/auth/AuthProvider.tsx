@@ -20,33 +20,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('loading')
   const [session, setSession] = useState<Session | null>(null)
   const [user, setUser] = useState<User | null>(null)
+  const [sessionError, setSessionError] = useState<string | null>(null)
+  const [sessionReloadToken, setSessionReloadToken] = useState(0)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [profileLoading, setProfileLoading] = useState(false)
   const [profileError, setProfileError] = useState<string | null>(null)
   const [profileReloadToken, setProfileReloadToken] = useState(0)
 
+  // Separate from the onAuthStateChange subscription below so that retrying
+  // it (see `retrySession`) doesn't tear down and re-create that subscription.
   useEffect(() => {
     let mounted = true
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (!mounted) return
-      setSession(data.session)
-      setUser(data.session?.user ?? null)
-      setStatus(data.session ? 'signed-in' : 'signed-out')
-    })
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (!mounted) return
+        setSession(data.session)
+        setUser(data.session?.user ?? null)
+        setStatus(data.session ? 'signed-in' : 'signed-out')
+      })
+      .catch((error: unknown) => {
+        if (!mounted) return
+        // Mirrors src/household/HouseholdProvider.tsx's 'error' status +
+        // retry pattern: never fake a signed-in/signed-out state when we
+        // simply don't know it yet, and never swallow the failure.
+        setSessionError(normalizeAuthError(error))
+        setStatus('error')
+      })
 
+    return () => {
+      mounted = false
+    }
+  }, [sessionReloadToken])
+
+  useEffect(() => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSessionError(null)
       setSession(nextSession)
       setUser(nextSession?.user ?? null)
       setStatus(nextSession ? 'signed-in' : 'signed-out')
     })
 
     return () => {
-      mounted = false
       subscription.unsubscribe()
     }
+  }, [])
+
+  const retrySession = useCallback(() => {
+    setSessionError(null)
+    setStatus('loading')
+    setSessionReloadToken((n) => n + 1)
   }, [])
 
   // Profile lookup is always keyed on the authenticated user's own id from
@@ -163,6 +189,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     status,
     session,
     user,
+    sessionError,
+    retrySession,
     profile,
     profileLoading,
     profileError,

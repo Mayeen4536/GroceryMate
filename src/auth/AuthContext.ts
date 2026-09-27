@@ -8,6 +8,9 @@ export interface AuthContextValue {
   session: Session | null
   /** The raw Supabase Auth user (id, email, metadata). Prefer `profile` for display. */
   user: User | null
+  /** Set when `status` is 'error' — the initial session check itself failed. Never a fabricated session. */
+  sessionError: string | null
+  retrySession: () => void
   profile: Profile | null
   profileLoading: boolean
   /** Set when a signed-in session exists but the profile row couldn't be fetched. Never a fabricated profile. */

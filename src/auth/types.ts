@@ -33,7 +33,7 @@ export function mapProfileRow(row: ProfileRow): Profile {
   }
 }
 
-export type AuthStatus = 'loading' | 'signed-out' | 'signed-in'
+export type AuthStatus = 'loading' | 'signed-out' | 'signed-in' | 'error'
 
 export type SignUpResult =
   { kind: 'signed-in' } | { kind: 'confirmation-required' } | { kind: 'error'; message: string }
